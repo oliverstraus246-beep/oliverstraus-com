@@ -3,71 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Oliver Straus — Denver, Colorado entrepreneur. Born July 16, 2010. CEO and CFO of multi-million dollar ventures. $250,000+ philanthropist. Building the next generation of AI-powered companies." />
-  <meta name="keywords" content="Oliver Straus, Denver entrepreneur, startup CEO, Oliver Straus Denver, young entrepreneur Colorado, CFO, philanthropy, AI startup founder" />
-  <meta name="author" content="Oliver Straus" />
-  <meta name="robots" content="index, follow" />
 
-  <!-- Open Graph -->
+  <!-- ═══ PRIMARY SEO META ═══ -->
+  <title>Oliver Straus | Entrepreneur, CEO & Philanthropist | Denver, Colorado</title>
+  <meta name="description" content="Oliver Straus — Denver, Colorado entrepreneur, startup CEO, and philanthropist. Born July 16, 2010. CFO at age 14. Directed $750,000+ in charitable giving. Defense-tech software engineer. Founder of multiple AI and automation companies." />
+  <meta name="keywords" content="Oliver Straus, Oliver Straus Denver, Oliver Straus entrepreneur, Oliver Straus CEO, Oliver Straus Colorado, Oliver Straus startup, Oliver Straus philanthropist, Denver entrepreneur, young entrepreneur Denver, AI startup founder Colorado, Oliver Straus tech" />
+  <meta name="author" content="Oliver Straus" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <link rel="canonical" href="https://oliverstraus.com" />
+
+  <!-- ═══ OPEN GRAPH ═══ -->
+  <meta property="og:site_name" content="Oliver Straus" />
   <meta property="og:title" content="Oliver Straus — Entrepreneur, CEO & Philanthropist" />
-  <meta property="og:description" content="Denver-based entrepreneur and executive. CEO & CFO of multi-million dollar ventures. $250,000+ contributed to charitable causes." />
+  <meta property="og:description" content="Denver-based entrepreneur. CEO & CFO of multi-million dollar ventures. $750,000+ directed to charitable causes. Defense-tech software engineer. Born July 16, 2010." />
   <meta property="og:url" content="https://oliverstraus.com" />
   <meta property="og:type" content="profile" />
   <meta property="og:image" content="https://oliverstraus.com/assets/oliver-straus.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="profile:first_name" content="Oliver" />
   <meta property="profile:last_name" content="Straus" />
   <meta property="profile:gender" content="male" />
 
-  <!-- Twitter Card -->
+  <!-- ═══ TWITTER / X ═══ -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@OLIVER_STRAUS1" />
   <meta name="twitter:creator" content="@OLIVER_STRAUS1" />
   <meta name="twitter:title" content="Oliver Straus — Entrepreneur & CEO" />
-  <meta name="twitter:description" content="Denver-based entrepreneur, CEO, and philanthropist. Building AI companies. $250K+ donated." />
+  <meta name="twitter:description" content="Denver-based entrepreneur, CEO, defense-tech engineer, and philanthropist. $750K+ donated. Built AI companies. Born 2010." />
+  <meta name="twitter:image" content="https://oliverstraus.com/assets/oliver-straus.jpg" />
 
-  <title>Oliver Straus — Entrepreneur, CEO & Philanthropist | Denver, CO</title>
-  <link rel="canonical" href="https://oliverstraus.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Person Schema — primary signal for Google Knowledge Panel -->
+  <!-- ═══════════════════════════════════════════════════════
+       STRUCTURED DATA — Google Knowledge Panel signals
+       All schemas below are invisible to users but fully
+       read by Google, ChatGPT, Perplexity, and Bing.
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- PERSON — primary entity -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": "https://oliverstraus.com/#oliver-straus",
     "name": "Oliver Straus",
     "givenName": "Oliver",
     "familyName": "Straus",
     "url": "https://oliverstraus.com",
-    "image": "https://oliverstraus.com/assets/oliver-straus.jpg",
+    "image": {
+      "@type": "ImageObject",
+      "url": "https://oliverstraus.com/assets/oliver-straus.jpg",
+      "width": 800,
+      "height": 800
+    },
     "birthDate": "2010-07-16",
     "birthPlace": {
       "@type": "Place",
+      "name": "Denver, Colorado",
       "addressLocality": "Denver",
       "addressRegion": "Colorado",
       "addressCountry": "US"
     },
-    "jobTitle": "CEO & Entrepreneur",
-    "description": "Oliver Straus is a Denver, Colorado entrepreneur and executive. Born July 16, 2010, he is the CEO and CFO of multiple technology ventures and has contributed over $250,000 to charitable causes.",
+    "jobTitle": ["CEO", "Entrepreneur", "Software Engineer", "Philanthropist"],
+    "description": "Oliver Straus is a Denver, Colorado entrepreneur born July 16, 2010. He served as CFO of a multi-million dollar fine art business at age 14, directed $750,000+ in charitable giving, engineered software for a confidential defense-technology contractor, and founded multiple AI-powered technology companies.",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Denver",
       "addressRegion": "CO",
       "addressCountry": "US"
     },
-    "alumniOf": {
-      "@type": "EducationalOrganization",
-      "name": "Kent Denver School",
-      "url": "https://www.kentdenver.org"
-    },
+    "nationality": "American",
     "knowsAbout": [
-      "Startups", "Entrepreneurship", "Artificial Intelligence",
-      "Technology", "Business Leadership", "Philanthropy",
-      "Venture Building", "Software Development"
+      "Entrepreneurship","Startups","Artificial Intelligence","Machine Learning",
+      "Software Engineering","Financial Management","Philanthropy","Defense Technology",
+      "Autonomous Systems","Business Operations","React","Node.js","Python"
     ],
+    "hasOccupation": [
+      {
+        "@type": "Occupation",
+        "name": "Entrepreneur",
+        "occupationLocation": { "@type": "City", "name": "Denver" }
+      },
+      {
+        "@type": "Occupation",
+        "name": "Software Engineer",
+        "occupationLocation": { "@type": "City", "name": "Denver" }
+      }
+    ],
+    "award": "CFO appointment at age 14 for multi-million dollar fine art enterprise",
     "sameAs": [
+      "https://www.wikidata.org/wiki/Q140045127",
       "https://www.linkedin.com/in/oliver-straus-06804240b/",
       "https://x.com/OLIVER_STRAUS1",
       "https://www.instagram.com/oliver_straus1/",
@@ -76,392 +105,446 @@
     ]
   }
   </script>
+
+  <!-- WEBSITE -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Oliver Straus",
+    "url": "https://oliverstraus.com",
+    "description": "Official website of Oliver Straus — Denver entrepreneur, CEO, and philanthropist.",
+    "author": { "@id": "https://oliverstraus.com/#oliver-straus" },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://oliverstraus.com/?s={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
+  <!-- PROFILE PAGE -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "name": "Oliver Straus — Official Website",
+    "url": "https://oliverstraus.com",
+    "description": "Official profile of Oliver Straus, Denver entrepreneur, CEO, and philanthropist born July 16, 2010.",
+    "mainEntity": { "@id": "https://oliverstraus.com/#oliver-straus" },
+    "dateModified": "2025-06-03",
+    "inLanguage": "en-US"
+  }
+  </script>
+
+  <!-- FAQ — drives "People Also Asked" in Google results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Who is Oliver Straus?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oliver Straus is a Denver, Colorado entrepreneur and technology executive born on July 16, 2010. He is the CEO and founder of multiple AI-powered technology companies, a former CFO who managed multi-million dollar operations at age 14, a defense-technology software engineer, and a philanthropist who has directed over $750,000 to charitable causes."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What companies has Oliver Straus founded?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oliver Straus has founded multiple technology ventures including an AI life coaching platform (Apex), a fully automated B2B lead generation system, a developer operations dashboard powered by AI, and Imperial Detailing, a premium mobile auto detailing company in Denver, Colorado."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Where is Oliver Straus from?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oliver Straus is from Denver, Colorado. He was born on July 16, 2010 in Denver and continues to build his companies from the Denver metro area."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Oliver Straus known for?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oliver Straus is known for being a young Denver entrepreneur who served as CFO of a multi-million dollar enterprise at age 14, directed over $750,000 in charitable giving, engineered software for a confidential defense-technology contractor, and has founded multiple AI and automation companies as CEO."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How old is Oliver Straus the entrepreneur?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oliver Straus the Denver entrepreneur was born on July 16, 2010, making him 15 years old as of 2025. He is distinct from Oliver Straus, the music industry figure and father of musician King Princess."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- BREADCRUMB -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Oliver Straus", "item": "https://oliverstraus.com" }
+    ]
+  }
+  </script>
+
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav class="nav" id="nav">
+  <!-- ═══ NAV ═══ -->
+  <nav class="nav" id="nav" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
-      <a href="/" class="nav-logo">Oliver Straus</a>
+      <a href="/" class="nav-logo" aria-label="Oliver Straus home">Oliver Straus</a>
       <div class="nav-links">
         <a href="#about">About</a>
         <a href="#ventures">Ventures</a>
         <a href="#philanthropy">Philanthropy</a>
         <a href="#press">Press</a>
+        <a href="/resume.html" target="_blank" rel="noopener">Résumé</a>
         <a href="#contact">Contact</a>
       </div>
-      <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="nav-cta">Connect</a>
+      <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="nav-cta">Connect →</a>
     </div>
   </nav>
 
-  <!-- Hero -->
-  <section class="hero" id="home">
+  <!-- ═══ HERO ═══ -->
+  <header class="hero" id="home" role="banner">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-grid"></div>
+      <div class="hero-glow-1"></div>
+      <div class="hero-glow-2"></div>
+    </div>
     <div class="container">
-      <div class="hero-inner">
-        <div class="hero-left">
-          <div class="hero-eyebrow">
-            <span class="dot"></span>
-            Denver, Colorado · Born July 16, 2010
-          </div>
-          <h1>
-            Oliver<br />
-            <span class="hero-name-accent">Straus</span>
-          </h1>
-          <p class="hero-tagline">
-            Entrepreneur. Executive. Philanthropist.
-          </p>
-          <p class="hero-sub">
-            Building technology companies that matter — as CEO, CFO,
-            and founder. Giving back to the communities that make
-            success possible.
-          </p>
-          <div class="hero-cta">
-            <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="btn btn-primary">
-              Connect on LinkedIn
-            </a>
-            <a href="#about" class="btn btn-outline">Learn More</a>
-          </div>
-        </div>
-        <div class="hero-right">
-          <div class="hero-card-stack">
-            <div class="info-card">
-              <div class="info-card-label">Role</div>
-              <div class="info-card-value">CEO &amp; Founder</div>
-            </div>
-            <div class="info-card info-card-blue">
-              <div class="info-card-label">Philanthropy</div>
-              <div class="info-card-value">$250,000+</div>
-            </div>
-            <div class="info-card">
-              <div class="info-card-label">Based in</div>
-              <div class="info-card-value">Denver, CO</div>
-            </div>
-            <div class="info-card">
-              <div class="info-card-label">Active Ventures</div>
-              <div class="info-card-value">3+</div>
-            </div>
-          </div>
-        </div>
+      <div class="hero-eyebrow">
+        <span class="eyebrow-dot" aria-hidden="true"></span>
+        <span>Denver, Colorado · Born July 16, 2010</span>
+      </div>
+      <h1 class="hero-name" itemprop="name">
+        <span class="hero-first">Oliver</span>
+        <span class="hero-last">Straus</span>
+      </h1>
+      <p class="hero-role" aria-label="Entrepreneur · CEO · Philanthropist">
+        Entrepreneur &nbsp;·&nbsp; CEO &nbsp;·&nbsp; Philanthropist
+      </p>
+      <p class="hero-sub">
+        Building technology companies from zero to multi-million.
+        Giving back at scale. Denver-born and relentlessly focused.
+      </p>
+      <div class="hero-actions">
+        <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="btn btn-primary">Connect on LinkedIn</a>
+        <a href="/resume.html" target="_blank" rel="noopener" class="btn btn-ghost">View Résumé ↗</a>
       </div>
     </div>
-  </section>
+    <div class="hero-scroll" aria-hidden="true"><span></span></div>
+  </header>
 
-  <!-- Stats Strip -->
-  <div class="stats-strip">
-    <div class="container stats-inner">
-      <div class="stat">
-        <span class="stat-n">CEO</span>
-        <span class="stat-l">Multiple Companies</span>
+  <!-- ═══ STAT STRIP ═══ -->
+  <div class="stat-strip" role="region" aria-label="Key achievements">
+    <div class="container stat-inner">
+      <div class="stat-item">
+        <span class="stat-big">$750K+</span>
+        <span class="stat-tiny">Charitable Giving Directed</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-n">CFO</span>
-        <span class="stat-l">Multi-Million Dollar Ops</span>
+      <div class="stat-div" aria-hidden="true"></div>
+      <div class="stat-item">
+        <span class="stat-big">$1M+</span>
+        <span class="stat-tiny">Annual Revenue Managed as CFO</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-n">$250K+</span>
-        <span class="stat-l">Donated to Charity</span>
+      <div class="stat-div" aria-hidden="true"></div>
+      <div class="stat-item">
+        <span class="stat-big">Age 14</span>
+        <span class="stat-tiny">Appointed CFO · Multi-Million P&amp;L</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat">
-        <span class="stat-n">Denver</span>
-        <span class="stat-l">Colorado, USA</span>
+      <div class="stat-div" aria-hidden="true"></div>
+      <div class="stat-item">
+        <span class="stat-big">3+</span>
+        <span class="stat-tiny">Technology Ventures Founded</span>
       </div>
     </div>
   </div>
 
-  <!-- About -->
-  <section class="section" id="about">
+  <!-- ═══ ABOUT ═══ -->
+  <section class="section" id="about" aria-labelledby="about-heading">
     <div class="container">
-      <div class="about-grid">
-        <div class="about-image-col">
-          <div class="photo-frame">
-            <div class="photo-placeholder">
-              <span>OS</span>
+      <div class="about-layout">
+
+        <div class="about-card-col">
+          <div class="id-card" role="complementary" aria-label="Oliver Straus profile card">
+            <div class="id-photo">
+              <img src="assets/oliver-straus.jpg" alt="Oliver Straus — Denver entrepreneur and CEO"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                   width="120" height="120" loading="eager" />
+              <div class="id-initials" style="display:none" aria-hidden="true">OS</div>
             </div>
-            <div class="photo-tag">Oliver Straus</div>
-            <div class="photo-sub">Denver, Colorado</div>
-          </div>
-          <div class="quick-facts">
-            <div class="qf-row">
-              <span class="qf-label">Born</span>
-              <span class="qf-value">July 16, 2010</span>
+            <div class="id-name">Oliver Straus</div>
+            <div class="id-title">CEO · Entrepreneur · Philanthropist</div>
+            <div class="id-facts">
+              <div class="id-row"><span>Born</span><span>July 16, 2010</span></div>
+              <div class="id-row"><span>Location</span><span>Denver, CO</span></div>
+              <div class="id-row"><span>Nationality</span><span>American</span></div>
+              <div class="id-row"><span>Status</span><span>Active · Building</span></div>
             </div>
-            <div class="qf-row">
-              <span class="qf-label">Location</span>
-              <span class="qf-value">Denver, Colorado</span>
-            </div>
-            <div class="qf-row">
-              <span class="qf-label">School</span>
-              <span class="qf-value">Kent Denver</span>
-            </div>
-            <div class="qf-row">
-              <span class="qf-label">Nationality</span>
-              <span class="qf-value">American</span>
+            <div class="id-links">
+              <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" aria-label="LinkedIn profile">in</a>
+              <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener" aria-label="X/Twitter profile">𝕏</a>
+              <a href="https://www.imdb.com/name/nm8461530/" target="_blank" rel="noopener" aria-label="IMDb profile">IMDb</a>
+              <a href="/resume.html" target="_blank" rel="noopener" aria-label="View résumé">CV</a>
             </div>
           </div>
         </div>
+
         <div class="about-text-col">
-          <div class="section-label">About</div>
-          <h2>Built to lead.<br /><em>Wired to build.</em></h2>
+          <p class="section-label">About</p>
+          <h2 id="about-heading">
+            Built for impact.<br />
+            <em>Wired to execute.</em>
+          </h2>
           <p>
-            Oliver Straus was born on July 16, 2010 in Denver, Colorado.
-            From an early age, Oliver demonstrated an exceptional ability to see
-            what others couldn't — building systems, strategies, and companies
-            while his peers were still figuring out what they wanted to be.
+            Oliver Straus was born on <strong>July 16, 2010</strong> in Denver, Colorado.
+            He managed his first multi-million dollar P&amp;L at <strong>age 14</strong> —
+            not as a simulation, but as the real CFO of a high-revenue fine art business —
+            overseeing financial modeling, budgeting, and a charitable giving program that
+            directed <strong>$750,000+</strong> to 15+ nonprofits.
           </p>
           <p>
-            Today, Oliver serves as CEO and CFO across multiple technology
-            ventures, managing multi-million dollar operations. He has built
-            platforms in AI, automation, and software development — leading
-            every stage from concept to scale.
+            In 2025, Oliver shipped production software for a
+            <strong>confidential defense-technology contractor</strong> working in autonomous
+            systems and UAV operations — applying reliability-first engineering under NDA
+            alongside senior engineers. He simultaneously launched
+            <strong>Imperial Detailing</strong>, a mobile auto detailing company that reached
+            profitability in its first season.
           </p>
           <p>
-            A student at Kent Denver School, Oliver is building one of the most
-            compelling entrepreneurial stories in Colorado — proof that ambition
-            and execution don't wait for age.
+            Today Oliver leads multiple AI-powered technology ventures as CEO, including
+            an AI life coaching platform, a fully automated B2B lead generation system,
+            and a professional developer dashboard. He writes code, runs financials,
+            and ships product — all at once.
           </p>
-          <p>
-            Philanthropy is a core part of who Oliver is. He has contributed
-            over <strong>$250,000</strong> to charitable causes, believing that
-            wealth without purpose is wealth wasted.
-          </p>
-          <div class="about-links">
-            <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="about-link">LinkedIn →</a>
-            <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener" class="about-link">Twitter / X →</a>
-            <a href="https://www.imdb.com/name/nm8461530/" target="_blank" rel="noopener" class="about-link">IMDb →</a>
+          <div class="about-resume-cta">
+            <a href="/resume.html" target="_blank" rel="noopener" class="resume-link">
+              <span>View Full Résumé</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+            <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="resume-link resume-link-ghost">LinkedIn →</a>
           </div>
         </div>
+
       </div>
     </div>
   </section>
 
-  <!-- Focus Areas -->
-  <section class="section bg-light" id="focus">
+  <!-- ═══ FOCUS ═══ -->
+  <section class="section section-tinted" id="focus" aria-labelledby="focus-heading">
     <div class="container">
-      <div class="section-header">
-        <div class="section-label">What I Do</div>
-        <h2>Three areas. <span class="blue">One mission.</span></h2>
-      </div>
+      <p class="section-label">Capabilities</p>
+      <h2 id="focus-heading">Three strengths.<br /><span class="blue">One builder.</span></h2>
       <div class="focus-grid">
-        <div class="focus-card">
-          <div class="focus-num">01</div>
+        <article class="focus-card" aria-label="Startup building">
+          <div class="focus-num" aria-hidden="true">01</div>
           <h3>Startup Building</h3>
-          <p>
-            From concept to revenue — Oliver has built and led technology
-            companies from the ground up, navigating product development,
-            team building, and go-to-market strategy simultaneously.
-          </p>
-        </div>
-        <div class="focus-card focus-card-featured">
-          <div class="focus-num">02</div>
+          <p>Zero to revenue. Oliver has founded, structured, and scaled technology ventures — building product, acquiring customers, and running operations simultaneously without outside funding or a team to rely on.</p>
+        </article>
+        <article class="focus-card focus-card-featured" aria-label="Executive leadership">
+          <div class="focus-num" aria-hidden="true">02</div>
           <h3>Executive Leadership</h3>
-          <p>
-            As both CEO and CFO of multi-million dollar ventures, Oliver brings
-            top-level vision and rigorous financial discipline. He operates
-            companies — not just builds them.
-          </p>
-        </div>
-        <div class="focus-card">
-          <div class="focus-num">03</div>
+          <p>Named CFO at 14 for a multi-million dollar enterprise. As CEO across multiple active ventures, Oliver operates full businesses — not just builds them. Vision and financial rigor in the same person.</p>
+        </article>
+        <article class="focus-card" aria-label="Philanthropy">
+          <div class="focus-num" aria-hidden="true">03</div>
           <h3>Philanthropy</h3>
-          <p>
-            Oliver has given over $250,000 to charitable causes. He believes
-            that building generational wealth carries a responsibility to
-            give back — and acts on that belief.
-          </p>
-        </div>
+          <p>Oliver has directed over $750,000 in charitable giving to 15+ nonprofits across arts, education, and community development. Giving is part of the operating model, not an afterthought.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- Ventures -->
-  <section class="section" id="ventures">
+  <!-- ═══ VENTURES ═══ -->
+  <section class="section" id="ventures" aria-labelledby="ventures-heading">
     <div class="container">
-      <div class="section-header">
-        <div class="section-label">Ventures</div>
-        <h2>Building the next generation<br />of <span class="blue">intelligent companies.</span></h2>
-      </div>
+      <p class="section-label">Ventures</p>
+      <h2 id="ventures-heading">Active companies.<br /><span class="blue">Real revenue.</span></h2>
       <div class="ventures-grid">
-        <div class="venture-card">
-          <div class="venture-top">
-            <span class="venture-cat">AI · Consumer</span>
+        <article class="venture-card" aria-label="Apex AI life coach">
+          <div class="v-header">
+            <span class="v-badge">AI · Consumer</span>
           </div>
-          <h3>AI Life Coach Platform</h3>
-          <p>
-            A desktop AI coaching application that combines behavioral
-            psychology with advanced AI to deliver personalized guidance
-            on goals, habits, and growth — at a scale no human coach can match.
-          </p>
-          <div class="venture-tech">
-            <span>Electron</span><span>React</span><span>Claude AI</span>
+          <h3>Apex — AI Life Coach</h3>
+          <p>A desktop AI coaching application combining behavioral psychology with advanced AI to deliver personalized guidance on goals, habits, and growth. Fully designed and shipped solo, including backend API and complete UI system.</p>
+          <div class="v-stack"><span>Electron</span><span>React</span><span>Claude AI</span><span>Node.js</span></div>
+        </article>
+        <article class="venture-card venture-featured" aria-label="Lead Generation Platform">
+          <div class="v-header">
+            <span class="v-badge">Automation · B2B</span>
           </div>
-        </div>
-        <div class="venture-card venture-card-featured">
-          <div class="venture-top">
-            <span class="venture-cat">Automation · B2B</span>
-          </div>
-          <h3>Automated Lead Generation Platform</h3>
-          <p>
-            A fully automated B2B sales pipeline. AI voice agents, intelligent
-            outreach, and automated lead qualification — connecting businesses
-            with high-value prospects at a fraction of agency costs.
-          </p>
-          <div class="venture-tech">
-            <span>Node.js</span><span>Supabase</span><span>AI Voice</span>
-          </div>
-        </div>
-        <div class="venture-card">
-          <div class="venture-top">
-            <span class="venture-cat">Dev Tools · Infrastructure</span>
+          <h3>Lead Generation Platform</h3>
+          <p>Fully automated B2B sales pipeline. AI voice agents, intelligent outreach sequences, automated lead qualification, Stripe billing, and Supabase data management — engineered to operate end-to-end with minimal oversight.</p>
+          <div class="v-stack"><span>Node.js</span><span>Supabase</span><span>Vapi</span><span>Stripe</span></div>
+        </article>
+        <article class="venture-card" aria-label="Developer Operations Dashboard">
+          <div class="v-header">
+            <span class="v-badge">Dev Tools · Infrastructure</span>
           </div>
           <h3>Developer Operations Dashboard</h3>
-          <p>
-            A professional command center for modern developers — integrating
-            AI tooling, project intelligence, and operational dashboards into
-            a single native desktop application.
-          </p>
-          <div class="venture-tech">
-            <span>Electron</span><span>React</span><span>Vite</span>
+          <p>Professional desktop command center for modern developers — integrating AI tooling, project intelligence, session monitoring, and operational dashboards. Built from scratch with a custom OLED-optimized UI system.</p>
+          <div class="v-stack"><span>Electron</span><span>React</span><span>Vite</span><span>IPC</span></div>
+        </article>
+        <article class="venture-card" aria-label="Imperial Detailing">
+          <div class="v-header">
+            <span class="v-badge">Services · Denver</span>
           </div>
-        </div>
+          <h3>Imperial Detailing</h3>
+          <p>Premium mobile auto detailing operation in Denver, Colorado — founded from scratch and profitable by the end of the first season. Built custom booking automation and client management tools in React and Node.js.</p>
+          <div class="v-stack"><span>React</span><span>Node.js</span><span>Denver</span></div>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- Philanthropy -->
-  <section class="section bg-blue-deep" id="philanthropy">
+  <!-- ═══ PHILANTHROPY ═══ -->
+  <section class="section section-dark-alt" id="philanthropy" aria-labelledby="philanthropy-heading">
     <div class="container">
-      <div class="philanthropy-inner">
-        <div class="section-label section-label-white">Philanthropy</div>
-        <h2 class="white">$250,000+ <span class="blue-light">given back.</span></h2>
-        <p class="philanthropy-sub">
-          Oliver believes that success is a multiplier — not a destination.
-          Having contributed over a quarter-million dollars to charitable
-          causes, he is committed to using his platform and resources
-          to create meaningful impact in Denver and beyond.
+      <div class="phil-inner">
+        <p class="section-label section-label-dim">Philanthropy</p>
+        <h2 id="philanthropy-heading" class="phil-headline">
+          $750,000+ <span class="blue-bright">given back.</span>
+        </h2>
+        <p class="phil-sub">
+          As Philanthropy Director for Topher Straus Fine Art, Oliver directed over three-quarters
+          of a million dollars to 15+ nonprofit organizations across arts, education, and community
+          support. He believes that serious financial success carries a serious obligation to give —
+          and acts on it.
         </p>
-        <div class="philanthropy-pillars">
-          <div class="pillar">
-            <div class="pillar-icon">◈</div>
-            <div class="pillar-title">Community</div>
-            <div class="pillar-desc">Investing in local Denver organizations and community initiatives</div>
+        <div class="phil-grid">
+          <div class="phil-card">
+            <div class="phil-icon" aria-hidden="true">◈</div>
+            <div class="phil-title">Community</div>
+            <div class="phil-desc">Investing in local Denver organizations — including food banks, cultural programs, and community development initiatives.</div>
           </div>
-          <div class="pillar">
-            <div class="pillar-icon">◎</div>
-            <div class="pillar-title">Education</div>
-            <div class="pillar-desc">Supporting access to education and opportunity for young people</div>
+          <div class="phil-card">
+            <div class="phil-icon" aria-hidden="true">◎</div>
+            <div class="phil-title">Arts &amp; Education</div>
+            <div class="phil-desc">Supporting access to arts education and institutional funding for cultural organizations across Colorado and nationally.</div>
           </div>
-          <div class="pillar">
-            <div class="pillar-icon">◌</div>
-            <div class="pillar-title">Innovation</div>
-            <div class="pillar-desc">Funding programs that bring technology and entrepreneurship to more people</div>
+          <div class="phil-card">
+            <div class="phil-icon" aria-hidden="true">◌</div>
+            <div class="phil-title">Nonprofits</div>
+            <div class="phil-desc">Systematic giving to 15+ nonprofit partners — structured giving programs, not one-off donations.</div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Press -->
-  <section class="section bg-light" id="press">
+  <!-- ═══ PRESS ═══ -->
+  <section class="section section-tinted" id="press" aria-labelledby="press-heading">
     <div class="container">
-      <div class="section-header">
-        <div class="section-label">Press &amp; Recognition</div>
-        <h2>In the <span class="blue">conversation.</span></h2>
-      </div>
+      <p class="section-label">Press &amp; Recognition</p>
+      <h2 id="press-heading">In the <span class="blue">record.</span></h2>
       <div class="press-grid">
-        <a href="https://www.imdb.com/name/nm8461530/" target="_blank" rel="noopener" class="press-card">
-          <div class="press-source-badge">IMDb</div>
-          <div class="press-title">Film Credits — Oliver Straus</div>
-          <div class="press-meta">IMDb · Entertainment database</div>
-          <span class="press-arrow">→</span>
+        <a href="https://www.imdb.com/name/nm8461530/" target="_blank" rel="noopener" class="press-card" aria-label="IMDb film credits for Oliver Straus">
+          <span class="press-badge">IMDb</span>
+          <span class="press-title">Film Credits — Oliver Straus</span>
+          <span class="press-meta">Internet Movie Database</span>
+          <span class="press-arrow" aria-hidden="true">→</span>
         </a>
-        <a href="https://www.kentdenver.org/perspective/alumni-posts-detail/~board/perspective/post/mirroring-nature-meet-digital-painter-topher-straus-93" target="_blank" rel="noopener" class="press-card">
-          <div class="press-source-badge">Kent Denver</div>
-          <div class="press-title">Straus Family Alumni Feature</div>
-          <div class="press-meta">Kent Denver School · Perspective</div>
-          <span class="press-arrow">→</span>
+        <a href="https://www.kentdenver.org/perspective/alumni-posts-detail/~board/perspective/post/mirroring-nature-meet-digital-painter-topher-straus-93" target="_blank" rel="noopener" class="press-card" aria-label="Kent Denver alumni feature">
+          <span class="press-badge">Kent Denver</span>
+          <span class="press-title">Straus Family Feature</span>
+          <span class="press-meta">Kent Denver School · Perspective</span>
+          <span class="press-arrow" aria-hidden="true">→</span>
         </a>
-        <a href="https://topherstraus.com/blogs/news/the-straus-family-by-kathy-lamore-mcmanus-foothills-living" target="_blank" rel="noopener" class="press-card">
-          <div class="press-source-badge">Foothills Living</div>
-          <div class="press-title">The Straus Family Profile</div>
-          <div class="press-meta">Foothills Living Magazine</div>
-          <span class="press-arrow">→</span>
+        <a href="https://topherstraus.com/blogs/news/the-straus-family-by-kathy-lamore-mcmanus-foothills-living" target="_blank" rel="noopener" class="press-card" aria-label="Foothills Living Straus family profile">
+          <span class="press-badge">Foothills Living</span>
+          <span class="press-title">The Straus Family Profile</span>
+          <span class="press-meta">Foothills Living Magazine</span>
+          <span class="press-arrow" aria-hidden="true">→</span>
         </a>
       </div>
     </div>
   </section>
 
-  <!-- Contact -->
-  <section class="section" id="contact">
+  <!-- ═══ CONTACT ═══ -->
+  <section class="section" id="contact" aria-labelledby="contact-heading">
     <div class="container contact-wrap">
-      <div class="section-label">Contact</div>
-      <h2>Let's <span class="blue">connect.</span></h2>
-      <p class="contact-body">
-        Founder, investor, partner, or just curious — reach out.
-      </p>
-      <div class="social-grid">
-        <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="social-btn">
-          <span class="social-abbr">in</span>
-          <div>
-            <div class="social-name">LinkedIn</div>
-            <div class="social-handle">oliver-straus-06804240b</div>
-          </div>
+      <p class="section-label">Contact</p>
+      <h2 id="contact-heading">Let's <span class="blue">connect.</span></h2>
+      <p class="contact-sub">Founder, investor, partner, collaborator — reach out.</p>
+      <div class="socials">
+        <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="social-btn" aria-label="LinkedIn">
+          <span class="s-icon">in</span>
+          <div><div class="s-name">LinkedIn</div><div class="s-handle">oliver-straus-06804240b</div></div>
         </a>
-        <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener" class="social-btn">
-          <span class="social-abbr">𝕏</span>
-          <div>
-            <div class="social-name">Twitter / X</div>
-            <div class="social-handle">@OLIVER_STRAUS1</div>
-          </div>
+        <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener" class="social-btn" aria-label="Twitter / X">
+          <span class="s-icon">𝕏</span>
+          <div><div class="s-name">Twitter / X</div><div class="s-handle">@OLIVER_STRAUS1</div></div>
         </a>
-        <a href="https://www.instagram.com/oliver_straus1/" target="_blank" rel="noopener" class="social-btn">
-          <span class="social-abbr">ig</span>
-          <div>
-            <div class="social-name">Instagram</div>
-            <div class="social-handle">@oliver_straus1</div>
-          </div>
+        <a href="https://www.instagram.com/oliver_straus1/" target="_blank" rel="noopener" class="social-btn" aria-label="Instagram">
+          <span class="s-icon">ig</span>
+          <div><div class="s-name">Instagram</div><div class="s-handle">@oliver_straus1</div></div>
         </a>
-        <a href="https://github.com/oliverstraus246-beep" target="_blank" rel="noopener" class="social-btn">
-          <span class="social-abbr">gh</span>
-          <div>
-            <div class="social-name">GitHub</div>
-            <div class="social-handle">oliverstraus246-beep</div>
-          </div>
+        <a href="https://github.com/oliverstraus246-beep" target="_blank" rel="noopener" class="social-btn" aria-label="GitHub">
+          <span class="s-icon">gh</span>
+          <div><div class="s-name">GitHub</div><div class="s-handle">oliverstraus246-beep</div></div>
         </a>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="footer">
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer" role="contentinfo">
     <div class="container footer-inner">
-      <div class="footer-brand">
-        <span class="footer-name">Oliver Straus</span>
-        <span class="footer-tagline">Entrepreneur · Denver, Colorado</span>
+      <div>
+        <div class="footer-name">Oliver Straus</div>
+        <div class="footer-sub">Entrepreneur · Denver, Colorado · Born 2010</div>
       </div>
-      <div class="footer-links">
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="/resume.html" target="_blank" rel="noopener">Résumé</a>
         <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener">LinkedIn</a>
-        <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener">Twitter</a>
         <a href="https://www.imdb.com/name/nm8461530/" target="_blank" rel="noopener">IMDb</a>
-      </div>
+        <a href="https://www.wikidata.org/wiki/Q140045127" target="_blank" rel="noopener">Wikidata</a>
+      </nav>
       <span class="footer-copy">© 2025 Oliver Straus</span>
     </div>
   </footer>
 
+  <!-- ═══ MICRODATA (hidden, for additional entity disambiguation) ═══ -->
+  <div itemscope itemtype="https://schema.org/Person" style="display:none" aria-hidden="true">
+    <span itemprop="name">Oliver Straus</span>
+    <span itemprop="birthDate">2010-07-16</span>
+    <span itemprop="birthPlace" itemscope itemtype="https://schema.org/Place">
+      <span itemprop="name">Denver, Colorado</span>
+    </span>
+    <span itemprop="jobTitle">CEO</span>
+    <span itemprop="jobTitle">Entrepreneur</span>
+    <span itemprop="nationality">American</span>
+    <a itemprop="url" href="https://oliverstraus.com">https://oliverstraus.com</a>
+    <a itemprop="sameAs" href="https://www.wikidata.org/wiki/Q140045127">Wikidata</a>
+    <a itemprop="sameAs" href="https://www.linkedin.com/in/oliver-straus-06804240b/">LinkedIn</a>
+    <a itemprop="sameAs" href="https://www.imdb.com/name/nm8461530/">IMDb</a>
+  </div>
+
   <script>
-    // Sticky nav
+    // Nav scroll effect
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => {
       nav.classList.toggle('scrolled', window.scrollY > 60);
-    });
+    }, { passive: true });
 
     // Fade-in on scroll
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.08 });
-    document.querySelectorAll('.section, .focus-card, .venture-card, .press-card, .pillar, .info-card')
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.section, .focus-card, .venture-card, .press-card, .phil-card, .id-card')
       .forEach(el => io.observe(el));
   </script>
 </body>

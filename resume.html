@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oliver Straus — Resume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:      #0f0f0f;
+  --mid:      #383838;
+  --light:    #666666;
+  --xlight:   #9a9a9a;
+  --rule:     #cccccc;
+  --rule-lt:  #e6e6e6;
+  --page-w:   816px;
+  --mh:       0.58in;
+  --mv:       0.52in;
+  --left-w:   244px;
+  --sidebar:  #e2e2e2;
+}
+
+/* Global link reset */
+a { color: inherit; text-decoration: none; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #bababa;
+  color: var(--ink);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ──────────────────────────────────────
+   PAGE
+────────────────────────────────────── */
+.page {
+  width: var(--page-w);
+  min-height: 1056px;
+  /* Upside-down L: full header gray, then left sidebar gray only */
+  background: linear-gradient(to right, var(--sidebar) 244px, #fff 244px);
+  margin: 2.5rem auto;
+  box-shadow: 0 12px 80px rgba(0,0,0,.3), 0 2px 14px rgba(0,0,0,.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left black accent stripe */
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: var(--ink);
+  z-index: 10;
+}
+
+/* Column divider — starts below achievement row */
+.col-rule {
+  position: absolute;
+  left: 244px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent 0, var(--rule) 18%, var(--rule) 88%, transparent 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ──────────────────────────────────────
+   HEADER  (full-width gray = top of L)
+────────────────────────────────────── */
+.header {
+  background: var(--sidebar);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: var(--mv) var(--mh) 15px;
+  border-bottom: 1.5px solid var(--ink);
+  position: relative;
+  z-index: 2;
+}
+
+.name {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 54px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  line-height: 0.88;
+  color: var(--ink);
+}
+
+.name-sub {
+  margin-top: 9px;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--xlight);
+}
+
+.contact-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3.5px;
+  padding-bottom: 4px;
+}
+
+.contact-col span,
+.contact-col a {
+  font-size: 8.5px;
+  color: var(--mid);
+  line-height: 1.6;
+  letter-spacing: 0.15px;
+}
+
+/* ──────────────────────────────────────
+   ACHIEVEMENT CALLOUTS  (white band)
+────────────────────────────────────── */
+.achievements-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #fff;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+  z-index: 2;
+}
+
+.ach-card {
+  padding: 13px 16px 14px;
+  text-align: center;
+  border-right: 1px solid var(--rule);
+  border-top: 2.5px solid var(--ink);
+}
+.ach-card:last-child { border-right: none; }
+
+.ach-number {
+  font-family: 'EB Garamond', serif;
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.ach-label {
+  margin-top: 4px;
+  font-size: 6.5px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--xlight);
+  line-height: 1.55;
+}
+
+/* ──────────────────────────────────────
+   TWO-COLUMN BODY
+────────────────────────────────────── */
+.body {
+  display: grid;
+  grid-template-columns: var(--left-w) 1fr;
+  gap: 0;
+  padding: 20px 0 var(--mv);
+  position: relative;
+  z-index: 2;
+}
+
+.left  { padding: 0 18px 0 var(--mh); }
+.right { padding: 0 var(--mh) 0 22px; }
+
+/* ──────────────────────────────────────
+   SECTION HEADERS
+────────────────────────────────────── */
+.sec-head {
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: var(--xlight);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.sec-head::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section { margin-bottom: 20px; }
+
+/* ──────────────────────────────────────
+   LEFT — SKILLS
+────────────────────────────────────── */
+.skill-block { margin-bottom: 11px; }
+
+.skill-block-name {
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-bottom: 5px;
+}
+
+.skill-items { display: flex; flex-direction: column; gap: 3px; }
+
+.skill-item {
+  font-size: 8.5px;
+  color: var(--ink);
+  line-height: 1.4;
+  padding-left: 10px;
+  position: relative;
+}
+.skill-item::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--rule);
+  font-size: 14px;
+  line-height: 0.8;
+  top: 1px;
+}
+
+/* ──────────────────────────────────────
+   LEFT — EDUCATION
+────────────────────────────────────── */
+.edu-block { margin-bottom: 12px; }
+.edu-school { font-size: 9px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.edu-program { font-size: 8px; color: var(--mid); margin-top: 2px; font-style: italic; }
+.edu-note { font-size: 7px; color: var(--xlight); margin-top: 2px; line-height: 1.5; }
+
+/* ──────────────────────────────────────
+   LEFT — COMMUNITY
+────────────────────────────────────── */
+.community-item {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-lt);
+}
+.community-item:last-child { border-bottom: none; margin-bottom: 0; }
+.community-org { font-size: 8.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.community-role { font-size: 7.5px; color: var(--mid); margin-top: 1px; font-style: italic; }
+.community-desc { font-size: 7.5px; color: var(--light); margin-top: 3px; line-height: 1.6; }
+
+/* ──────────────────────────────────────
+   RIGHT — PROFILE
+────────────────────────────────────── */
+.summary {
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
+  line-height: 1.84;
+  color: var(--mid);
+  font-style: italic;
+}
+
+/* ──────────────────────────────────────
+   RIGHT — EXPERIENCE
+────────────────────────────────────── */
+.exp-entry {
+  margin-bottom: 17px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--rule-lt);
+}
+.exp-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.exp-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.exp-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant: small-caps;
+  letter-spacing: 0.2px;
+}
+
+.exp-dates {
+  font-size: 7px;
+  color: var(--xlight);
+  letter-spacing: 0.6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.exp-company {
+  font-size: 8.5px;
+  color: var(--light);
+  font-style: italic;
+  margin-bottom: 7px;
+  letter-spacing: 0.15px;
+}
+
+.exp-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+.exp-list li {
+  font-size: 9.5px;
+  line-height: 1.64;
+  color: var(--mid);
+  padding-left: 14px;
+  position: relative;
+}
+.exp-list li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--rule);
+  font-size: 8px;
+  top: 1px;
+}
+.exp-list li strong {
+  font-weight: 600;
+  color: #111111 !important;
+}
+
+/* ──────────────────────────────────────
+   RIGHT — PROJECTS
+────────────────────────────────────── */
+.proj-entry {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-lt);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+.proj-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.proj-name { font-size: 9.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+
+.proj-tech {
+  font-size: 6.5px;
+  letter-spacing: 0.8px;
+  color: var(--xlight);
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-top: 1px;
+  text-align: right;
+}
+
+.proj-desc {
+  font-size: 8.5px;
+  color: var(--light);
+  line-height: 1.65;
+  margin-top: 3px;
+  grid-column: 1 / -1;
+}
+
+/* ──────────────────────────────────────
+   PRINT
+────────────────────────────────────── */
+@media print {
+  body { background: white; }
+  .page {
+    width: 100%; margin: 0; box-shadow: none; overflow: visible;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: linear-gradient(to right, #e2e2e2 244px, #ffffff 244px) !important;
+  }
+  .header { background: #e2e2e2 !important; }
+  a, a:visited { color: inherit !important; text-decoration: none !important; }
+  strong { color: #111111 !important; }
+}
+
+@page { size: letter; margin: 0; }
+
+/* ──────────────────────────────────────
+   PRINT BUTTON (screen only)
+────────────────────────────────────── */
+.print-hint {
+  width: var(--page-w);
+  margin: 0 auto 12px;
+  text-align: right;
+  font-family: Inter, sans-serif;
+}
+.print-hint button {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 9px 22px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.8px;
+  font-family: Inter, sans-serif;
+  transition: background .2s;
+}
+.print-hint button:hover { background: #2a2a2a; }
+
+@media print { .print-hint { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="print-hint">
+  <button onclick="window.print()">Save as PDF ↓</button>
+</div>
+
+<div class="page">
+  <div class="col-rule"></div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="name">Oliver Straus</div>
+      <div class="name-sub">Entrepreneur &nbsp;·&nbsp; Software Engineer &nbsp;·&nbsp; Business Executive</div>
+    </div>
+    <div class="contact-col">
+      <span>Denver, Colorado</span>
+      <a href="tel:+13039464224">(303) 946-4224</a>
+      <a href="mailto:oliverstraus246@gmail.com">oliverstraus246@gmail.com</a>
+      <a href="https://imperialdetailingcodetail.com">imperialdetailingcodetail.com</a>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="achievements-row">
+    <div class="ach-card">
+      <div class="ach-number">$750K+</div>
+      <div class="ach-label">Charitable Donations<br>Directed</div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-number">$1M+</div>
+      <div class="ach-label">Annual Revenue<br>Managed as CFO</div>
+    </div>
+    <div class="ach-card">
+      <div class="ach-number">Year 1</div>
+      <div class="ach-label">Startup — Profitable<br>First Season</div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- LEFT -->
+    <div class="left">
+
+      <div class="section">
+        <div class="sec-head">Skills</div>
+
+        <div class="skill-block">
+          <div class="skill-block-name">Programming</div>
+          <div class="skill-items">
+            <span class="skill-item">Python</span>
+            <span class="skill-item">JavaScript / ES2024</span>
+            <span class="skill-item">C++</span>
+            <span class="skill-item">React &amp; Node.js</span>
+            <span class="skill-item">REST API Design</span>
+          </div>
+        </div>
+
+        <div class="skill-block">
+          <div class="skill-block-name">Technology</div>
+          <div class="skill-items">
+            <span class="skill-item">AI / LLM Integration</span>
+            <span class="skill-item">Autonomous Systems</span>
+            <span class="skill-item">Electron Desktop Apps</span>
+            <span class="skill-item">Automation Pipelines</span>
+            <span class="skill-item">Systems Architecture</span>
+            <span class="skill-item">Git / Version Control</span>
+          </div>
+        </div>
+
+        <div class="skill-block">
+          <div class="skill-block-name">Business &amp; Finance</div>
+          <div class="skill-items">
+            <span class="skill-item">P&amp;L Management</span>
+            <span class="skill-item">Financial Modeling</span>
+            <span class="skill-item">Sales &amp; Client Acquisition</span>
+            <span class="skill-item">Operations Management</span>
+            <span class="skill-item">Brand Development</span>
+          </div>
+        </div>
+
+        <div class="skill-block">
+          <div class="skill-block-name">Interpersonal</div>
+          <div class="skill-items">
+            <span class="skill-item">Executive Communication</span>
+            <span class="skill-item">Team Leadership</span>
+            <span class="skill-item">High-Pressure Performance</span>
+            <span class="skill-item">Customer Service</span>
+            <span class="skill-item">Conflict Resolution</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sec-head">Education</div>
+        <div class="edu-block">
+          <div class="edu-school">University of Colorado<br>Boulder</div>
+          <div class="edu-program">B.S. Business &amp; Marketing</div>
+          <div class="edu-note">Enrollment Planned 2027<br>Accelerated Track</div>
+        </div>
+        <div class="edu-block">
+          <div class="edu-school">GED — Accelerated</div>
+          <div class="edu-program">Self-Directed Study</div>
+          <div class="edu-note">Expected 2026–2027</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="sec-head">Community</div>
+        <div class="community-item">
+          <div class="community-org">B Golden Food Bank</div>
+          <div class="community-role">Volunteer Operations Support</div>
+          <div class="community-desc">Food distribution, event coordination, and community outreach across the Denver metro.</div>
+        </div>
+        <div class="community-item">
+          <div class="community-org">Topher Straus Fine Art</div>
+          <div class="community-role">Philanthropy Director</div>
+          <div class="community-desc">Directed $750,000+ in charitable giving to 15+ nonprofit partners over a 3-year tenure.</div>
+        </div>
+      </div>
+
+    </div><!-- /left -->
+
+    <!-- RIGHT -->
+    <div class="right">
+
+      <div class="section">
+        <div class="sec-head">Profile</div>
+        <p class="summary">
+          I managed my first multi-million dollar P&amp;L at 14 — not as an exercise, but as CFO of a real business. By 18 I had shipped production software for drone mapping and autonomous systems at one of the world's leading military contractors — multiple government contracts, name withheld by agreement — and founded a services company that was profitable in its first season. I adapt fast, perform under pressure, and deliver in every environment I've walked into.
+        </p>
+      </div>
+
+      <div class="section">
+        <div class="sec-head">Professional Experience</div>
+
+        <!-- Defense Contractor -->
+        <div class="exp-entry">
+          <div class="exp-top">
+            <div class="exp-title">Software Engineer</div>
+            <div class="exp-dates">Mar 2025 – May 2025</div>
+          </div>
+          <div class="exp-company">Confidential Defense-Technology Contractor &nbsp;·&nbsp; Autonomous Systems / UAV &nbsp;·&nbsp; Newport Beach, CA</div>
+          <ul class="exp-list">
+            <li>Contributed to a <strong>drone-based aerial mapping and reconnaissance system</strong> — processing real-time sensor feeds, spatial telemetry, and autonomous flight path data for military field operations across multiple governments.</li>
+            <li>Developed components of a <strong>UAV mission-planning pipeline</strong>, including spatial mapping logic, obstacle-avoidance inputs, and real-time data integration for autonomous navigation in contested environments.</li>
+            <li>Applied <strong>reliability-first engineering standards</strong> in a production codebase where software accuracy directly impacts field operations — zero tolerance for errors.</li>
+            <li>Operated under <strong>NDA and security protocols</strong> alongside senior engineers; demonstrated the professional discretion and judgment the role required.</li>
+          </ul>
+        </div>
+
+        <!-- Topher Straus -->
+        <div class="exp-entry">
+          <div class="exp-top">
+            <div class="exp-title">Chief Financial Officer</div>
+            <div class="exp-dates">2020 – 2023</div>
+          </div>
+          <div class="exp-company">Topher Straus Fine Art &nbsp;·&nbsp; Fine Art Commerce &nbsp;·&nbsp; Denver, CO &nbsp;·&nbsp; topherstraus.com</div>
+          <ul class="exp-list">
+            <li>Appointed CFO at <strong>age 14</strong> for a fine art business generating multi-million dollars annually — managed financial planning, budgeting, P&amp;L reporting, and accounts payable/receivable for three years.</li>
+            <li>Maintained <strong>financial models guiding pricing, collection valuations, exhibition ROI, and negotiations</strong> with high-net-worth collectors and institutional buyers.</li>
+            <li>Architected a philanthropic giving program that distributed <strong>$750,000+ across 15+ nonprofit organizations</strong> in arts, education, and community support.</li>
+            <li>Oversaw operations: <strong>vendor contracts, event logistics, artwork shipping and insurance</strong>, and staff coordination for national exhibitions.</li>
+            <li>Developed executive communication skills through sustained relationships with galleries, collectors, and cultural institutions.</li>
+          </ul>
+        </div>
+
+        <!-- Imperial Detailing -->
+        <div class="exp-entry">
+          <div class="exp-top">
+            <div class="exp-title">Founder &amp; Chief Executive</div>
+            <div class="exp-dates">Summer 2025 – Present</div>
+          </div>
+          <div class="exp-company">Imperial Detailing &nbsp;·&nbsp; Premium Mobile Auto Detailing &nbsp;·&nbsp; Denver, CO &nbsp;·&nbsp; imperialdetailingcodetail.com</div>
+          <ul class="exp-list">
+            <li>Founded and launched a premium mobile detailing operation from scratch — <strong>profitable by end of the first season</strong> without outside funding.</li>
+            <li>Managed every business function solo: <strong>client acquisition, scheduling, invoicing, service delivery, marketing, and brand development</strong>.</li>
+            <li>Built <strong>custom booking automation and client management tools</strong> in React and Node.js, reducing admin overhead and improving client retention.</li>
+            <li>Developed a <strong>professional brand identity and web presence</strong> from zero — driving inbound leads through local SEO, social media, and referrals.</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="section">
+        <div class="sec-head">Technology Projects</div>
+
+        <div class="proj-entry">
+          <div>
+            <div class="proj-name">Apex — AI Life Coach Desktop Application</div>
+            <div class="proj-desc">Full-stack Electron + React desktop app powered by Claude AI. Conversational coaching, habit tracking, and intelligent journaling — designed and shipped entirely solo, including the full backend API and UI system.</div>
+          </div>
+          <div class="proj-tech">Electron · React · Node · AI</div>
+        </div>
+
+        <div class="proj-entry">
+          <div>
+            <div class="proj-name">Lead Generation Agency — Automated Sales Pipeline</div>
+            <div class="proj-desc">Fully automated B2B outreach platform integrating AI copywriting, AI voice calling (Vapi), Stripe billing, and Supabase data management. Engineered to run end-to-end with minimal human oversight.</div>
+          </div>
+          <div class="proj-tech">Node · Supabase · Vapi · Stripe</div>
+        </div>
+
+        <div class="proj-entry">
+          <div>
+            <div class="proj-name">Claude Command Center — Developer Dashboard</div>
+            <div class="proj-desc">Custom Electron developer control panel for managing AI sessions, tools, and workflows. Real-time session monitoring, MCP server management, and an OLED-optimized dark UI system built from scratch.</div>
+          </div>
+          <div class="proj-tech">Electron · React · Vite · IPC</div>
+        </div>
+
+      </div>
+
+    </div><!-- /right -->
+  </div><!-- /body -->
+</div><!-- /page -->
+</body>
+</html>
