@@ -26,7 +26,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","@id":"https://oliverstraus.com/#oliver-straus","name":"Oliver Straus","givenName":"Oliver","familyName":"Straus","url":"https://oliverstraus.com","image":"https://oliverstraus.com/assets/oliver-straus.jpg","birthPlace":{"@type":"Place","name":"Denver, Colorado"},"jobTitle":["CEO","Entrepreneur","Software Engineer"],"description":"Oliver Straus is a Denver entrepreneur and software engineer. He served as CFO of Topher Straus Fine Art at 14, directed $250,000 in charitable giving, engineered software for a defense technology contractor, and founded multiple AI companies.","email":"oliverstraus246@gmail.com","sameAs":["https://www.wikidata.org/wiki/Q140045127","https://www.linkedin.com/in/oliver-straus-06804240b/","https://x.com/OLIVER_STRAUS1","https://www.instagram.com/oliver_straus1/","https://github.com/oliverstraus246-beep","https://www.imdb.com/name/nm8461530/"]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","@id":"https://oliverstraus.com/#oliver-straus","name":"Oliver Straus","givenName":"Oliver","familyName":"Straus","url":"https://oliverstraus.com","image":"https://oliverstraus.com/assets/oliver-straus.jpg","birthPlace":{"@type":"Place","name":"Denver, Colorado","addressLocality":"Denver","addressRegion":"Colorado","addressCountry":"US"},"jobTitle":["CEO","Entrepreneur","Software Engineer"],"description":"Oliver Straus is a Denver, Colorado entrepreneur and software engineer. At 14 he served as CFO of Topher Straus Fine Art, directing $250,000 to nonprofit organizations. He engineered software for a defense technology contractor and founded multiple AI technology companies including Apex.","disambiguatingDescription":"Oliver Straus, Denver Colorado entrepreneur and software engineer, born and based in Denver. Distinct from Oliver Straus, the New York music industry executive.","address":{"@type":"PostalAddress","addressLocality":"Denver","addressRegion":"CO","addressCountry":"US"},"email":"oliverstraus246@gmail.com","telephone":"+13039464224","nationality":"American","knowsAbout":["entrepreneurship","software engineering","artificial intelligence","financial management","philanthropy","drone technology","React","Node.js","Electron"],"hasOccupation":[{"@type":"Occupation","name":"Chief Executive Officer"},{"@type":"Occupation","name":"Software Engineer"},{"@type":"Occupation","name":"Entrepreneur"}],"sameAs":["https://www.wikidata.org/wiki/Q140045127","https://www.linkedin.com/in/oliver-straus-06804240b/","https://x.com/OLIVER_STRAUS1","https://www.instagram.com/oliver_straus1/","https://github.com/oliverstraus246-beep","https://www.imdb.com/name/nm8461530/"]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Who is Oliver Straus?","acceptedAnswer":{"@type":"Answer","text":"Oliver Straus is a Denver, Colorado entrepreneur and software engineer. He served as CFO of Topher Straus Fine Art at age 14, directed $250,000 to 15 nonprofits, engineered software for a defense technology contractor, and founded multiple AI technology companies. He is based in Denver, Colorado."}},{"@type":"Question","name":"Who is Oliver Straus Denver?","acceptedAnswer":{"@type":"Answer","text":"Oliver Straus from Denver, Colorado is an entrepreneur and software engineer. He became CFO of a multi-million dollar fine art business at 14, worked in defense technology software, and founded several AI companies including Apex, an AI life coaching platform."}},{"@type":"Question","name":"What companies has Oliver Straus founded?","acceptedAnswer":{"@type":"Answer","text":"Oliver Straus has founded Apex (an AI life coaching desktop application), an enterprise business development automation platform, Command Center (a developer intelligence dashboard), and Imperial Detailing (a premium mobile auto detailing service in Denver that reached profitability in its first season)."}},{"@type":"Question","name":"Where is Oliver Straus from?","acceptedAnswer":{"@type":"Answer","text":"Oliver Straus is from Denver, Colorado. He was born and raised in Denver and continues to build and operate his companies there."}},{"@type":"Question","name":"What is Oliver Straus known for?","acceptedAnswer":{"@type":"Answer","text":"Oliver Straus is known as a Denver entrepreneur who became Chief Financial Officer of Topher Straus Fine Art at age 14, managed a philanthropic program directing $250,000 to nonprofits, worked as a software engineer on defense technology, and founded multiple AI companies."}}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Oliver Straus","url":"https://oliverstraus.com","author":{"@id":"https://oliverstraus.com/#oliver-straus"},"description":"Official website of Oliver Straus, Denver Colorado entrepreneur and software engineer."}</script>
 </head>
 <body>
 
@@ -424,7 +426,7 @@
       io.observe(el);
     });
 
-    /* Press row hover slide */
+    /* Press row hover — arrow slide */
     document.querySelectorAll('.press-row').forEach(function (row) {
       row.addEventListener('mouseenter', function () {
         row.querySelector('.pr-arrow').style.transform = 'translateX(6px)';
@@ -433,6 +435,64 @@
         row.querySelector('.pr-arrow').style.transform = '';
       });
     });
+
+    /* Stagger company + experience items */
+    document.querySelectorAll('.company-list .company').forEach(function (el, i) {
+      el.style.transitionDelay = (i * 90) + 'ms';
+      io.observe(el);
+      el.classList.add('fade-in');
+    });
+    document.querySelectorAll('.exp-item').forEach(function (el, i) {
+      el.style.transitionDelay = (i * 100) + 'ms';
+      io.observe(el);
+      el.classList.add('fade-in');
+    });
+
+    /* Cursor glow in hero */
+    var hero = document.querySelector('.hero');
+    if (hero) {
+      var glow = document.createElement('div');
+      glow.className = 'cursor-glow';
+      hero.appendChild(glow);
+      hero.addEventListener('mousemove', function (e) {
+        var r = hero.getBoundingClientRect();
+        glow.style.left = (e.clientX - r.left) + 'px';
+        glow.style.top  = (e.clientY - r.top)  + 'px';
+        glow.style.opacity = '1';
+      }, { passive: true });
+      hero.addEventListener('mouseleave', function () {
+        glow.style.opacity = '0';
+      });
+    }
+
+    /* Parallax — monogram drifts slowly on scroll */
+    var mono = document.querySelector('.hero-monogram');
+    if (mono) {
+      window.addEventListener('scroll', function () {
+        mono.style.transform = 'translateY(' + (window.scrollY * 0.18) + 'px)';
+      }, { passive: true });
+    }
+
+    /* Intro pull — counter for philanthropy section */
+    var philHeading = document.querySelector('.phil-left .section-heading');
+    if (philHeading) {
+      var philIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var n = 0;
+            var target = 250000;
+            var step = Math.ceil(target / 60);
+            var t = setInterval(function () {
+              n = Math.min(n + step, target);
+              philHeading.innerHTML = '$' + n.toLocaleString() + '<br/>given back.';
+              if (n >= target) clearInterval(t);
+            }, 16);
+            philIo.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+      philIo.observe(philHeading);
+    }
 
   }());
   </script>

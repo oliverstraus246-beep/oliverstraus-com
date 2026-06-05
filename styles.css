@@ -369,6 +369,15 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .company:first-child { border-top: 1px solid var(--border); }
+.company { position: relative; }
+.company::before {
+  content: '';
+  position: absolute; left: -2.5rem; top: 2.75rem; bottom: 0;
+  width: 2px; background: var(--blue-lt);
+  opacity: 0; transform: scaleY(0); transform-origin: top;
+  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.company:hover::before { opacity: 0.5; transform: scaleY(1); }
 
 .co-top {
   display: flex; justify-content: space-between;
@@ -505,6 +514,34 @@ body {
   transition: color 0.2s var(--ease);
 }
 .contact-item:hover .ci-value { color: var(--blue-lt); }
+
+/* ============================================================
+   CURSOR GLOW
+   ============================================================ */
+.cursor-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(37,99,235,.09) 0%, transparent 65%);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.4s var(--ease);
+  opacity: 0;
+  z-index: 0;
+  will-change: left, top;
+}
+
+/* ============================================================
+   GRAIN OVERLAY
+   ============================================================ */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.028;
+  pointer-events: none;
+  z-index: 9998;
+}
 
 /* ============================================================
    FOOTER
