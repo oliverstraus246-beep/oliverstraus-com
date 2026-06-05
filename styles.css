@@ -826,3 +826,49 @@ body::after {
   .intro-section { padding: 5.5rem 0; }
   .hero { padding: 9rem 0 6rem; }
 }
+
+/* ============================================================
+   STATS BAR
+   ============================================================ */
+.stats-section {
+  padding: 3.5rem 0;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+}
+.stats-row {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 0;
+}
+.stat {
+  text-align: center;
+  padding: 0.8rem 3.5rem;
+}
+.stat-num {
+  font-family: var(--serif);
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 0.45rem;
+  background: linear-gradient(135deg, var(--white) 40%, var(--blue-lt) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-lbl {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat-div {
+  width: 1px; height: 52px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .stats-row { gap: 0; }
+  .stat { padding: 0.8rem 1.8rem; }
+  .stat-div { display: none; }
+}
