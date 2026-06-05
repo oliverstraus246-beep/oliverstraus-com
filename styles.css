@@ -754,6 +754,55 @@ body::after {
 .contact-item:hover { background: rgba(59,130,246,.03); }
 
 /* ============================================================
+   Q&A / COMMON QUESTIONS
+   ============================================================ */
+.qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+.qa-item {
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.qa-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--white);
+  cursor: pointer;
+  list-style: none;
+  transition: color 0.2s var(--ease);
+}
+.qa-q::-webkit-details-marker { display: none; }
+.qa-q::after {
+  content: '+';
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--blue-3);
+  flex-shrink: 0;
+  transition: transform 0.25s var(--ease);
+}
+.qa-item[open] .qa-q::after {
+  transform: rotate(45deg);
+}
+.qa-item[open] .qa-q { color: var(--blue-3); }
+.qa-a {
+  padding-bottom: 1.5rem;
+}
+.qa-a p {
+  color: var(--text);
+  font-size: 0.97rem;
+  line-height: 1.75;
+  max-width: 68ch;
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 960px) {
