@@ -667,17 +667,77 @@ body::after {
 .company:hover .co-name { color: var(--blue-3); transition: color 0.25s; }
 
 /* ============================================================
-   INTRO SECTION — clip reveal
+   INTRO SECTION — word reveal with blur
    ============================================================ */
-.intro-pull {
-  overflow: hidden;
-}
 .intro-pull .word {
   display: inline-block;
-  opacity: 0; transform: translateY(30px);
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  opacity: 0; transform: translateY(24px);
+  filter: blur(4px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease), filter 0.7s var(--ease);
 }
-.intro-pull .word.visible { opacity: 1; transform: none; }
+.intro-pull .word.visible { opacity: 1; transform: none; filter: none; }
+
+/* ============================================================
+   ABOUT PHOTO — scale in
+   ============================================================ */
+.about-photo-col.visible .about-photo {
+  animation: photo-scale 0.8s cubic-bezier(0.34,1.2,0.64,1) forwards;
+}
+@keyframes photo-scale {
+  from { transform: scale(0.92); opacity: 0.4; }
+  to   { transform: scale(1);    opacity: 1;   }
+}
+
+/* ============================================================
+   EXPERIENCE — timeline connector
+   ============================================================ */
+.exp-list { position: relative; }
+.exp-list::before {
+  content: '';
+  position: absolute; left: 100px; top: 3rem; bottom: 3rem;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--border) 15%, var(--border) 85%, transparent);
+}
+.tl-item .exp-period::before {
+  content: '';
+  display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--blue-3);
+  margin-right: 0.6rem; vertical-align: middle;
+  box-shadow: 0 0 8px var(--blue);
+}
+
+/* ============================================================
+   PHILANTHROPY — number glow
+   ============================================================ */
+.phil-left .section-heading {
+  background: linear-gradient(135deg, var(--white) 30%, var(--blue-3) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   PROJECTS — hover lift
+   ============================================================ */
+.company {
+  transition: background 0.3s var(--ease), padding-left 0.3s var(--ease);
+}
+.company:hover {
+  padding-left: 1rem;
+}
+
+/* ============================================================
+   FOOTER — gradient top border
+   ============================================================ */
+.footer {
+  border-top: none;
+  position: relative;
+}
+.footer::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 5%, var(--border-b) 30%, var(--blue-3) 50%, var(--border-b) 70%, transparent 95%);
+}
 
 /* ============================================================
    PRESS ROW — improved hover
