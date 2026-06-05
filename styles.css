@@ -528,14 +528,38 @@ body {
 .contact-item:hover .ci-value { color: var(--blue-lt); }
 
 /* ============================================================
-   CURSOR GLOW
+   SCROLL PROGRESS BAR
+   ============================================================ */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; z-index: 500;
+  height: 2px; width: 0%;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--blue-3) 60%, rgba(147,197,253,.5) 100%);
+  box-shadow: 0 0 10px rgba(59,130,246,.5);
+  transition: width 0.08s linear;
+  pointer-events: none;
+}
+
+/* ============================================================
+   SITE-WIDE CURSOR GLOW
+   ============================================================ */
+.site-cursor {
+  position: fixed; pointer-events: none; z-index: 9990;
+  width: 380px; height: 380px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(59,130,246,.07) 0%, transparent 65%);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.5s var(--ease);
+  opacity: 0; will-change: left, top;
+}
+
+/* ============================================================
+   CURSOR GLOW (hero-only)
    ============================================================ */
 .cursor-glow {
   position: absolute;
   width: 500px; height: 500px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(37,99,235,.09) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(37,99,235,.11) 0%, transparent 65%);
   transform: translate(-50%, -50%);
   transition: opacity 0.4s var(--ease);
   opacity: 0;
@@ -575,6 +599,99 @@ body::after {
 }
 .footer-nav a:hover { color: var(--white); }
 .footer-copy { font-size: 0.68rem; color: var(--dim); }
+
+/* ============================================================
+   LETTER ANIMATION
+   ============================================================ */
+.letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(50px) skewX(-6deg);
+  animation: letter-rise 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes letter-rise {
+  to { opacity: 1; transform: none; }
+}
+.hero-name-a { animation: none !important; opacity: 1 !important; transform: none !important; }
+.hero-name-b { animation: none !important; opacity: 1 !important; transform: none !important; }
+
+/* ============================================================
+   TYPEWRITER CURSOR
+   ============================================================ */
+.type-cursor {
+  display: inline-block;
+  width: 2px; height: 1em;
+  background: var(--blue-3);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 0.9s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ============================================================
+   NAV ACTIVE STATE
+   ============================================================ */
+.nav-links a.active { color: var(--white); }
+.nav-links a.active::after { width: 100%; }
+
+/* ============================================================
+   SECTION WATERMARK NUMBERS
+   ============================================================ */
+.section { position: relative; overflow: visible; }
+.section[data-num]::before {
+  content: attr(data-num);
+  position: absolute; right: -1rem; top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--serif);
+  font-size: clamp(8rem, 18vw, 16rem);
+  font-weight: 800; letter-spacing: -0.05em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,.03);
+  pointer-events: none; user-select: none;
+  line-height: 1; z-index: 0;
+}
+
+/* ============================================================
+   COMPANY HOVER SWEEP
+   ============================================================ */
+.company { position: relative; overflow: hidden; }
+.company::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(37,99,235,.04) 0%, transparent 70%);
+  opacity: 0; transform: translateX(-100%);
+  transition: opacity 0.4s var(--ease), transform 0.5s var(--ease);
+  pointer-events: none;
+}
+.company:hover::after { opacity: 1; transform: translateX(0); }
+.company:hover .co-name { color: var(--blue-3); transition: color 0.25s; }
+
+/* ============================================================
+   INTRO SECTION — clip reveal
+   ============================================================ */
+.intro-pull {
+  overflow: hidden;
+}
+.intro-pull .word {
+  display: inline-block;
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.intro-pull .word.visible { opacity: 1; transform: none; }
+
+/* ============================================================
+   PRESS ROW — improved hover
+   ============================================================ */
+.press-row { border-radius: 4px; }
+.press-row:hover { background: rgba(59,130,246,.04); padding-left: 1.25rem; }
+.press-row:hover .pr-title { color: var(--blue-3); }
+.pr-title { transition: color 0.2s var(--ease); }
+
+/* ============================================================
+   CONTACT ITEMS — glow hover
+   ============================================================ */
+.contact-item:hover .ci-value { color: var(--blue-3); }
+.contact-item:hover { background: rgba(59,130,246,.03); }
 
 /* ============================================================
    RESPONSIVE

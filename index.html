@@ -155,7 +155,7 @@
   </section>
 
   <!-- COMPANIES -->
-  <section class="section section-alt" id="companies">
+  <section class="section section-alt" id="companies" data-num="02">
     <div class="container">
       <h2 class="section-heading">Companies</h2>
       <div class="company-list">
@@ -207,7 +207,7 @@
   </section>
 
   <!-- EXPERIENCE -->
-  <section class="section" id="experience">
+  <section class="section" id="experience" data-num="03">
     <div class="container">
       <h2 class="section-heading">Experience</h2>
       <div class="exp-list">
@@ -408,7 +408,31 @@
   <script>
   (function () {
 
-    /* Splash */
+    /* ── SCROLL PROGRESS BAR ──────────────────────── */
+    var prog = document.createElement('div');
+    prog.className = 'scroll-progress';
+    document.body.prepend(prog);
+    window.addEventListener('scroll', function () {
+      var pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight) * 100;
+      prog.style.width = Math.min(pct, 100) + '%';
+    }, { passive: true });
+
+    /* ── SITE-WIDE CURSOR GLOW ────────────────────── */
+    var siteCur = document.createElement('div');
+    siteCur.className = 'site-cursor';
+    document.body.appendChild(siteCur);
+    var curX = 0, curY = 0, rafCur;
+    window.addEventListener('mousemove', function (e) {
+      curX = e.clientX; curY = e.clientY;
+      if (!rafCur) rafCur = requestAnimationFrame(function () {
+        siteCur.style.left = curX + 'px';
+        siteCur.style.top  = curY + 'px';
+        siteCur.style.opacity = '1';
+        rafCur = null;
+      });
+    }, { passive: true });
+
+    /* ── SPLASH ───────────────────────────────────── */
     var splash = document.getElementById('splash');
     document.body.style.overflow = 'hidden';
     setTimeout(function () {
@@ -449,17 +473,95 @@
       });
     });
 
-    /* Stagger company + experience items */
+    /* ── LETTER SPLIT — hero name ────────────────── */
+    function splitLetters(el, baseDelay) {
+      var text = el.textContent;
+      el.innerHTML = '';
+      text.split('').forEach(function (ch, i) {
+        var s = document.createElement('span');
+        s.className = 'letter';
+        s.style.animationDelay = (baseDelay + i * 0.042) + 's';
+        s.textContent = ch === ' ' ? ' ' : ch;
+        el.appendChild(s);
+      });
+    }
+    var nameA = document.querySelector('.hero-name-a');
+    var nameB = document.querySelector('.hero-name-b');
+    if (nameA) splitLetters(nameA, 1.0);
+    if (nameB) splitLetters(nameB, 1.25);
+
+    /* ── TYPEWRITER — hero tagline ────────────────── */
+    var tagEl = document.querySelector('.hero-line');
+    if (tagEl) {
+      var fullText = tagEl.textContent.trim();
+      tagEl.innerHTML = '';
+      tagEl.style.opacity = '1';
+      tagEl.style.transform = 'none';
+      var cur = document.createElement('span');
+      cur.className = 'type-cursor';
+      var idx = 0;
+      setTimeout(function () {
+        var t = setInterval(function () {
+          if (idx < fullText.length) {
+            tagEl.insertBefore(document.createTextNode(fullText[idx]), cur);
+            idx++;
+          } else {
+            clearInterval(t);
+            setTimeout(function () { cur.remove(); }, 1200);
+          }
+        }, 38);
+        tagEl.appendChild(cur);
+      }, 1700);
+    }
+
+    /* ── WORD SPLIT — intro pull quote ───────────── */
+    var pullEl = document.querySelector('.intro-pull');
+    if (pullEl) {
+      var words = pullEl.textContent.trim().split(/(\s+)/);
+      pullEl.innerHTML = '';
+      words.forEach(function (w) {
+        if (/^\s+$/.test(w)) {
+          pullEl.appendChild(document.createTextNode(w));
+        } else {
+          var span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = w;
+          pullEl.appendChild(span);
+          io.observe(span);
+        }
+      });
+    }
+
+    /* ── STAGGER — companies + experience ────────── */
     document.querySelectorAll('.company-list .company').forEach(function (el, i) {
-      el.style.transitionDelay = (i * 90) + 'ms';
-      io.observe(el);
-      el.classList.add('fade-in');
-    });
-    document.querySelectorAll('.exp-item').forEach(function (el, i) {
       el.style.transitionDelay = (i * 100) + 'ms';
-      io.observe(el);
       el.classList.add('fade-in');
+      io.observe(el);
     });
+    document.querySelectorAll('.tl-item').forEach(function (el, i) {
+      el.classList.add(i % 2 === 0 ? 'from-left' : 'from-right');
+      el.style.transitionDelay = (i * 120) + 'ms';
+      io.observe(el);
+    });
+    document.querySelectorAll('.press-row').forEach(function (el, i) {
+      el.classList.add('fade-in');
+      el.style.transitionDelay = (i * 55) + 'ms';
+      io.observe(el);
+    });
+
+    /* ── ACTIVE NAV on scroll ─────────────────────── */
+    var allSections = document.querySelectorAll('[id]');
+    var navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
+    window.addEventListener('scroll', function () {
+      var scrollMid = window.scrollY + window.innerHeight * 0.4;
+      var current = '';
+      allSections.forEach(function (s) {
+        if (s.offsetTop <= scrollMid) current = s.id;
+      });
+      navAnchors.forEach(function (a) {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+      });
+    }, { passive: true });
 
     /* Cursor glow in hero */
     var hero = document.querySelector('.hero');
