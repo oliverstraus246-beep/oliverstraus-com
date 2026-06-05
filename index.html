@@ -53,6 +53,7 @@
       <ul class="nav-links" role="list">
         <li><a href="#about">About</a></li>
         <li><a href="#companies">Companies</a></li>
+        <li><a href="#projects">Projects</a></li>
         <li><a href="#press">Press</a></li>
         <li><a href="#contact">Contact</a></li>
         <li><a href="/resume.html" target="_blank" rel="noopener">Resume</a></li>
@@ -100,7 +101,7 @@
   <!-- ABOUT -->
   <section class="section" id="about-detail">
     <div class="container about-layout">
-      <div class="about-photo-col">
+      <div class="about-photo-col from-left">
         <div class="about-photo">
           <img src="assets/oliver-straus.jpg"
                alt="Oliver Straus"
@@ -109,7 +110,7 @@
           <div class="about-photo-fallback" aria-hidden="true">OS</div>
         </div>
       </div>
-      <div class="about-text-col">
+      <div class="about-text-col from-right">
         <h2 class="section-heading">About</h2>
         <div class="about-body">
           <p>
@@ -184,19 +185,6 @@
             prospecting calls, intelligent lead qualification, and integrated billing. The
             platform runs with minimal manual oversight, handling the complete sales cycle
             from first contact to paid contract.
-          </p>
-        </div>
-
-        <div class="company fade-in">
-          <div class="co-top">
-            <div class="co-name">Command Center</div>
-            <div class="co-year">2025 — Present</div>
-          </div>
-          <div class="co-role">Founder and CEO</div>
-          <p class="co-desc">
-            A professional desktop control panel for developers. It unifies AI tooling,
-            project intelligence, session monitoring, and operational dashboards in a single
-            native desktop interface. Built in Electron and React.
           </p>
         </div>
 
@@ -283,13 +271,51 @@
     </div>
   </section>
 
+  <!-- PROJECTS -->
+  <section class="section" id="projects">
+    <div class="container">
+      <h2 class="section-heading">Projects</h2>
+      <div class="company-list">
+        <div class="company from-left">
+          <div class="co-top">
+            <div class="co-name">Command Center</div>
+            <div class="co-year">2025 — Present</div>
+          </div>
+          <div class="co-role">Developer Tool</div>
+          <p class="co-desc">A professional desktop control panel for developers. Unifies AI tooling, project intelligence, session monitoring, and operational dashboards in a single native desktop interface. Built in Electron and React.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PRESS -->
-  <section class="section" id="press">
+  <section class="section section-alt" id="press">
     <div class="container">
       <h2 class="section-heading">Press</h2>
 
       <div class="press-group">
-        <h3 class="press-group-label">Featured Coverage</h3>
+        <h3 class="press-group-label">Press Releases</h3>
+        <div class="press-list">
+          <a href="/press/oliver-straus-profile.html" class="press-row fade-in">
+            <div class="pr-source">June 2025</div>
+            <div class="pr-title">Oliver Straus: Denver's Young Entrepreneur Building AI Companies From the Ground Up</div>
+            <div class="pr-arrow">&#8594;</div>
+          </a>
+          <a href="/press/apex-launch.html" class="press-row fade-in">
+            <div class="pr-source">June 2025</div>
+            <div class="pr-title">Denver Entrepreneur Oliver Straus Launches Apex, an AI Life Coaching Platform</div>
+            <div class="pr-arrow">&#8594;</div>
+          </a>
+          <a href="/press/imperial-detailing.html" class="press-row fade-in">
+            <div class="pr-source">June 2025</div>
+            <div class="pr-title">Imperial Detailing Reaches First-Season Profitability Under Founder Oliver Straus</div>
+            <div class="pr-arrow">&#8594;</div>
+          </a>
+        </div>
+      </div>
+
+      <div class="press-group" style="margin-top: 3rem;">
+        <h3 class="press-group-label">Coverage</h3>
         <div class="press-list">
           <a href="https://www.wikidata.org/wiki/Q140045127" target="_blank" rel="noopener" class="press-row fade-in">
             <div class="pr-source">Wikipedia / Wikidata</div>
@@ -319,51 +345,38 @@
         </div>
       </div>
 
-      <div class="press-group" style="margin-top: 3.5rem;">
-        <h3 class="press-group-label">Press Releases</h3>
-        <div class="press-list">
-          <a href="/press/apex-launch.html" class="press-row fade-in">
-            <div class="pr-source">June 2025</div>
-            <div class="pr-title">Denver Entrepreneur Oliver Straus Launches Apex, an AI Life Coaching Platform</div>
-            <div class="pr-arrow">&#8594;</div>
-          </a>
-          <a href="/press/imperial-detailing.html" class="press-row fade-in">
-            <div class="pr-source">June 2025</div>
-            <div class="pr-title">Imperial Detailing Reaches First-Season Profitability Under Founder Oliver Straus</div>
-            <div class="pr-arrow">&#8594;</div>
-          </a>
-          <a href="/press/oliver-straus-profile.html" class="press-row fade-in">
-            <div class="pr-source">June 2025</div>
-            <div class="pr-title">Oliver Straus: Denver's Young Entrepreneur Building AI Companies From the Ground Up</div>
-            <div class="pr-arrow">&#8594;</div>
-          </a>
-        </div>
-      </div>
-
     </div>
   </section>
 
   <!-- CONTACT -->
-  <section class="section section-alt" id="contact">
+  <section class="section" id="contact">
     <div class="container contact-layout">
       <h2 class="section-heading contact-heading">Get in touch.</h2>
       <p class="contact-note">Available for investment conversations, partnerships, and serious inquiries.</p>
       <div class="contact-links">
-        <a href="mailto:oliverstraus246@gmail.com" class="contact-item">
+        <a href="tel:+13039464224" class="contact-item from-left">
+          <span class="ci-label">Phone</span>
+          <span class="ci-value">(303) 946-4224</span>
+        </a>
+        <a href="mailto:oliverstraus246@gmail.com" class="contact-item from-right">
           <span class="ci-label">Email</span>
           <span class="ci-value">oliverstraus246@gmail.com</span>
         </a>
-        <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="contact-item">
+        <a href="https://www.linkedin.com/in/oliver-straus-06804240b/" target="_blank" rel="noopener" class="contact-item from-left">
           <span class="ci-label">LinkedIn</span>
           <span class="ci-value">oliver-straus-06804240b</span>
         </a>
-        <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener" class="contact-item">
+        <a href="https://x.com/OLIVER_STRAUS1" target="_blank" rel="noopener" class="contact-item from-right">
           <span class="ci-label">X</span>
           <span class="ci-value">@OLIVER_STRAUS1</span>
         </a>
-        <a href="https://www.instagram.com/oliver_straus1/" target="_blank" rel="noopener" class="contact-item">
+        <a href="https://www.instagram.com/oliver_straus1/" target="_blank" rel="noopener" class="contact-item from-left">
           <span class="ci-label">Instagram</span>
           <span class="ci-value">@oliver_straus1</span>
+        </a>
+        <a href="https://github.com/oliverstraus246-beep" target="_blank" rel="noopener" class="contact-item from-right">
+          <span class="ci-label">GitHub</span>
+          <span class="ci-value">oliverstraus246-beep</span>
         </a>
       </div>
     </div>
@@ -412,7 +425,7 @@
       nav.classList.toggle('scrolled', window.scrollY > 60);
     }, { passive: true });
 
-    /* Fade in elements */
+    /* Reveal: fade-in, from-left, from-right, sections */
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
@@ -420,9 +433,9 @@
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
 
-    document.querySelectorAll('.fade-in, .section').forEach(function (el) {
+    document.querySelectorAll('.fade-in, .from-left, .from-right, .section').forEach(function (el) {
       io.observe(el);
     });
 

@@ -293,10 +293,22 @@ body {
 .section-alt { background: var(--bg-alt); }
 
 .fade-in {
-  opacity: 0; transform: translateY(14px);
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  opacity: 0; transform: translateY(18px);
+  transition: opacity 0.65s var(--ease), transform 0.65s var(--ease);
 }
 .fade-in.visible { opacity: 1; transform: none; }
+
+.from-left {
+  opacity: 0; transform: translateX(-40px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.from-left.visible { opacity: 1; transform: none; }
+
+.from-right {
+  opacity: 0; transform: translateX(40px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+}
+.from-right.visible { opacity: 1; transform: none; }
 
 .section-heading {
   font-family: var(--serif);

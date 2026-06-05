@@ -1,9 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Oliver Straus â€” Resume</title>
+<title>Oliver Straus — Resume | Denver, Colorado</title>
+<meta name="description" content="Resume of Oliver Straus, Denver entrepreneur and software engineer. CFO at 14, defense technology engineer, founder of multiple AI companies." />
+<link rel="canonical" href="https://oliverstraus.com/resume.html" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -11,20 +13,19 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --ink:      #0f0f0f;
-  --mid:      #383838;
-  --light:    #666666;
-  --xlight:   #9a9a9a;
-  --rule:     #cccccc;
-  --rule-lt:  #e6e6e6;
-  --page-w:   816px;
-  --mh:       0.58in;
-  --mv:       0.52in;
-  --left-w:   244px;
-  --sidebar:  #e2e2e2;
+  --ink:     #0f0f0f;
+  --mid:     #383838;
+  --light:   #666666;
+  --xlight:  #9a9a9a;
+  --rule:    #cccccc;
+  --rule-lt: #e6e6e6;
+  --page-w:  816px;
+  --mh:      0.52in;
+  --mv:      0.44in;
+  --left-w:  236px;
+  --sidebar: #e2e2e2;
 }
 
-/* Global link reset */
 a { color: inherit; text-decoration: none; }
 
 body {
@@ -35,21 +36,17 @@ body {
   print-color-adjust: exact;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PAGE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* PAGE */
 .page {
   width: var(--page-w);
-  min-height: 1056px;
-  /* Upside-down L: full header gray, then left sidebar gray only */
-  background: linear-gradient(to right, var(--sidebar) 244px, #fff 244px);
+  height: 1056px;
+  overflow: hidden;
+  background: linear-gradient(to right, var(--sidebar) 236px, #fff 236px);
   margin: 2.5rem auto;
   box-shadow: 0 12px 80px rgba(0,0,0,.3), 0 2px 14px rgba(0,0,0,.1);
   position: relative;
-  overflow: hidden;
 }
 
-/* Left black accent stripe */
 .page::before {
   content: '';
   position: absolute;
@@ -59,27 +56,22 @@ body {
   z-index: 10;
 }
 
-/* Column divider â€” starts below achievement row */
 .col-rule {
   position: absolute;
-  left: 244px;
-  top: 0;
-  bottom: 0;
+  left: 236px; top: 0; bottom: 0;
   width: 1px;
-  background: linear-gradient(180deg, transparent 0, var(--rule) 18%, var(--rule) 88%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0, var(--rule) 14%, var(--rule) 90%, transparent 100%);
   z-index: 1;
   pointer-events: none;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   HEADER  (full-width gray = top of L)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* HEADER */
 .header {
   background: var(--sidebar);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: var(--mv) var(--mh) 15px;
+  padding: 0.38in var(--mh) 12px;
   border-bottom: 1.5px solid var(--ink);
   position: relative;
   z-index: 2;
@@ -87,7 +79,7 @@ body {
 
 .name {
   font-family: 'EB Garamond', Georgia, serif;
-  font-size: 54px;
+  font-size: 50px;
   font-weight: 500;
   letter-spacing: -0.5px;
   line-height: 0.88;
@@ -95,10 +87,10 @@ body {
 }
 
 .name-sub {
-  margin-top: 9px;
-  font-size: 7px;
+  margin-top: 8px;
+  font-size: 6.5px;
   font-weight: 600;
-  letter-spacing: 4px;
+  letter-spacing: 3.8px;
   text-transform: uppercase;
   color: var(--xlight);
 }
@@ -107,21 +99,18 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3.5px;
-  padding-bottom: 4px;
+  gap: 3px;
+  padding-bottom: 3px;
 }
-
 .contact-col span,
 .contact-col a {
-  font-size: 8.5px;
+  font-size: 8px;
   color: var(--mid);
   line-height: 1.6;
-  letter-spacing: 0.15px;
+  letter-spacing: 0.1px;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   ACHIEVEMENT CALLOUTS  (white band)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ACHIEVEMENTS */
 .achievements-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -132,59 +121,55 @@ body {
 }
 
 .ach-card {
-  padding: 13px 16px 14px;
+  padding: 10px 14px 11px;
   text-align: center;
   border-right: 1px solid var(--rule);
-  border-top: 2.5px solid var(--ink);
+  border-top: 2px solid var(--ink);
 }
 .ach-card:last-child { border-right: none; }
 
 .ach-number {
   font-family: 'EB Garamond', serif;
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--ink);
   line-height: 1;
 }
 
 .ach-label {
-  margin-top: 4px;
-  font-size: 6.5px;
+  margin-top: 3px;
+  font-size: 6px;
   font-weight: 600;
-  letter-spacing: 1.6px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
   color: var(--xlight);
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   TWO-COLUMN BODY
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* TWO-COLUMN BODY */
 .body {
   display: grid;
   grid-template-columns: var(--left-w) 1fr;
   gap: 0;
-  padding: 20px 0 var(--mv);
+  padding: 14px 0 0;
   position: relative;
   z-index: 2;
 }
 
-.left  { padding: 0 18px 0 var(--mh); }
-.right { padding: 0 var(--mh) 0 22px; }
+.left  { padding: 0 15px 0 var(--mh); }
+.right { padding: 0 var(--mh) 0 19px; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   SECTION HEADERS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* SECTION HEADERS */
 .sec-head {
-  font-size: 6px;
+  font-size: 5.8px;
   font-weight: 700;
-  letter-spacing: 3.5px;
+  letter-spacing: 3.2px;
   text-transform: uppercase;
   color: var(--xlight);
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 7px;
+  margin-bottom: 10px;
 }
 .sec-head::after {
   content: '';
@@ -193,79 +178,66 @@ body {
   background: var(--rule);
 }
 
-.section { margin-bottom: 20px; }
+.section { margin-bottom: 14px; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   LEFT â€” SKILLS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.skill-block { margin-bottom: 11px; }
-
+/* SKILLS */
+.skill-block { margin-bottom: 9px; }
 .skill-block-name {
-  font-size: 6.5px;
+  font-size: 6px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
   color: var(--mid);
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
-
-.skill-items { display: flex; flex-direction: column; gap: 3px; }
-
+.skill-items { display: flex; flex-direction: column; gap: 2px; }
 .skill-item {
-  font-size: 8.5px;
+  font-size: 8px;
   color: var(--ink);
-  line-height: 1.4;
-  padding-left: 10px;
+  line-height: 1.35;
+  padding-left: 9px;
   position: relative;
 }
 .skill-item::before {
-  content: 'Â·';
+  content: '·';
   position: absolute;
   left: 0;
   color: var(--rule);
-  font-size: 14px;
-  line-height: 0.8;
+  font-size: 13px;
+  line-height: 0.75;
   top: 1px;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   LEFT â€” EDUCATION
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.edu-block { margin-bottom: 12px; }
-.edu-school { font-size: 9px; font-weight: 600; color: var(--ink); line-height: 1.3; }
-.edu-program { font-size: 8px; color: var(--mid); margin-top: 2px; font-style: italic; }
-.edu-note { font-size: 7px; color: var(--xlight); margin-top: 2px; line-height: 1.5; }
+/* EDUCATION */
+.edu-block { margin-bottom: 10px; }
+.edu-school { font-size: 8.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.edu-program { font-size: 7.5px; color: var(--mid); margin-top: 2px; font-style: italic; }
+.edu-note { font-size: 6.5px; color: var(--xlight); margin-top: 2px; line-height: 1.4; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   LEFT â€” COMMUNITY
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* COMMUNITY */
 .community-item {
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+  margin-bottom: 9px;
+  padding-bottom: 9px;
   border-bottom: 1px solid var(--rule-lt);
 }
 .community-item:last-child { border-bottom: none; margin-bottom: 0; }
-.community-org { font-size: 8.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
-.community-role { font-size: 7.5px; color: var(--mid); margin-top: 1px; font-style: italic; }
-.community-desc { font-size: 7.5px; color: var(--light); margin-top: 3px; line-height: 1.6; }
+.community-org { font-size: 8px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.community-role { font-size: 7px; color: var(--mid); margin-top: 1px; font-style: italic; }
+.community-desc { font-size: 7px; color: var(--light); margin-top: 2px; line-height: 1.55; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   RIGHT â€” PROFILE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* PROFILE */
 .summary {
   font-family: 'EB Garamond', serif;
-  font-size: 13px;
-  line-height: 1.84;
+  font-size: 12.5px;
+  line-height: 1.72;
   color: var(--mid);
   font-style: italic;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   RIGHT â€” EXPERIENCE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* EXPERIENCE */
 .exp-entry {
-  margin-bottom: 17px;
-  padding-bottom: 17px;
+  margin-bottom: 11px;
+  padding-bottom: 11px;
   border-bottom: 1px solid var(--rule-lt);
 }
 .exp-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
@@ -275,76 +247,63 @@ body {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
-
 .exp-title {
   font-family: 'EB Garamond', serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--ink);
   font-variant: small-caps;
   letter-spacing: 0.2px;
 }
-
 .exp-dates {
-  font-size: 7px;
+  font-size: 6.5px;
   color: var(--xlight);
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   white-space: nowrap;
   flex-shrink: 0;
   font-weight: 500;
 }
-
 .exp-company {
-  font-size: 8.5px;
+  font-size: 8px;
   color: var(--light);
   font-style: italic;
-  margin-bottom: 7px;
-  letter-spacing: 0.15px;
+  margin-bottom: 6px;
+  letter-spacing: 0.1px;
 }
-
-.exp-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-
+.exp-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
 .exp-list li {
-  font-size: 9.5px;
-  line-height: 1.64;
+  font-size: 9px;
+  line-height: 1.58;
   color: var(--mid);
-  padding-left: 14px;
+  padding-left: 13px;
   position: relative;
 }
 .exp-list li::before {
-  content: 'â€”';
+  content: '';
   position: absolute;
-  left: 0;
-  color: var(--rule);
-  font-size: 8px;
-  top: 1px;
+  left: 2px; top: 7px;
+  width: 4px; height: 1px;
+  background: var(--rule);
 }
-.exp-list li strong {
-  font-weight: 600;
-  color: #111111 !important;
-}
+.exp-list li strong { font-weight: 600; color: #111111 !important; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   RIGHT â€” PROJECTS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* PROJECTS */
 .proj-entry {
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--rule-lt);
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 10px;
+  gap: 8px;
   align-items: start;
 }
 .proj-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-
-.proj-name { font-size: 9.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
-
+.proj-name { font-size: 9px; font-weight: 600; color: var(--ink); line-height: 1.3; }
 .proj-tech {
-  font-size: 6.5px;
-  letter-spacing: 0.8px;
+  font-size: 6px;
+  letter-spacing: 0.7px;
   color: var(--xlight);
   text-transform: uppercase;
   font-weight: 500;
@@ -352,47 +311,52 @@ body {
   padding-top: 1px;
   text-align: right;
 }
-
 .proj-desc {
-  font-size: 8.5px;
+  font-size: 8px;
   color: var(--light);
-  line-height: 1.65;
-  margin-top: 3px;
+  line-height: 1.6;
+  margin-top: 2px;
   grid-column: 1 / -1;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PRINT
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* PRINT */
 @media print {
   body { background: white; }
   .page {
-    width: 100%; margin: 0; box-shadow: none; overflow: visible;
+    width: 100%; height: auto; max-height: none;
+    overflow: visible; margin: 0; box-shadow: none;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    background: linear-gradient(to right, #e2e2e2 244px, #ffffff 244px) !important;
+    background: linear-gradient(to right, #e2e2e2 236px, #ffffff 236px) !important;
   }
   .header { background: #e2e2e2 !important; }
   a, a:visited { color: inherit !important; text-decoration: none !important; }
   strong { color: #111111 !important; }
 }
-
 @page { size: letter; margin: 0; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   PRINT BUTTON (screen only)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* PRINT BUTTON */
 .print-hint {
   width: var(--page-w);
-  margin: 0 auto 12px;
+  margin: 0 auto 10px;
   text-align: right;
   font-family: Inter, sans-serif;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
+.print-hint a {
+  font-size: 11px;
+  color: #444;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+}
+.print-hint a:hover { color: #000; }
 .print-hint button {
   background: #111;
   color: #fff;
   border: none;
-  padding: 9px 22px;
+  padding: 8px 20px;
   border-radius: 4px;
   font-size: 11px;
   cursor: pointer;
@@ -401,14 +365,14 @@ body {
   transition: background .2s;
 }
 .print-hint button:hover { background: #2a2a2a; }
-
 @media print { .print-hint { display: none; } }
 </style>
 </head>
 <body>
 
 <div class="print-hint">
-  <button onclick="window.print()">Save as PDF â†“</button>
+  <a href="https://oliverstraus.com">&larr; oliverstraus.com</a>
+  <button onclick="window.print()">Save as PDF &darr;</button>
 </div>
 
 <div class="page">
@@ -418,13 +382,14 @@ body {
   <div class="header">
     <div>
       <div class="name">Oliver Straus</div>
-      <div class="name-sub">Entrepreneur &nbsp;Â·&nbsp; Software Engineer &nbsp;Â·&nbsp; Business Executive</div>
+      <div class="name-sub">Entrepreneur &nbsp;&middot;&nbsp; Software Engineer &nbsp;&middot;&nbsp; CEO</div>
     </div>
     <div class="contact-col">
       <span>Denver, Colorado</span>
       <a href="tel:+13039464224">(303) 946-4224</a>
       <a href="mailto:oliverstraus246@gmail.com">oliverstraus246@gmail.com</a>
-      <a href="https://imperialdetailingcodetail.com">imperialdetailingcodetail.com</a>
+      <a href="https://oliverstraus.com">oliverstraus.com</a>
+      <a href="https://linkedin.com/in/oliver-straus-06804240b">linkedin.com/in/oliver-straus</a>
     </div>
   </div>
 
@@ -432,7 +397,7 @@ body {
   <div class="achievements-row">
     <div class="ach-card">
       <div class="ach-number">$250K+</div>
-      <div class="ach-label">Charitable Donations<br>Directed</div>
+      <div class="ach-label">Charitable Giving<br>Directed</div>
     </div>
     <div class="ach-card">
       <div class="ach-number">$1M+</div>
@@ -440,7 +405,7 @@ body {
     </div>
     <div class="ach-card">
       <div class="ach-number">Year 1</div>
-      <div class="ach-label">Startup â€” Profitable<br>First Season</div>
+      <div class="ach-label">Startup Profitable<br>First Season</div>
     </div>
   </div>
 
@@ -456,9 +421,8 @@ body {
         <div class="skill-block">
           <div class="skill-block-name">Programming</div>
           <div class="skill-items">
-            <span class="skill-item">Python</span>
-            <span class="skill-item">JavaScript / ES2024</span>
-            <span class="skill-item">C++</span>
+            <span class="skill-item">JavaScript / TypeScript</span>
+            <span class="skill-item">Python &amp; C++</span>
             <span class="skill-item">React &amp; Node.js</span>
             <span class="skill-item">REST API Design</span>
           </div>
@@ -468,11 +432,9 @@ body {
           <div class="skill-block-name">Technology</div>
           <div class="skill-items">
             <span class="skill-item">AI / LLM Integration</span>
-            <span class="skill-item">Autonomous Systems</span>
             <span class="skill-item">Electron Desktop Apps</span>
             <span class="skill-item">Automation Pipelines</span>
             <span class="skill-item">Systems Architecture</span>
-            <span class="skill-item">Git / Version Control</span>
           </div>
         </div>
 
@@ -481,20 +443,8 @@ body {
           <div class="skill-items">
             <span class="skill-item">P&amp;L Management</span>
             <span class="skill-item">Financial Modeling</span>
-            <span class="skill-item">Sales &amp; Client Acquisition</span>
+            <span class="skill-item">Sales &amp; Acquisition</span>
             <span class="skill-item">Operations Management</span>
-            <span class="skill-item">Brand Development</span>
-          </div>
-        </div>
-
-        <div class="skill-block">
-          <div class="skill-block-name">Interpersonal</div>
-          <div class="skill-items">
-            <span class="skill-item">Executive Communication</span>
-            <span class="skill-item">Team Leadership</span>
-            <span class="skill-item">High-Pressure Performance</span>
-            <span class="skill-item">Customer Service</span>
-            <span class="skill-item">Conflict Resolution</span>
           </div>
         </div>
       </div>
@@ -502,14 +452,14 @@ body {
       <div class="section">
         <div class="sec-head">Education</div>
         <div class="edu-block">
-          <div class="edu-school">University of Colorado<br>Boulder</div>
+          <div class="edu-school">University of Colorado Boulder</div>
           <div class="edu-program">B.S. Business &amp; Marketing</div>
-          <div class="edu-note">Enrollment Planned 2027<br>Accelerated Track</div>
+          <div class="edu-note">Planned enrollment 2027</div>
         </div>
         <div class="edu-block">
-          <div class="edu-school">GED â€” Accelerated</div>
+          <div class="edu-school">GED &mdash; Accelerated</div>
           <div class="edu-program">Self-Directed Study</div>
-          <div class="edu-note">Expected 2026â€“2027</div>
+          <div class="edu-note">Expected 2026&ndash;2027</div>
         </div>
       </div>
 
@@ -523,11 +473,11 @@ body {
         <div class="community-item">
           <div class="community-org">Topher Straus Fine Art</div>
           <div class="community-role">Philanthropy Director</div>
-          <div class="community-desc">Directed $250,000+ in charitable giving to 15+ nonprofit partners over a 3-year tenure.</div>
+          <div class="community-desc">Directed $250,000+ to 15+ nonprofit partners over a 3-year tenure.</div>
         </div>
       </div>
 
-    </div><!-- /left -->
+    </div>
 
     <!-- RIGHT -->
     <div class="right">
@@ -535,56 +485,51 @@ body {
       <div class="section">
         <div class="sec-head">Profile</div>
         <p class="summary">
-          I managed my first multi-million dollar P&amp;L at 14 â€” not as an exercise, but as CFO of a real business. By 18 I had shipped production software for drone mapping and autonomous systems at one of the world's leading military contractors â€” multiple government contracts, name withheld by agreement â€” and founded a services company that was profitable in its first season. I adapt fast, perform under pressure, and deliver in every environment I've walked into.
+          Managed my first multi-million dollar P&amp;L at 14 as CFO of a real business. At 15,
+          shipped production software for drone mapping and autonomous systems at a defense
+          contractor under NDA. Founded a services company that hit profitability in its first
+          season. I adapt fast and deliver in every environment I have walked into.
         </p>
       </div>
 
       <div class="section">
         <div class="sec-head">Professional Experience</div>
 
-        <!-- Defense Contractor -->
         <div class="exp-entry">
           <div class="exp-top">
             <div class="exp-title">Software Engineer</div>
-            <div class="exp-dates">Mar 2025 â€“ May 2025</div>
+            <div class="exp-dates">Mar 2025 &ndash; May 2025</div>
           </div>
-          <div class="exp-company">Confidential Defense-Technology Contractor &nbsp;Â·&nbsp; Autonomous Systems / UAV &nbsp;Â·&nbsp; Newport Beach, CA</div>
+          <div class="exp-company">Confidential Defense-Technology Contractor &middot; Autonomous Systems / UAV &middot; Newport Beach, CA</div>
           <ul class="exp-list">
-            <li>Contributed to a <strong>drone-based aerial mapping and reconnaissance system</strong> â€” processing real-time sensor feeds, spatial telemetry, and autonomous flight path data for military field operations across multiple governments.</li>
-            <li>Developed components of a <strong>UAV mission-planning pipeline</strong>, including spatial mapping logic, obstacle-avoidance inputs, and real-time data integration for autonomous navigation in contested environments.</li>
-            <li>Applied <strong>reliability-first engineering standards</strong> in a production codebase where software accuracy directly impacts field operations â€” zero tolerance for errors.</li>
-            <li>Operated under <strong>NDA and security protocols</strong> alongside senior engineers; demonstrated the professional discretion and judgment the role required.</li>
+            <li>Contributed to a <strong>drone-based aerial mapping and reconnaissance system</strong> processing real-time sensor feeds, spatial telemetry, and autonomous flight path data for military operations across multiple governments.</li>
+            <li>Developed components of a <strong>UAV mission-planning pipeline</strong> including spatial mapping logic and real-time data integration for autonomous navigation.</li>
+            <li>Operated under <strong>NDA and security protocols</strong> alongside senior engineers; applied reliability-first standards where errors directly impact field operations.</li>
           </ul>
         </div>
 
-        <!-- Topher Straus -->
         <div class="exp-entry">
           <div class="exp-top">
             <div class="exp-title">Chief Financial Officer</div>
-            <div class="exp-dates">2020 â€“ 2023</div>
+            <div class="exp-dates">2020 &ndash; 2023</div>
           </div>
-          <div class="exp-company">Topher Straus Fine Art &nbsp;Â·&nbsp; Fine Art Commerce &nbsp;Â·&nbsp; Denver, CO &nbsp;Â·&nbsp; topherstraus.com</div>
+          <div class="exp-company">Topher Straus Fine Art &middot; Fine Art Commerce &middot; Denver, CO &middot; topherstraus.com</div>
           <ul class="exp-list">
-            <li>Appointed CFO at <strong>age 14</strong> for a fine art business generating multi-million dollars annually â€” managed financial planning, budgeting, P&amp;L reporting, and accounts payable/receivable for three years.</li>
-            <li>Maintained <strong>financial models guiding pricing, collection valuations, exhibition ROI, and negotiations</strong> with high-net-worth collectors and institutional buyers.</li>
-            <li>Architected a philanthropic giving program that distributed <strong>$250,000+ across 15+ nonprofit organizations</strong> in arts, education, and community support.</li>
-            <li>Oversaw operations: <strong>vendor contracts, event logistics, artwork shipping and insurance</strong>, and staff coordination for national exhibitions.</li>
-            <li>Developed executive communication skills through sustained relationships with galleries, collectors, and cultural institutions.</li>
+            <li>Appointed CFO at <strong>age 14</strong> for a fine art business generating multi-million dollars annually. Managed financial planning, budgeting, P&amp;L reporting, and accounts payable and receivable for three years.</li>
+            <li>Maintained <strong>financial models</strong> guiding pricing, collection valuations, and negotiations with high-net-worth collectors and institutional buyers.</li>
+            <li>Architected a philanthropic giving program distributing <strong>$250,000+ across 15+ nonprofit organizations</strong> in arts, education, and community support.</li>
           </ul>
         </div>
 
-        <!-- Imperial Detailing -->
         <div class="exp-entry">
           <div class="exp-top">
-            <div class="exp-title">Founder &amp; Chief Executive</div>
-            <div class="exp-dates">Summer 2025 â€“ Present</div>
+            <div class="exp-title">Founder &amp; CEO</div>
+            <div class="exp-dates">2025 &ndash; Present</div>
           </div>
-          <div class="exp-company">Imperial Detailing &nbsp;Â·&nbsp; Premium Mobile Auto Detailing &nbsp;Â·&nbsp; Denver, CO &nbsp;Â·&nbsp; imperialdetailingcodetail.com</div>
+          <div class="exp-company">Imperial Detailing &middot; Premium Mobile Auto Detailing &middot; Denver, CO</div>
           <ul class="exp-list">
-            <li>Founded and launched a premium mobile detailing operation from scratch â€” <strong>profitable by end of the first season</strong> without outside funding.</li>
-            <li>Managed every business function solo: <strong>client acquisition, scheduling, invoicing, service delivery, marketing, and brand development</strong>.</li>
-            <li>Built <strong>custom booking automation and client management tools</strong> in React and Node.js, reducing admin overhead and improving client retention.</li>
-            <li>Developed a <strong>professional brand identity and web presence</strong> from zero â€” driving inbound leads through local SEO, social media, and referrals.</li>
+            <li>Founded and launched a premium mobile detailing operation from scratch. <strong>Profitable by end of the first season</strong> without outside funding.</li>
+            <li>Managed every business function independently and built <strong>custom booking automation and client management tools</strong> in React and Node.js.</li>
           </ul>
         </div>
 
@@ -595,33 +540,32 @@ body {
 
         <div class="proj-entry">
           <div>
-            <div class="proj-name">Apex â€” AI Life Coach Desktop Application</div>
-            <div class="proj-desc">Full-stack Electron + React desktop app powered by Claude AI. Conversational coaching, habit tracking, and intelligent journaling â€” designed and shipped entirely solo, including the full backend API and UI system.</div>
+            <div class="proj-name">Apex &mdash; AI Life Coaching Desktop Application</div>
+            <div class="proj-desc">Full-stack Electron + React desktop app powered by Claude AI. Conversational coaching, habit tracking, and intelligent journaling. Designed and shipped entirely solo including backend API and UI system.</div>
           </div>
-          <div class="proj-tech">Electron Â· React Â· Node Â· AI</div>
+          <div class="proj-tech">Electron &middot; React &middot; Node &middot; AI</div>
         </div>
 
         <div class="proj-entry">
           <div>
-            <div class="proj-name">Lead Generation Agency â€” Automated Sales Pipeline</div>
-            <div class="proj-desc">Fully automated B2B outreach platform integrating AI copywriting, AI voice calling (Vapi), Stripe billing, and Supabase data management. Engineered to run end-to-end with minimal human oversight.</div>
+            <div class="proj-name">Enterprise Acquisition Platform &mdash; Automated Sales Pipeline</div>
+            <div class="proj-desc">Fully automated B2B outreach platform with AI voice calling, Stripe billing, and Supabase data management. Runs end-to-end with minimal human oversight.</div>
           </div>
-          <div class="proj-tech">Node Â· Supabase Â· Vapi Â· Stripe</div>
+          <div class="proj-tech">Node &middot; Supabase &middot; Vapi &middot; Stripe</div>
         </div>
 
         <div class="proj-entry">
           <div>
-            <div class="proj-name">Claude Command Center â€” Developer Dashboard</div>
-            <div class="proj-desc">Custom Electron developer control panel for managing AI sessions, tools, and workflows. Real-time session monitoring, MCP server management, and an OLED-optimized dark UI system built from scratch.</div>
+            <div class="proj-name">Command Center &mdash; Developer Intelligence Dashboard</div>
+            <div class="proj-desc">Custom Electron developer control panel for managing AI sessions, tools, and workflows with real-time session monitoring and OLED-optimized dark UI.</div>
           </div>
-          <div class="proj-tech">Electron Â· React Â· Vite Â· IPC</div>
+          <div class="proj-tech">Electron &middot; React &middot; Vite</div>
         </div>
 
       </div>
 
-    </div><!-- /right -->
-  </div><!-- /body -->
-</div><!-- /page -->
+    </div>
+  </div>
+</div>
 </body>
 </html>
-
