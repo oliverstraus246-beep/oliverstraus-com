@@ -872,3 +872,7 @@ body::after {
   .stat { padding: 0.8rem 1.8rem; }
   .stat-div { display: none; }
 }
+
+/* Nav logo */
+.nav-wordmark { display: flex; align-items: center; gap: 0.55rem; }
+.nav-logo { display: block; border-radius: 4px; flex-shrink: 0; }
