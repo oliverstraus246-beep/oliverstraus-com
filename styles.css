@@ -341,7 +341,32 @@ body {
 
 /* CONTACT */
 .contact-wrap { max-width: 740px; }
-.contact-note { font-size: 1rem; color: var(--muted); margin-bottom: 3rem; line-height: 1.8; }
+.contact-note { font-size: 1rem; color: var(--muted); margin-bottom: 2.5rem; line-height: 1.8; }
+
+.direct-contact {
+  display: grid; grid-template-columns: repeat(2,1fr);
+  gap: 1rem; margin-bottom: 2.5rem;
+}
+.direct-contact-item {
+  display: flex; flex-direction: column; gap: .35rem;
+  background: var(--bg-alt); border: 1px solid var(--border-b);
+  border-radius: var(--r); padding: 1.75rem;
+  text-decoration: none;
+  transition: border-color var(--t), transform var(--t), background var(--t);
+}
+.direct-contact-item:hover { background: rgba(37,99,235,.08); transform: translateY(-2px); }
+.dc-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--blue-mid);
+}
+.dc-value { font-size: 1rem; font-weight: 600; color: var(--white); }
+
+.contact-divider {
+  font-size: .65rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted2);
+  margin-bottom: 1.25rem;
+}
+
 .contact-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
 .contact-card {
   background: var(--card); border: 1px solid var(--border);
