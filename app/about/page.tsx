@@ -45,7 +45,7 @@ export default function AboutPage() {
               letterSpacing: "-0.01em",
             }}
           >
-            "He chose to build instead of wait."
+            "He operates like he's been doing this for thirty years. Then you remember he's sixteen."
           </blockquote>
         </div>
 
