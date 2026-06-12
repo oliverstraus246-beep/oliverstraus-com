@@ -98,13 +98,13 @@ export default function BuilderSection() {
           transition={{ duration: 0.6, delay: 0.6 }}
         >
           <a
-            href="https://github.com/oliverstraus246"
+            href="https://github.com/oliverstraus246-beep"
             target="_blank"
             rel="noopener noreferrer"
             className="text-text-primary hover:text-accent transition-colors duration-200 border-b pb-px"
             style={{ fontFamily: "var(--font-body)", fontSize: "13px", letterSpacing: "0.06em", borderColor: "rgba(255,255,255,0.15)" }}
           >
-            All builds at github.com/oliverstraus246 &rarr;
+            All builds at github.com/oliverstraus246-beep &rarr;
           </a>
         </motion.div>
       </div>

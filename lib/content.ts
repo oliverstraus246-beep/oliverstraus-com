@@ -182,8 +182,8 @@ export const ventures = [
     name: "Software Products",
     description:
       "10+ products shipped solo — AI life coach, autonomous computer agent, fully automated sales pipeline, developer intelligence dashboard, and more.",
-    link: "https://github.com/oliverstraus246" as string | null,
-    linkText: "github.com/oliverstraus246" as string | null,
+    link: "https://github.com/oliverstraus246-beep" as string | null,
+    linkText: "github.com/oliverstraus246-beep" as string | null,
   },
 ];
 export const contactLinks = [
@@ -191,7 +191,7 @@ export const contactLinks = [
   { label: "x.com/OLIVER_STRAUS1", href: "https://x.com/OLIVER_STRAUS1" },
   { label: "instagram.com/oliver__straus", href: "https://instagram.com/oliver__straus" },
   { label: "linkedin.com/in/oliver-straus-06804240b", href: "https://linkedin.com/in/oliver-straus-06804240b" },
-  { label: "github.com/oliverstraus246", href: "https://github.com/oliverstraus246" },
+  { label: "github.com/oliverstraus246-beep", href: "https://github.com/oliverstraus246-beep" },
   { label: "imdb.com/name/nm8461530", href: "https://imdb.com/name/nm8461530" },
 ];
 

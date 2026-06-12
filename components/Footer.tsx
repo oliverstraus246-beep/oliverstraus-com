@@ -4,7 +4,7 @@ const socials = [
   { label: "X", href: "https://x.com/OLIVER_STRAUS1" },
   { label: "Instagram", href: "https://instagram.com/oliver__straus" },
   { label: "LinkedIn", href: "https://linkedin.com/in/oliver-straus-06804240b" },
-  { label: "GitHub", href: "https://github.com/oliverstraus246" },
+  { label: "GitHub", href: "https://github.com/oliverstraus246-beep" },
   { label: "IMDb", href: "https://imdb.com/name/nm8461530" },
 ];
 

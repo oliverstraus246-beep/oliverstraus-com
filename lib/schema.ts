@@ -11,7 +11,7 @@
     "https://x.com/OLIVER_STRAUS1",
     "https://instagram.com/oliver__straus",
     "https://linkedin.com/in/oliver-straus-06804240b",
-    "https://github.com/oliverstraus246",
+    "https://github.com/oliverstraus246-beep",
     "https://imdb.com/name/nm8461530",
   ],
 };
