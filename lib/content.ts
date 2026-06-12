@@ -48,12 +48,12 @@ export const fineArt = {
 export const imperial = {
   label: "Venture",
   paragraphs: [
-    "Founded Imperial Detailing, a premium mobile auto detailing operation in Denver — launched from scratch and profitable by the end of its first season, without a dollar of outside capital.",
+    "Built Imperial Detailing, a luxury mobile auto detailing operation in Denver — launched from scratch in a single season, without a dollar of outside capital.",
     "Every business function ran through him: sales, operations, finance. When no software fit, he wrote his own — custom booking automation and client management tools built in React and Node.js.",
   ],
   facts: [
     { value: "2025–Present", label: "Operating" },
-    { value: "Year 1", label: "Profitable" },
+    { value: "Year 1", label: "Operating" },
     { value: "$0", label: "Outside capital" },
   ],
 };
@@ -115,7 +115,7 @@ At fourteen, Oliver Straus was appointed CFO of Topher Straus Fine Art. For thre
 
 In 2025, Oliver Straus contracted as a software engineer for a confidential defense-technology company, contributing to a drone-based aerial mapping and reconnaissance system and developing components of a UAV mission-planning pipeline — production software for autonomous military systems, written under NDA alongside senior engineers.
 
-The same year he founded Imperial Detailing, a premium mobile auto detailing company that reached profitability in its first operating season without outside capital, running on booking and client-management software he wrote himself.
+The same year he founded Imperial Detailing, a luxury mobile auto detailing company that built a client base and ran fully on custom software he wrote himself — booking automation and a client management system built in React and Node.js, without outside capital.
 
 On the software side, Oliver Straus writes all production code across his ventures — JavaScript, TypeScript, React, Node.js, Electron, Supabase, PostgreSQL, and AI infrastructure including Anthropic’s Claude and Vapi voice systems. His shipped products include Apex, an AI life coaching platform; Ada, an autonomous computer-control agent; and a fully automated enterprise acquisition pipeline that prospects, qualifies, and bills without human intervention.
 
@@ -167,7 +167,7 @@ export const ventures = [
   {
     name: "Imperial Detailing",
     description:
-      "Founder & CEO. Premium mobile auto detailing in Denver — profitable year one, zero outside capital. Custom booking and CRM software written in React and Node.js.",
+      "Founder & CEO. Luxury mobile auto detailing in Denver — built a client base in one season, zero outside capital. Custom booking and CRM software written in React and Node.js.",
     link: null as string | null,
     linkText: null as string | null,
   },
