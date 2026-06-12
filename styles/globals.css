@@ -8,7 +8,7 @@
   --surface: #111111;
   --border: rgba(255, 255, 255, 0.05);
   --text-primary: #efefef;
-  --text-secondary: #555555;
+  --text-secondary: #777777;
   --accent: #c8b4f8;
   --font-display: "Instrument Serif", serif;
   --font-body: var(--font-geist-sans, system-ui, sans-serif);
@@ -23,8 +23,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
-}
+  }
 
 body {
   background-color: var(--base);

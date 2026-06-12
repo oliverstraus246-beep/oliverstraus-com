@@ -18,7 +18,6 @@ export type Stat =
   | { countUp: false; display: string; label: string };
 
 export const stats: Stat[] = [
-  { countUp: false, display: "$1M+", label: "Annual revenue managed" },
   { countUp: true, target: 15, prefix: "", suffix: "+", label: "Nonprofits funded" },
   { countUp: true, target: 10, prefix: "", suffix: "+", label: "Products shipped" },
   { countUp: true, target: 14, prefix: "", suffix: "", label: "Age appointed CFO" },
@@ -106,7 +105,7 @@ export const products = [
   },
 ];
 
-export const bioShort = `Oliver Straus is a 16-year-old founder, operator, and software engineer based in Denver, Colorado. Appointed CFO of a multi-million dollar fine art business at fourteen, he directed $250,000+ to more than fifteen nonprofits, shipped production software for defense UAV systems under NDA, founded a detailing company profitable in its first season, and has built more than ten software products — including an AI life coach, an autonomous computer-control agent, and a fully automated acquisition pipeline. He hasn’t had a driver’s license as long as he’s been running companies.`;
+export const bioShort = `Oliver Straus is a 16-year-old founder, operator, and software engineer based in Denver, Colorado. Appointed CFO of a multi-million dollar fine art business at fourteen, he directed $250,000+ to more than fifteen nonprofits, shipped production software for defense UAV systems under NDA, founded a detailing company profitable in its first season, and has built more than ten software products — including an AI life coach, an autonomous computer-control agent, and a fully automated acquisition pipeline. He has been building companies longer than most people his age have had jobs.`;
 
 export const bioFull = `Oliver Straus (born 2010, Denver, Colorado) is an American entrepreneur and software engineer — widely recognized as one of the youngest Chief Financial Officers of a multi-million dollar company in United States history.
 
@@ -122,7 +121,7 @@ On the software side, Oliver Straus writes all production code across his ventur
 
 Oliver Straus chose a self-directed educational path, stepping away from traditional school to build companies — pursuing his GED independently with university enrollment planned for 2027. He also holds an IMDb credit as a producer.
 
-He hasn’t had a driver’s license as long as he’s been running companies.`;
+He has been building companies longer than most people his age have had jobs.`;
 
 export const pressItems = [
   {
