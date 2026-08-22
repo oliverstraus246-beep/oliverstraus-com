@@ -1,0 +1,207 @@
+"use client";
+
+import { useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import { CountUp } from "@/components/count-up";
+import { openResume } from "@/components/resume-modal";
+import { STATS } from "@/lib/stats";
+
+gsap.registerPlugin(ScrollTrigger, useGSAP);
+
+const HEADLINES = [
+  "Appointed CFO\nat fourteen.",
+  "The actual books.\nThe actual payroll.",
+  "Builds alone.\nVerifies always.",
+  "Chose building\nover waiting.",
+];
+
+// Desktop only: each headline claims a different corner instead of
+// crossfading in the exact same spot. Kept out of the flex row entirely
+// (see the section-level absolute layer below) after an earlier version
+// nested this inside the flex text column with an explicit sm:h-[60vh]
+// wrapper to have room to spread into -- that fed real document-flow
+// height into the row GSAP's ScrollTrigger pins against, and broke the
+// pin's scroll math badly enough that the page loaded scrolled to the
+// Contact section instead of the hero. This version positions each
+// headline absolutely against the section itself (stable h-screen,
+// doesn't grow with content), so nothing here can ever feed height back
+// into the pinned layout again.
+//
+// Positions follow Oliver's literal spec: left, a little below that,
+// right (further right than the first two sit left), then down at the
+// bottom -- a diagonal drift rather than four discrete corners.
+const DESKTOP_POSITION = [
+  "sm:top-[32%] sm:left-6",
+  "sm:top-[52%] sm:left-6",
+  "sm:top-[42%] sm:right-6 sm:text-right",
+  "sm:bottom-16 sm:left-1/2 sm:-translate-x-1/2 sm:text-center",
+];
+
+export function Hero() {
+  const container = useRef<HTMLElement>(null);
+  const mobileLineRefs = useRef<Array<HTMLHeadingElement | null>>([]);
+  const desktopLineRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  useGSAP(
+    () => {
+      const groups = HEADLINES.map((_, i) =>
+        [mobileLineRefs.current[i], desktopLineRefs.current[i]].filter(
+          (el): el is HTMLHeadingElement | HTMLDivElement => el !== null,
+        ),
+      );
+      if (groups.every((g) => g.length === 0)) return;
+
+      const allEls = groups.flat();
+      gsap.set(allEls, { autoAlpha: 0, y: 24 });
+      gsap.set(groups[0]!, { autoAlpha: 1, y: 0 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: container.current,
+          start: "top top",
+          // 0.55x per transition, not a full viewport height each -- the
+          // original 1x pin held the page for 3 full screens of forced
+          // scroll just to read four short lines, with the right ~60% of
+          // the viewport empty the whole time. Same crossfade, much less
+          // scroll-jacking.
+          end: () => (groups.length - 1) * window.innerHeight * 0.55,
+          pin: true,
+          scrub: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      groups.forEach((group, i) => {
+        if (i === groups.length - 1) return;
+        tl.to(group, { autoAlpha: 0, y: -24, duration: 1 }).fromTo(
+          groups[i + 1]!,
+          { autoAlpha: 0, y: 24 },
+          { autoAlpha: 1, y: 0, duration: 1 },
+          "<",
+        );
+      });
+    },
+    { scope: container },
+  );
+
+  return (
+    <section
+      ref={container}
+      className="relative h-screen w-full overflow-hidden"
+    >
+      {/* An actually-visible gradient this time -- the previous version was
+          88% transparent and barely read as a gradient at all. Two stops
+          (blue behind the photo, a whisper of the warm accent lower-left)
+          for real depth, still within the established palette rule (no
+          red/green as a literal color, unlike the reference this borrows
+          the *vividness* from). */}
+      <div className="absolute inset-0 bg-background" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_78%_30%,color-mix(in_oklch,var(--accent-blue),transparent_75%)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_15%_85%,color-mix(in_oklch,var(--accent-warm),transparent_92%)_0%,transparent_70%)]" />
+
+      {/* No photo: removed entirely per Oliver's explicit instruction ("we
+          just don't have my face at all"), not adjusted or hidden. This
+          used to also contain a side-by-side photo column (mobile: stacked
+          below the text; sm+: absolutely positioned on the right, masked
+          into the text column) -- that whole column is gone, not repurposed.
+          Left as a single-column, mobile-only-styled text block for now;
+          the desktop headline positions below were originally chosen to
+          share the row with that photo and may want reconsidering now that
+          the space is empty. */}
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-6xl flex-col px-6 sm:flex-row sm:items-center">
+        <div className="shrink-0 pt-24 sm:flex-1 sm:pt-0">
+          <div className="max-w-lg lg:max-w-xl sm:hidden">
+            <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Denver, Colorado
+            </p>
+            <div className="relative h-[2.1em]">
+              {HEADLINES.map((headline, i) => (
+                <h1
+                  key={headline}
+                  ref={(el) => {
+                    mobileLineRefs.current[i] = el;
+                  }}
+                  className="absolute inset-0 whitespace-pre-line text-5xl font-black leading-[0.95] tracking-tight text-foreground"
+                >
+                  {headline}
+                </h1>
+              ))}
+            </div>
+            <p className="mt-6 max-w-md text-lg text-muted-foreground">
+              Now building software.
+            </p>
+            <a
+              href="/resume"
+              onClick={(e) => {
+                e.preventDefault();
+                openResume();
+              }}
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-mono text-xs uppercase tracking-widest transition-colors hover:border-accent-blue hover:text-accent-blue"
+            >
+              View résumé
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop-only headline layer. A direct child of the section
+          (inset-0 against a fixed h-screen ancestor), never nested inside
+          the flex row above -- see the note on DESKTOP_POSITION for why
+          that separation matters. pointer-events-none since it overlaps
+          the photo and shouldn't block interaction with anything there. */}
+      <div className="pointer-events-none absolute inset-0 z-10 mx-auto hidden max-w-6xl px-6 sm:block">
+        {HEADLINES.map((headline, i) => (
+          <div
+            key={headline}
+            ref={(el) => {
+              desktopLineRefs.current[i] = el;
+            }}
+            className={`absolute max-w-md ${DESKTOP_POSITION[i]}`}
+          >
+            <h1 className="whitespace-pre-line text-6xl font-black leading-[0.95] tracking-tight text-foreground lg:text-7xl">
+              {headline}
+            </h1>
+          </div>
+        ))}
+      </div>
+
+      {/* Dashboard panel: fills the right side that used to sit empty for
+          the whole scroll-pinned intro. Real numbers already established
+          in StatsSection (single source via lib/stats.ts), not new
+          content -- a compact "at a glance" readout rather than dead
+          gradient space. Positioned low enough (bottom-anchored) to clear
+          DESKTOP_POSITION[2]'s right-aligned headline above it. */}
+      <div className="pointer-events-none absolute inset-0 z-10 mx-auto hidden max-w-6xl px-6 sm:block">
+        <div className="absolute bottom-20 right-6 w-64 rounded-xl border border-border bg-card/70 p-5 backdrop-blur-sm">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            At a glance
+          </p>
+          <div className="mt-4 space-y-4">
+            {STATS.map((stat) => (
+              <div key={stat.label}>
+                <p className="text-2xl font-black tracking-tight text-foreground">
+                  <CountUp value={stat.value} />
+                </p>
+                <p className="mt-0.5 text-xs text-foreground/70">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+          <a
+            href="/resume"
+            onClick={(e) => {
+              e.preventDefault();
+              openResume();
+            }}
+            className="pointer-events-auto mt-5 flex items-center justify-between border-t border-border pt-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+          >
+            View résumé
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}

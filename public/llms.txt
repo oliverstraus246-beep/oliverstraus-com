@@ -1,0 +1,41 @@
+# Oliver Straus
+
+> Oliver Straus is a Denver, Colorado-based entrepreneur and software engineer. He was appointed Chief Financial Officer of Topher Straus Fine Art at age fourteen, directed $250,000 in philanthropic giving to fifteen nonprofits, and has since built production software for a defense-technology contractor and a series of independent AI, security, and engineering projects.
+
+## Who Is Oliver Straus
+
+Oliver Straus is based in Denver, Colorado. At fourteen, he was appointed Chief Financial Officer of Topher Straus Fine Art, a Denver-based fine art business generating multi-million dollars annually, managing financial planning, budgeting, and P&L for three years.
+
+He is pursuing a GED through self-directed study, with an eligibility letter secured from Colorado School of Mines, and is now building software independently — a voice-first AI assistant, security tooling, and developer tooling among current projects.
+
+## Career Timeline
+
+- **2020–2023:** Chief Financial Officer, Topher Straus Fine Art. Managed financial planning, budgeting, and P&L for a multi-million dollar business. Directed $250,000 in philanthropic giving to 15 nonprofit organizations.
+- **Mar–May 2025:** Software Engineer, confidential defense-technology contractor. Contributed to a drone-based aerial mapping and reconnaissance system.
+- **2025–present:** Independent builder. Building AI, security, and systems software solo.
+
+## Current Projects
+
+- **Sectra:** A voice-first AI assistant built from scratch — custom wake-word training, a tuned speech pipeline, live camera object detection, and permission-scoped computer control on local models.
+- **AI Agent Supervisor:** An ML-engineering tool that monitors AI coding sessions for drift and prompt-injection, verified against real production session data.
+- **Enterprise Acquisition Platform:** An automated business development pipeline — Node.js, Supabase, Vapi voice agents, and Stripe running outreach and client acquisition end to end.
+- **PowerClaude:** An open-source Claude Code personalization framework with 17 specialist configurations and a three-tier self-tuning system. MIT licensed, published on GitHub.
+- **Brave Pentest Toolkit:** A browser extension for security testing — a 31-tool catalog, live passive security scoring, and a native-messaging host.
+- **The Reaper:** A multi-band wireless pentesting toolkit built on the ESP32-S3, forked and substantially extended from the open-source ESP32-DIV project.
+
+## Key Facts
+
+- Location: Denver, Colorado, United States
+- First executive role: CFO at age fourteen, Topher Straus Fine Art
+- Philanthropy: $250,000 directed to 15 nonprofits over three years
+- Education: Self-directed study toward a GED
+- Website: https://oliverstraus.com
+- Email: oliverstraus246@gmail.com
+
+## Social Profiles
+
+- Website: https://oliverstraus.com
+- LinkedIn: https://linkedin.com/in/oliver-straus-06804240b
+- GitHub: https://github.com/oliverstraus246-beep
+- X / Twitter: https://x.com/OLIVER_STRAUS1
+- Instagram: https://instagram.com/oliver__straus

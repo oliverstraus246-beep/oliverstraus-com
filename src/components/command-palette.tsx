@@ -1,0 +1,210 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { VENTURES } from "@/lib/ventures";
+import { PLATFORMS } from "@/components/social-links";
+import { openResume } from "@/components/resume-modal";
+
+interface CommandItem {
+  id: string;
+  label: string;
+  hint: string;
+  run: () => void;
+}
+
+const EMAIL = "oliverstraus246@gmail.com";
+
+/**
+ * Cmd/Ctrl+K quick-nav palette -- jump to any section, venture, or link
+ * without touching the mouse. Fits the terminal aesthetic already
+ * established (boot sequence, career.log, contact.sh) rather than
+ * bolting on a generic library component.
+ */
+export function CommandPalette() {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  const items = useMemo<CommandItem[]>(() => {
+    function go(href: string) {
+      if (href.startsWith("/#") && window.location.pathname === "/") {
+        document.querySelector(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        router.push(href);
+      }
+    }
+
+    const core: CommandItem[] = [
+      { id: "nav-work", label: "Go to Work", hint: "Section", run: () => go("/#work") },
+      { id: "nav-about", label: "Go to About", hint: "Section", run: () => go("/#about") },
+      { id: "nav-contact", label: "Go to Contact", hint: "Section", run: () => go("/#contact") },
+      {
+        id: "resume",
+        label: "View Résumé",
+        hint: "Open",
+        run: () => openResume(),
+      },
+      {
+        id: "email",
+        label: "Copy Email Address",
+        hint: EMAIL,
+        run: () => {
+          navigator.clipboard.writeText(EMAIL);
+          setCopied(true);
+        },
+      },
+    ];
+
+    const ventures: CommandItem[] = VENTURES.map((v) => ({
+      id: `venture-${v.slug}`,
+      label: v.name,
+      hint: "Venture",
+      run: () => go(`/work/${v.slug}`),
+    }));
+
+    const social: CommandItem[] = PLATFORMS.map((p) => ({
+      id: `social-${p.label}`,
+      label: `Open ${p.label}`,
+      hint: p.href.replace(/^https?:\/\//, ""),
+      run: () => window.open(p.href, "_blank", "noopener,noreferrer"),
+    }));
+
+    return [...core, ...ventures, ...social];
+  }, [router]);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return items;
+    const q = query.toLowerCase();
+    return items.filter(
+      (item) =>
+        item.label.toLowerCase().includes(q) || item.hint.toLowerCase().includes(q),
+    );
+  }, [items, query]);
+
+  function close() {
+    setOpen(false);
+    setQuery("");
+    setActiveIndex(0);
+    setCopied(false);
+  }
+
+  function select(item: CommandItem | undefined) {
+    if (!item) return;
+    item.run();
+    if (item.id !== "email") close();
+  }
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen((v) => !v);
+        return;
+      }
+      if (!open) return;
+      if (e.key === "Escape") close();
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex((i) => (i + 1) % Math.max(filtered.length, 1));
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((i) => (i - 1 + Math.max(filtered.length, 1)) % Math.max(filtered.length, 1));
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        select(filtered[activeIndex]);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, filtered, activeIndex]);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  function handleQueryChange(next: string) {
+    setQuery(next);
+    setActiveIndex(0);
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="hidden h-10 items-center gap-1.5 rounded-full border border-border px-3.5 font-mono text-[11px] text-muted-foreground transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:flex"
+        aria-label="Open command palette"
+      >
+        <span aria-hidden="true">⌘</span>K
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-[90] flex items-start justify-center bg-background/80 px-6 pt-[15vh] backdrop-blur-sm"
+          onClick={close}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+          >
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <span className="font-mono text-accent-blue" aria-hidden="true">
+                $
+              </span>
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => handleQueryChange(e.target.value)}
+                placeholder="Jump to a section, venture, or link..."
+                className="w-full bg-transparent font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+              <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Esc
+              </span>
+            </div>
+
+            <ul className="max-h-80 overflow-y-auto py-2">
+              {filtered.length === 0 && (
+                <li className="px-4 py-6 text-center font-mono text-sm text-muted-foreground">
+                  No matches.
+                </li>
+              )}
+              {filtered.map((item, i) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => select(item)}
+                    onMouseEnter={() => setActiveIndex(i)}
+                    className={`flex w-full items-center justify-between px-4 py-2.5 text-left font-mono text-sm transition-colors ${
+                      i === activeIndex
+                        ? "bg-accent-blue/10 text-accent-blue"
+                        : "text-foreground/80"
+                    }`}
+                  >
+                    <span>
+                      {item.label}
+                      {item.id === "email" && copied && (
+                        <span className="ml-2 text-accent-blue-dim">Copied</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{item.hint}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
