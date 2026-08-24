@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
 import { BootSequence } from "@/components/boot-sequence";
 import { Cursor } from "@/components/cursor";
 import { Footer } from "@/components/footer";
@@ -91,12 +90,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plexSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Plain inline script (not next/script's <Script>) so it runs
+            synchronously during HTML parsing, before first paint -- and so
+            it never picks up next/script's automatic CSP-nonce handling,
+            which was rendering a stray nonce="" server-side vs undefined
+            client-side. suppressHydrationWarning on <html> above covers the
+            data-theme/data-accent attributes this script sets before React
+            hydrates (see preventing-flash-before-hydration docs). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT_SCRIPT}
-        </Script>
         {/* Static JSON-LD, not user input -- safe as a plain child (React
             escapes it as text), no dangerouslySetInnerHTML needed. Ships
             without the proxy's per-request CSP nonce: adding one would

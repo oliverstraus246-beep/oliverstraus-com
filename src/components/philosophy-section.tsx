@@ -31,7 +31,7 @@ export function PhilosophySection() {
     <section id="about" className="relative py-20">
       <div className="mx-auto max-w-6xl px-6">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          03 / About
+          04 / About
         </p>
         <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
           How the work gets decided.

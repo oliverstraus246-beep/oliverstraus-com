@@ -40,7 +40,12 @@ export function VenturesSection() {
                 </p>
                 <div className="relative z-[2] mt-6 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors duration-300">
                   View details
-                  <span aria-hidden="true">&rarr;</span>
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  >
+                    &rarr;
+                  </span>
                 </div>
               </SpotlightCard>
             );

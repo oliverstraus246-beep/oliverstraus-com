@@ -40,7 +40,9 @@ export function CommandPalette() {
 
     const core: CommandItem[] = [
       { id: "nav-work", label: "Go to Work", hint: "Section", run: () => go("/#work") },
+      { id: "nav-timeline", label: "Go to Timeline", hint: "Section", run: () => go("/#timeline") },
       { id: "nav-about", label: "Go to About", hint: "Section", run: () => go("/#about") },
+      { id: "nav-skills", label: "Go to Stack", hint: "Section", run: () => go("/#skills") },
       { id: "nav-contact", label: "Go to Contact", hint: "Section", run: () => go("/#contact") },
       {
         id: "resume",

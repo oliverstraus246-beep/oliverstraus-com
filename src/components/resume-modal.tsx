@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ResumeContent } from "@/components/resume-content";
+import { ResumePresetPicker } from "@/components/resume-preset-picker";
 
 const OPEN_EVENT = "open-resume";
 
@@ -51,10 +52,11 @@ export function ResumeModal() {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-3xl overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl"
       >
-        <div className="no-print sticky top-0 z-10 flex items-center justify-between border-b border-neutral-200 bg-neutral-50/95 px-6 py-3 backdrop-blur-sm">
+        <div className="no-print sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50/95 px-6 py-3 backdrop-blur-sm">
           <p className="font-mono text-xs uppercase tracking-widest text-neutral-500">
             Résumé
           </p>
+          <ResumePresetPicker />
           <div className="flex items-center gap-2">
             <button
               type="button"

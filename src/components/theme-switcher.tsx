@@ -142,7 +142,7 @@ export function ThemeSwitcher() {
                 onClick={() => chooseAccent(a.id)}
                 aria-label={`${a.label} accent`}
                 aria-pressed={accent === a.id}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-150 active:scale-90"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 active:scale-90"
               >
                 <span
                   className="h-5 w-5 rounded-full ring-1 ring-inset ring-black/10"

@@ -271,6 +271,24 @@
   animation: boot-outro 0.4s ease-out forwards;
 }
 
+/* Generic page-content entrance -- venture pages stagger this across the
+   header block via inline animation-delay per element. Same shape as
+   boot-line-in but kept as its own named utility since it's used outside
+   the boot sequence and "boot-line" would misname the intent there. */
+@keyframes fade-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @keyframes modal-backdrop-in {
   from {
     opacity: 0;
@@ -335,6 +353,52 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Résumé presets -- distinct color identities the resume can switch between
+   (see lib/resume-presets.ts). Deliberately separate from the site's own
+   --background/--foreground tokens: the résumé is a document meant to read
+   as a conventional document to a recruiter or admissions reader, not a
+   skin of the site's own dark hacker theme, so it gets its own variable
+   namespace applied via [data-resume-preset] on the print area's wrapper. */
+[data-resume-preset="ledger"] {
+  --resume-bg: #faf8f4;
+  --resume-sidebar-bg: #f0ebe1;
+  --resume-text: #292420;
+  --resume-muted: #7d7468;
+  --resume-border: #e2d9c9;
+  --resume-accent: #8a6d3b;
+}
+[data-resume-preset="terminal"] {
+  --resume-bg: #0c0f12;
+  --resume-sidebar-bg: #121619;
+  --resume-text: #e8eaed;
+  --resume-muted: #8992a0;
+  --resume-border: #23282e;
+  --resume-accent: #4f9dff;
+}
+[data-resume-preset="blueprint"] {
+  --resume-bg: #f3f6fb;
+  --resume-sidebar-bg: #e7edf7;
+  --resume-text: #101828;
+  --resume-muted: #57667c;
+  --resume-border: #ccd7e8;
+  --resume-accent: #2f6fed;
+}
+[data-resume-preset="brief"] {
+  --resume-bg: #ffffff;
+  --resume-sidebar-bg: #f7f7f7;
+  --resume-text: #111111;
+  --resume-muted: #555555;
+  --resume-border: #d9d9d9;
+  --resume-accent: #111111;
+}
+
+/* Cross-fade between presets instead of an instant snap. Not in the
+   @media print block's scope, and print doesn't run transitions anyway. */
+.resume-print-area,
+.resume-print-area * {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
 }
 
 /* Résumé download -- window.print() scoped to just the résumé content via
