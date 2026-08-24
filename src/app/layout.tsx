@@ -76,7 +76,6 @@ const PERSON_JSON_LD = {
   },
   sameAs: [
     "https://linkedin.com/in/oliver-straus-06804240b",
-    "https://github.com/oliverstraus246-beep",
     "https://x.com/OLIVER_STRAUS1",
     "https://instagram.com/oliver__straus",
   ],

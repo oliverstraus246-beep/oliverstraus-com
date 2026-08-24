@@ -162,7 +162,7 @@ export const VENTURES: readonly Venture[] = [
       "A ~35-question interview generates a complete, personalized config — no placeholder text",
       "Three-tier self-tuning: passive logging, live confirmed check-ins, and a reinforcement layer that learns how much evidence to require before asking again",
       "Five hooks automate memory, project context, and session handoff without being asked",
-      "Open-sourced on GitHub under the MIT license",
+      "Open-sourced under the MIT license",
     ],
     caseStudy: {
       problem:
@@ -174,7 +174,6 @@ export const VENTURES: readonly Venture[] = [
     },
     timeframe: null,
     stack: ["Node.js", "Bash", "Markdown"],
-    github: "https://github.com/oliverstraus246-beep/powerclaude",
     metrics: [
       { value: "17", label: "Specialist configurations" },
       { value: "5", label: "Automation hooks" },

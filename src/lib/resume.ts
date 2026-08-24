@@ -87,7 +87,6 @@ export const RESUME = {
       description:
         "Personalization framework for AI-assisted development — 17 specialist configurations and a three-tier self-tuning system. Open-sourced under the MIT license.",
       stack: "Node.js, Bash, Markdown",
-      href: "github.com/oliverstraus246-beep/powerclaude",
     },
   ],
   education: {

@@ -163,9 +163,6 @@ export function ResumeContent() {
                 <p className="mt-2 text-[10px] leading-snug text-[var(--resume-muted)]">
                   {project.stack}
                 </p>
-                {"href" in project && project.href && (
-                  <p className="mt-1 text-[10px] text-[var(--resume-muted)]">{project.href}</p>
-                )}
               </div>
             ))}
           </div>
