@@ -40,15 +40,16 @@
 }
 
 /*
-  One theme, deliberately -- this is a personal brand identity, not a
-  toggleable dark mode. No .dark class, no light-mode fallback values.
-
-  Palette: true near-neutral blacks/grays, with blue concentrated in the
-  accent alone rather than tinting every surface -- the previous version
-  tinted bg/card/border/muted-foreground all with the same blue, which read
-  as "too much blue" even before any accent was applied. One warm secondary
-  accent (amber) exists for sparse, high-value emphasis so blue isn't
-  carrying 100% of the visual weight everywhere.
+  Dark is the primary, deliberately-designed brand identity -- true
+  near-neutral blacks/grays, with blue concentrated in the accent alone
+  rather than tinting every surface (an earlier version tinted bg/card/
+  border/muted-foreground all with the same blue, which read as "too much
+  blue" even before any accent was applied). A light theme and three
+  alternate accents exist as a genuine, persisted user preference (see
+  theme-switcher.tsx) -- toggled via [data-theme]/[data-accent] on <html>,
+  not a system-preference media query, so the choice stays exactly what the
+  visitor picked. One warm secondary accent (amber) exists independent of
+  the chosen primary accent for sparse, high-value emphasis.
 
     #08090B  bg-base       near-black, minimal tint
     #0E0F12  bg-raised     one step up (proxy contact.sh header bars, etc.)
@@ -93,6 +94,62 @@
   --accent-warm: #d9a441;
   --bg-raised: #0e0f12;
   --bg-elevated: #1c1e23;
+  --dot-grid-base: #232a3d;
+}
+
+/* Light theme -- near-white warm-neutral (not stark #fff), same structural
+   roles as dark so every component that consumes --background/--card/etc
+   just works. Primary accent still comes from --accent-blue, which the
+   [data-accent] blocks below control independently of theme. */
+:root[data-theme="light"] {
+  --background: #f4f4f2;
+  --foreground: #17181b;
+  --card: #ffffff;
+  --card-foreground: #17181b;
+  --popover: #ffffff;
+  --popover-foreground: #17181b;
+
+  --primary: #2f6fe0;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eceae6;
+  --secondary-foreground: #17181b;
+  --muted: #eceae6;
+  --muted-foreground: #62636b;
+  --accent: #e7e5e1;
+  --accent-foreground: #17181b;
+
+  --destructive: #dc2626;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: rgba(0, 0, 0, 0.14);
+  --ring: #2f6fe0;
+
+  --bg-raised: #eeece8;
+  --bg-elevated: #e7e5e1;
+  --dot-grid-base: #d6d4cf;
+}
+
+/* Accent variants -- swap the signature accent everywhere it's referenced
+   (CTAs, active states, focus rings, the custom cursor) independent of
+   light/dark. --accent-warm is untouched by design: it's a fixed secondary
+   highlight, not the user's chosen primary. */
+:root[data-accent="amber"] {
+  --accent-blue: #d9a441;
+  --accent-blue-dim: #e8c377;
+  --primary: #d9a441;
+  --ring: #d9a441;
+}
+:root[data-accent="violet"] {
+  --accent-blue: #8b6fe0;
+  --accent-blue-dim: #b3a3ed;
+  --primary: #8b6fe0;
+  --ring: #8b6fe0;
+}
+:root[data-accent="emerald"] {
+  --accent-blue: #2fa86c;
+  --accent-blue-dim: #6fd9a3;
+  --primary: #2fa86c;
+  --ring: #2fa86c;
 }
 
 @layer base {
@@ -101,6 +158,9 @@
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
+    transition-property: background-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
   }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;

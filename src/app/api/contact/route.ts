@@ -22,6 +22,36 @@ function supabaseHeaders(key: string) {
   };
 }
 
+// Fire-and-forget: an email provider outage must never fail the visitor's
+// submission, which is already safely saved in Supabase by the time this
+// runs. Uses Resend's REST API directly rather than pulling in their SDK
+// for one call, matching how Supabase itself is called elsewhere in this
+// route. Silently no-ops if RESEND_API_KEY isn't set yet.
+async function notifyByEmail(submission: { email: string; name: string; reason: string }) {
+  const resendKey = process.env.RESEND_API_KEY;
+  const to = process.env.CONTACT_NOTIFICATION_EMAIL;
+  if (!resendKey || !to) return;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({
+        from: "Oliver Straus site <onboarding@resend.dev>",
+        to: [to],
+        reply_to: submission.email,
+        subject: `New contact form message from ${submission.name}`,
+        text: `From: ${submission.name} <${submission.email}>\n\n${submission.reason}`,
+      }),
+    });
+  } catch {
+    // Never let a notification failure surface to the visitor.
+  }
+}
+
 export async function POST(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -88,6 +118,8 @@ export async function POST(request: NextRequest) {
   if (!insertRes.ok) {
     return NextResponse.json({ error: "Failed to save submission." }, { status: 502 });
   }
+
+  void notifyByEmail({ email, name, reason });
 
   return NextResponse.json({ ok: true });
 }

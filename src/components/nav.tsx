@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { CommandPalette } from "@/components/command-palette";
 import { openResume } from "@/components/resume-modal";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 const LINKS = [
   { href: "#work", label: "Work" },
@@ -87,6 +88,7 @@ export function Nav() {
 
           <div className="flex items-center gap-3">
             <CommandPalette />
+            <ThemeSwitcher />
 
             <a
               href="#contact"

@@ -88,9 +88,13 @@ export function ResumeContent() {
           <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-neutral-500">
             Professional Experience
           </h2>
-          <div className="mt-3 space-y-6">
+          <div className="relative mt-4 space-y-7 border-l border-neutral-200 pl-6">
             {RESUME.experience.map((job) => (
-              <div key={job.role + job.org}>
+              <div key={job.role + job.org} className="relative">
+                <span
+                  aria-hidden="true"
+                  className="absolute -left-[27px] top-1 h-2.5 w-2.5 rounded-full border-2 border-neutral-50 bg-neutral-400"
+                />
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
                   <p className="text-sm font-semibold text-neutral-900">{job.role}</p>
                   <p className="shrink-0 text-xs tabular-nums text-neutral-500">{job.dates}</p>
@@ -103,6 +107,26 @@ export function ResumeContent() {
                     <li key={bullet}>{bullet}</li>
                   ))}
                 </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10 border-t border-neutral-200 pt-8">
+          <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-neutral-500">
+            Selected Projects
+          </h2>
+          <div className="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
+            {RESUME.projects.map((project) => (
+              <div key={project.name}>
+                <p className="text-sm font-semibold text-neutral-900">{project.name}</p>
+                <p className="text-pretty mt-1 text-xs leading-relaxed text-neutral-700">
+                  {project.description}
+                </p>
+                <p className="mt-2 text-[10px] leading-snug text-neutral-500">{project.stack}</p>
+                {"href" in project && project.href && (
+                  <p className="mt-1 text-[10px] text-neutral-500">{project.href}</p>
+                )}
               </div>
             ))}
           </div>

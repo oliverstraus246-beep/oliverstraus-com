@@ -62,6 +62,34 @@ export const RESUME = {
     { category: "Security", items: "Penetration testing tooling, browser extension security, embedded / RF security research" },
     { category: "Business & Finance", items: "P&L management, financial modeling, sales & client acquisition, operations management" },
   ],
+  // Curated, not exhaustive -- three ventures picked to demonstrate range
+  // (production AI system, evaluated ML tooling, open-source distribution)
+  // rather than all seven from lib/ventures.ts. Facts carried over verbatim
+  // from that file, nothing added.
+  projects: [
+    {
+      name: "Sectra",
+      role: "Builder",
+      description:
+        "Voice-first AI assistant built from scratch: custom-trained wake word, tuned speech pipeline, live camera object detection, and permission-scoped computer control, running end to end on local models.",
+      stack: "Electron, React, TypeScript, Python, FastAPI, Whisper, Ollama",
+    },
+    {
+      name: "AI Agent Supervisor",
+      role: "Builder",
+      description:
+        "ML-engineering tool that monitors AI coding sessions for drift and prompt-injection. Verified against real production session data up to 272MB; 29 tests passing, zero network calls in the suite.",
+      stack: "Python, Claude API",
+    },
+    {
+      name: "PowerClaude",
+      role: "Builder",
+      description:
+        "Personalization framework for AI-assisted development — 17 specialist configurations and a three-tier self-tuning system. Open-sourced under the MIT license.",
+      stack: "Node.js, Bash, Markdown",
+      href: "github.com/oliverstraus246-beep/powerclaude",
+    },
+  ],
   education: {
     program: "GED — Accelerated Completion",
     detail:

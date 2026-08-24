@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import { BootSequence } from "@/components/boot-sequence";
 import { Cursor } from "@/components/cursor";
 import { Footer } from "@/components/footer";
@@ -18,6 +19,23 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
+
+// Runs before hydration (strategy="beforeInteractive") so the chosen
+// theme/accent apply before first paint -- no flash of the default dark
+// palette while React boots. Static string, no user input, so this is safe
+// as an inline script despite the lack of a per-request CSP nonce (see the
+// JSON-LD note below for why this site skips nonces generally).
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var theme = localStorage.getItem("theme");
+    var accent = localStorage.getItem("accent");
+    document.documentElement.dataset.theme = theme === "light" ? "light" : "dark";
+    document.documentElement.dataset.accent =
+      accent === "amber" || accent === "violet" || accent === "emerald" ? accent : "blue";
+  } catch (e) {}
+})();
+`;
 
 const DESCRIPTION =
   "Oliver Straus. Appointed CFO at 14. Security-focused software engineer and builder. Denver, Colorado.";
@@ -76,6 +94,9 @@ export default function RootLayout({
       className={`${plexSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         {/* Static JSON-LD, not user input -- safe as a plain child (React
             escapes it as text), no dangerouslySetInnerHTML needed. Ships
             without the proxy's per-request CSP nonce: adding one would

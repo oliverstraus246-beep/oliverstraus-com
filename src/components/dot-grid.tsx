@@ -5,7 +5,7 @@
 // Changes from the original: hex defaults swapped for this project's
 // accent-blue/warm tokens, otherwise the physics (GSAP InertiaPlugin push
 // + elastic return, click shockwave) are unchanged.
-import { useRef, useEffect, useCallback, useMemo } from "react";
+import { useRef, useEffect, useCallback, useMemo, useState } from "react";
 import { gsap } from "gsap";
 import { InertiaPlugin } from "gsap/InertiaPlugin";
 
@@ -51,11 +51,34 @@ function hexToRgb(hex: string) {
   return { r: parseInt(m[1]!, 16), g: parseInt(m[2]!, 16), b: parseInt(m[3]!, 16) };
 }
 
+// Tracks a CSS custom property on <html> so canvas-drawn colors (which
+// can't consume var() directly) follow the user's theme/accent choice.
+// Re-reads on [data-theme]/[data-accent] mutation, which theme-switcher.tsx
+// writes directly to the DOM without a React re-render of its own.
+function useThemeColor(name: string, fallback: string) {
+  const [value, setValue] = useState(fallback);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    function read() {
+      const v = getComputedStyle(root).getPropertyValue(name).trim();
+      setValue(v || fallback);
+    }
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-accent"] });
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name]);
+
+  return value;
+}
+
 export function DotGrid({
   dotSize = 3,
   gap = 26,
-  baseColor = "#232a3d",
-  activeColor = "#2f6fe0",
+  baseColor,
+  activeColor,
   proximity = 140,
   speedTrigger = 100,
   shockRadius = 220,
@@ -79,8 +102,13 @@ export function DotGrid({
     lastY: 0,
   });
 
-  const baseRgb = useMemo(() => hexToRgb(baseColor), [baseColor]);
-  const activeRgb = useMemo(() => hexToRgb(activeColor), [activeColor]);
+  const themedBase = useThemeColor("--dot-grid-base", "#232a3d");
+  const themedActive = useThemeColor("--accent-blue", "#2f6fe0");
+  const resolvedBase = baseColor ?? themedBase;
+  const resolvedActive = activeColor ?? themedActive;
+
+  const baseRgb = useMemo(() => hexToRgb(resolvedBase), [resolvedBase]);
+  const activeRgb = useMemo(() => hexToRgb(resolvedActive), [resolvedActive]);
 
   const circlePath = useMemo(() => {
     if (typeof window === "undefined" || !window.Path2D) return null;
@@ -147,7 +175,7 @@ export function DotGrid({
         const dy = dot.cy - py;
         const dsq = dx * dx + dy * dy;
 
-        let style = baseColor;
+        let style = resolvedBase;
         if (dsq <= proxSq) {
           const t = 1 - Math.sqrt(dsq) / proximity;
           const r = Math.round(baseRgb.r + (activeRgb.r - baseRgb.r) * t);
@@ -167,7 +195,7 @@ export function DotGrid({
 
     draw();
     return () => cancelAnimationFrame(rafId);
-  }, [proximity, baseColor, activeRgb, baseRgb, circlePath]);
+  }, [proximity, resolvedBase, activeRgb, baseRgb, circlePath]);
 
   useEffect(() => {
     buildGrid();

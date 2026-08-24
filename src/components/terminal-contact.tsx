@@ -24,7 +24,7 @@ const PROMPTS: Record<ContactField, string> = {
 const TONE_CLASS: Record<Line["tone"], string> = {
   prompt: "text-foreground",
   input: "text-accent-blue",
-  error: "text-red-400",
+  error: "text-destructive",
   success: "text-accent-blue",
   muted: "text-muted-foreground",
 };
