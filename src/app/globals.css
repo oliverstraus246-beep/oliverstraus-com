@@ -271,6 +271,30 @@
   animation: boot-outro 0.4s ease-out forwards;
 }
 
+/* Pure-CSS last-resort failsafe for the boot overlay -- deliberately not
+   JavaScript. React drives the normal reveal/skip/outro sequence, and
+   layout.tsx also carries a JS-based failsafe script, but both depend on
+   the browser actually executing JS for this page (hydration succeeding,
+   and the CSP nonce policy actually allowing the inline scripts through --
+   both reported broken together on one real device: overlay stuck fully
+   open, only this component's own CSS-driven cursor blink still running,
+   no click response). Animation timing has zero JS dependency, so it's
+   the one guarantee that survives even a total JS failure: 7s after the
+   overlay mounts, it becomes invisible and click-through, permanently
+   (animation-fill-mode: forwards holds the end state with no further JS
+   needed). If React's own faster path already finished and unmounted the
+   element by then, this rule never gets the chance to matter. */
+#boot-sequence-overlay {
+  animation: boot-css-failsafe 0.01s 7s forwards;
+}
+@keyframes boot-css-failsafe {
+  to {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 /* Generic page-content entrance -- venture pages stagger this across the
    header block via inline animation-delay per element. Same shape as
    boot-line-in but kept as its own named utility since it's used outside

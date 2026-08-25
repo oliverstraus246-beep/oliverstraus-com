@@ -36,6 +36,37 @@ const THEME_INIT_SCRIPT = `
 })();
 `;
 
+// A React-independent failsafe for the boot overlay (#boot-sequence-overlay
+// in boot-sequence.tsx), same inline-script technique as THEME_INIT_SCRIPT
+// above. BootSequence's own watchdog lives inside a useEffect, so it never
+// runs at all if React hydration itself fails on a given device -- reported
+// live as the boot overlay staying fully stuck (blinking cursor, no lines,
+// skip button visually present but unresponsive) on a phone, which is the
+// exact signature of hydration never completing: only pure-CSS animation
+// (the cursor blink) kept running, and no click handler ever attached. This
+// runs the instant the browser parses <head>, entirely independent of the
+// React bundle loading, executing, or hydrating successfully -- so it can
+// unstick the overlay even when nothing else on the page works. Event
+// delegation on document (not a direct listener on the element) so it
+// works regardless of exactly when the overlay appears in the DOM.
+const BOOT_FAILSAFE_SCRIPT = `
+(function () {
+  var released = false;
+  function release() {
+    if (released) return;
+    released = true;
+    var el = document.getElementById("boot-sequence-overlay");
+    if (el) { el.style.display = "none"; }
+  }
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest("#boot-sequence-overlay")) {
+      release();
+    }
+  });
+  setTimeout(release, 6000);
+})();
+`;
+
 const DESCRIPTION =
   "Oliver Straus. Appointed CFO at 14. Security-focused software engineer and builder. Denver, Colorado.";
 
@@ -102,6 +133,7 @@ export default function RootLayout({
             data-theme/data-accent attributes this script sets before React
             hydrates (see preventing-flash-before-hydration docs). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_FAILSAFE_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         {/* Static JSON-LD, not user input -- safe as a plain child (React
