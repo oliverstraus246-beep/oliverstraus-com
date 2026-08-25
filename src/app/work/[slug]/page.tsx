@@ -33,7 +33,10 @@ export default async function VenturePage({
   if (!venture) notFound();
 
   const index = VENTURES.findIndex((v) => v.slug === slug);
-  const next = VENTURES[(index + 1) % VENTURES.length]!;
+  const more = [
+    VENTURES[(index + 1) % VENTURES.length]!,
+    VENTURES[(index + 2) % VENTURES.length]!,
+  ];
 
   return (
     <main className="mx-auto max-w-5xl px-6 pb-32 pt-32 sm:pt-40">
@@ -168,23 +171,35 @@ export default async function VenturePage({
         </aside>
       </div>
 
-      <Link
-        href={`/work/${next.slug}`}
-        className="group mt-16 flex items-center justify-between border-t border-border pt-8 transition-colors hover:border-accent-blue/40"
-      >
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Next
-          </p>
-          <p className="text-balance mt-1 text-xl font-bold tracking-tight">{next.name}</p>
+      <div className="mt-16 border-t border-border pt-10">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          More ventures
+        </p>
+        <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {more.map((venture) => (
+            <Link
+              key={venture.slug}
+              href={`/work/${venture.slug}`}
+              className="group flex items-center justify-between border border-border p-6 transition-colors hover:border-accent-blue/40"
+            >
+              <div className="min-w-0">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {venture.role}
+                </p>
+                <p className="text-balance mt-1 text-xl font-bold tracking-tight">
+                  {venture.name}
+                </p>
+              </div>
+              <span
+                aria-hidden="true"
+                className="ml-4 shrink-0 font-mono text-xl text-muted-foreground transition-[color,transform] duration-300 group-hover:translate-x-1 group-hover:text-accent-blue"
+              >
+                &rarr;
+              </span>
+            </Link>
+          ))}
         </div>
-        <span
-          aria-hidden="true"
-          className="font-mono text-xl text-muted-foreground transition-[color,transform] duration-300 group-hover:translate-x-1 group-hover:text-accent-blue"
-        >
-          &rarr;
-        </span>
-      </Link>
+      </div>
     </main>
   );
 }
