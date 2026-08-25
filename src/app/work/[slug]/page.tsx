@@ -158,14 +158,14 @@ export default async function VenturePage({
             </div>
           )}
 
-          {venture.github && (
+          {venture.repoUrl && (
             <a
-              href={venture.github}
+              href={venture.repoUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
             >
-              View on GitHub &rarr;
+              View on GitLab &rarr;
             </a>
           )}
         </aside>

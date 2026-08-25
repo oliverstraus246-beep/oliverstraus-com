@@ -4,10 +4,13 @@
 // already-documented facts support them (vault project files, git logs,
 // or a project's own README) -- never invented depth for ventures that
 // don't have more to say, per this project's no-fabrication rule.
-// `github` is only set where the repo is confirmed public -- most of
-// these are private, so most ventures have none. Imperial Detailing and
-// Apex are deliberately not listed here -- the former for tax reasons,
-// the latter because Oliver doesn't consider it representative work.
+// `repoUrl` is only set where the repo is confirmed public on GitLab
+// (verified live via the GitLab API + a direct fetch, not assumed) --
+// most of these are private, so most ventures have none. Imperial
+// Detailing and Apex are deliberately not listed here -- the former for
+// tax reasons, the latter because Oliver doesn't consider it
+// representative work (Apex's GitLab repo is also public but is
+// intentionally never linked from this site for that reason).
 export interface Venture {
   slug: string;
   role: string;
@@ -26,7 +29,7 @@ export interface Venture {
   };
   timeframe?: string | null;
   stack?: readonly string[];
-  github?: string;
+  repoUrl?: string;
   // Real numbers only, pulled from the same facts as `highlights`/`body` --
   // no comma formatting (CountUp's parser expects a bare number plus an
   // optional unit suffix, e.g. "272MB" or "9294").
@@ -115,6 +118,7 @@ export const VENTURES: readonly Venture[] = [
     },
     timeframe: "2026 — Present",
     stack: ["Python", "Claude API", "uv"],
+    repoUrl: "https://gitlab.com/oliverstraus/agent-supervisor",
     metrics: [
       { value: "272MB", label: "Largest session file parsed" },
       { value: "9294", label: "Turns parsed in verification" },
@@ -174,6 +178,7 @@ export const VENTURES: readonly Venture[] = [
     },
     timeframe: null,
     stack: ["Node.js", "Bash", "Markdown"],
+    repoUrl: "https://gitlab.com/oliverstraus/powerclaude",
     metrics: [
       { value: "17", label: "Specialist configurations" },
       { value: "5", label: "Automation hooks" },
