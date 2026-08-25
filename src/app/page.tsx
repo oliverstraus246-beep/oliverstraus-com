@@ -30,6 +30,10 @@ export default function Home() {
           <p className="mt-4 max-w-md text-sm text-muted-foreground">
             oliverstraus246@gmail.com · (303) 946-4224
           </p>
+          <p className="mt-3 max-w-md font-mono text-xs text-muted-foreground">
+            <span className="text-accent-blue">Now:</span> GED sprint,
+            building Sectra, applying to Colorado community colleges.
+          </p>
           <div className="mx-auto mt-12 max-w-2xl">
             <TerminalContact />
           </div>
