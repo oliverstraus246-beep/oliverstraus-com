@@ -17,6 +17,17 @@ const HEADLINES = [
   "Chose building\nover waiting.",
 ];
 
+// Every headline's crossfade visibility (autoAlpha/opacity) is set by GSAP
+// via useGSAP below -- but that only ever runs if hydration succeeds.
+// Reported live: on devices where it doesn't (JS never executes), every
+// headline rendered at its raw un-styled-by-JS state, all `absolute
+// inset-0` on top of each other -- four taglines visibly overlapping,
+// unreadable. `opacity-0 first:opacity-100` on both the mobile <h1>s and
+// the desktop wrapper divs below is a pure-CSS baseline: only the first
+// headline shows with zero JS involvement. When GSAP does run, its inline
+// styles set on mount override these classes immediately (inline always
+// wins over a class), so this changes nothing for the working case.
+
 // Desktop only: each headline claims a different corner instead of
 // crossfading in the exact same spot. Kept out of the flex row entirely
 // (see the section-level absolute layer below) after an earlier version
@@ -164,7 +175,7 @@ export function Hero() {
                   ref={(el) => {
                     mobileLineRefs.current[i] = el;
                   }}
-                  className="absolute inset-0 whitespace-pre-line text-5xl font-black leading-[0.95] tracking-tight text-foreground"
+                  className="absolute inset-0 whitespace-pre-line text-5xl font-black leading-[0.95] tracking-tight text-foreground opacity-0 first:opacity-100"
                 >
                   {headline}
                 </h1>
@@ -200,7 +211,7 @@ export function Hero() {
             ref={(el) => {
               desktopLineRefs.current[i] = el;
             }}
-            className={`absolute max-w-md ${DESKTOP_POSITION[i]}`}
+            className={`absolute max-w-md opacity-0 first:opacity-100 ${DESKTOP_POSITION[i]}`}
           >
             <h1 className="whitespace-pre-line text-6xl font-black leading-[0.95] tracking-tight text-foreground lg:text-7xl">
               {headline}
