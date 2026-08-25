@@ -38,20 +38,36 @@ export function BootSequence() {
       return;
     }
 
+    // This overlay is position:fixed, full-screen, and blocks the entire
+    // site until it releases -- so it can never be allowed to get stuck
+    // open, no matter the cause. Belt-and-suspenders against the async
+    // loop below silently failing to complete (a thrown error, or a
+    // device/browser throttling setTimeout in a background or
+    // low-power-mode tab far enough to feel "frozen"): an unconditional
+    // watchdog that force-releases it regardless of the loop's state.
+    // Expected duration is ~4.5s; 12s gives real headroom for a slow or
+    // throttled device without ever being mistakable for "stuck forever."
+    const watchdog = setTimeout(finish, 12000);
+
     (async () => {
-      for (let i = 0; i < LINES.length; i++) {
-        await new Promise((r) =>
-          setTimeout(r, i === 0 ? FIRST_LINE_DELAY_MS : LINE_DELAY_MS),
-        );
-        if (finishedRef.current) return;
-        setShown((prev) => [...prev, LINES[i]!]);
+      try {
+        for (let i = 0; i < LINES.length; i++) {
+          await new Promise((r) =>
+            setTimeout(r, i === 0 ? FIRST_LINE_DELAY_MS : LINE_DELAY_MS),
+          );
+          if (finishedRef.current) return;
+          setShown((prev) => [...prev, LINES[i]!]);
+        }
+        await new Promise((r) => setTimeout(r, HOLD_BEFORE_OUTRO_MS));
+        if (!finishedRef.current) finish();
+      } catch {
+        finish();
       }
-      await new Promise((r) => setTimeout(r, HOLD_BEFORE_OUTRO_MS));
-      if (!finishedRef.current) finish();
     })();
 
     return () => {
       finishedRef.current = true;
+      clearTimeout(watchdog);
     };
   }, []);
 

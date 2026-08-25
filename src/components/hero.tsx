@@ -39,10 +39,19 @@ const DESKTOP_POSITION = [
   "sm:bottom-16 sm:left-1/2 sm:-translate-x-1/2 sm:text-center",
 ];
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 export function Hero() {
   const container = useRef<HTMLElement>(null);
   const mobileLineRefs = useRef<Array<HTMLHeadingElement | null>>([]);
   const desktopLineRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const glowARef = useRef<HTMLDivElement>(null);
+  const glowBRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -82,6 +91,32 @@ export function Hero() {
           "<",
         );
       });
+
+      // Mouse parallax on the two background glows only -- deliberately not
+      // touching `container` (the pin target) or anything that wraps it.
+      // These divs are plain siblings inside the pinned section, not
+      // ancestors of it or of anything position:fixed, so a transform here
+      // can't reintroduce the containing-block bug documented above (a
+      // transformed ancestor breaking Hero's own fixed-position pin).
+      if (prefersReducedMotion() || !glowARef.current || !glowBRef.current) {
+        return;
+      }
+      const aX = gsap.quickTo(glowARef.current, "x", { duration: 0.9, ease: "power3" });
+      const aY = gsap.quickTo(glowARef.current, "y", { duration: 0.9, ease: "power3" });
+      const bX = gsap.quickTo(glowBRef.current, "x", { duration: 1.2, ease: "power3" });
+      const bY = gsap.quickTo(glowBRef.current, "y", { duration: 1.2, ease: "power3" });
+
+      const onMove = (e: MouseEvent) => {
+        const rect = container.current!.getBoundingClientRect();
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        aX(nx * 40);
+        aY(ny * 40);
+        bX(nx * -28);
+        bY(ny * -28);
+      };
+      container.current!.addEventListener("mousemove", onMove);
+      return () => container.current?.removeEventListener("mousemove", onMove);
     },
     { scope: container },
   );
@@ -98,8 +133,14 @@ export function Hero() {
           red/green as a literal color, unlike the reference this borrows
           the *vividness* from). */}
       <div className="absolute inset-0 bg-background" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_78%_30%,color-mix(in_oklch,var(--accent-blue),transparent_75%)_0%,transparent_70%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_15%_85%,color-mix(in_oklch,var(--accent-warm),transparent_92%)_0%,transparent_70%)]" />
+      <div
+        ref={glowARef}
+        className="absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_78%_30%,color-mix(in_oklch,var(--accent-blue),transparent_75%)_0%,transparent_70%)]"
+      />
+      <div
+        ref={glowBRef}
+        className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_15%_85%,color-mix(in_oklch,var(--accent-warm),transparent_92%)_0%,transparent_70%)]"
+      />
 
       {/* No photo: removed entirely per Oliver's explicit instruction ("we
           just don't have my face at all"), not adjusted or hidden. This
