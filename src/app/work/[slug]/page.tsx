@@ -38,8 +38,31 @@ export default async function VenturePage({
     VENTURES[(index + 2) % VENTURES.length]!,
   ];
 
+  // Per-venture structured data -- the root layout's Person schema covers
+  // every page site-wide, but search engines get no project-level detail
+  // for any individual venture without this. No CSP nonce needed, same
+  // reasoning as the Person block: static data a crawler reads from raw
+  // HTML, never executed as script.
+  const ventureJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: venture.name,
+    description: venture.description,
+    url: `https://oliverstraus.com/work/${venture.slug}`,
+    creator: {
+      "@type": "Person",
+      name: "Oliver Straus",
+      url: "https://oliverstraus.com",
+    },
+    ...(venture.timeframe ? { temporalCoverage: venture.timeframe } : {}),
+    ...(venture.stack && venture.stack.length > 0
+      ? { keywords: venture.stack.join(", ") }
+      : {}),
+  };
+
   return (
     <main className="mx-auto max-w-5xl px-6 pb-32 pt-32 sm:pt-40">
+      <script type="application/ld+json">{JSON.stringify(ventureJsonLd)}</script>
       <Link
         href="/#work"
         className="group animate-fade-up inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
