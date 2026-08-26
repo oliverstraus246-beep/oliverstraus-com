@@ -9,11 +9,16 @@ import { CommandPalette } from "@/components/command-palette";
 import { openResume } from "@/components/resume-modal";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
+// Section anchors are prefixed with "/" so they resolve from every route,
+// not just the homepage -- "#work" on /resume or /work/[slug] silently does
+// nothing because those section ids only exist on /. "/#work" navigates home
+// then scrolls; on the homepage itself the path already matches so the
+// browser just scrolls (no reload).
 const LINKS = [
-  { href: "#work", label: "Work" },
-  { href: "#about", label: "About" },
+  { href: "/#work", label: "Work" },
+  { href: "/#about", label: "About" },
   { href: "/resume", label: "Resume", isResume: true },
-  { href: "#contact", label: "Contact" },
+  { href: "/#contact", label: "Contact" },
 ];
 
 export function Nav() {
@@ -120,12 +125,12 @@ export function Nav() {
             <CommandPalette />
             <ThemeSwitcher />
 
-            <a
-              href="#contact"
+            <Link
+              href="/#contact"
               className="hidden h-11 items-center rounded-full border border-border px-4 font-mono text-xs uppercase tracking-widest transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:inline-flex"
             >
               Get in touch
-            </a>
+            </Link>
 
             <button
               type="button"
@@ -160,7 +165,7 @@ export function Nav() {
       >
         <nav className="mx-auto flex w-full max-w-4xl flex-col gap-2">
           {LINKS.map((link, i) => (
-            <a
+            <Link
               key={link.href}
               ref={(el) => {
                 linkRefs.current[i] = el;
@@ -179,7 +184,7 @@ export function Nav() {
                 0{i + 1}
               </span>
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>

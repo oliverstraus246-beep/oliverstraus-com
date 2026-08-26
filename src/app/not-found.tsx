@@ -15,6 +15,10 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col justify-center px-6 py-32">
+      {/* Visible "404" is a styled eyebrow, not a heading -- give screen-reader
+          users navigating by headings an actual page heading without changing
+          the terminal aesthetic. */}
+      <h1 className="sr-only">Page not found</h1>
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
         404
       </p>

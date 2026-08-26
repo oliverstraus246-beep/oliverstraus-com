@@ -1,13 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { SocialLinks } from "@/components/social-links";
 import { openResume } from "@/components/resume-modal";
 
+// "/"-prefixed so the section anchors resolve from every route, not just
+// the homepage (see nav.tsx for the same reasoning).
 const NAVIGATION = [
-  { href: "#work", label: "Work", isResume: false },
-  { href: "#about", label: "About", isResume: false },
+  { href: "/#work", label: "Work", isResume: false },
+  { href: "/#about", label: "About", isResume: false },
   { href: "/resume", label: "Resume", isResume: true },
-  { href: "#contact", label: "Contact", isResume: false },
+  { href: "/#contact", label: "Contact", isResume: false },
 ] as const;
 
 export function Footer() {
@@ -29,7 +32,7 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               {NAVIGATION.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     onClick={(e) => {
                       if (link.isResume) {
@@ -40,7 +43,7 @@ export function Footer() {
                     className="text-sm text-foreground/80 transition-colors hover:text-accent-blue"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
