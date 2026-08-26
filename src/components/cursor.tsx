@@ -26,6 +26,17 @@ export function Cursor() {
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
+    // Only on devices that have a real pointer with hover (a mouse/trackpad).
+    // A touch-only device has no mousemove to drive the cursor, so the mark
+    // would sit stuck at 0,0 (or jitter on the occasional touch->mousemove
+    // synthesis) -- and there's no native cursor to replace on touch anyway.
+    // Combined with the reduced-motion check above, this means the custom
+    // cursor only activates where it can actually track and is wanted.
+    if (
+      typeof window !== "undefined" &&
+      !window.matchMedia("(hover: hover)").matches
+    )
+      return;
     document.body.classList.add("custom-cursor-active");
     active.current = true;
 
