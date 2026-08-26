@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ResumeContent } from "@/components/resume-content";
 import { ResumePresetPicker } from "@/components/resume-preset-picker";
 
@@ -20,6 +20,11 @@ export function openResume() {
  */
 export function ResumeModal() {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // The element that had focus when the modal opened -- the trigger button
+  // (nav, footer, hero CTA, command palette). Focus returns here on close so
+  // keyboard users aren't dropped back to the top of the page.
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     function onOpen() {
@@ -57,6 +62,78 @@ export function ResumeModal() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  // Dialog focus management: move focus into the panel on open, trap Tab
+  // within the dialog (so keyboard users can't tab out into the homepage
+  // hidden behind the overlay), lock background scroll, and restore focus
+  // to the trigger on close. These are the parts a bare role="dialog"
+  // doesn't give you -- without them a screen-reader/keyboard user opens
+  // the résumé and is stranded on a focusable-poor overlay with no way back
+  // but Escape, and Tab leaks into the page behind it.
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current =
+      (document.activeElement as HTMLElement | null) ?? null;
+    const panel = panelRef.current;
+    if (panel) {
+      // Focus the dialog container itself (tabIndex=-1) rather than a control
+      // so the first Tab lands cleanly on the first button and the screen
+      // reader announces "Résumé, dialog" from aria-label.
+      panel.focus();
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onTab(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const p = panelRef.current;
+      if (!p) return;
+      const nodes = Array.from(
+        p.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((n) => {
+        // visible & focusable: offsetParent is null for display:none, and
+        // we also reject zero-size elements.
+        const rect = n.getBoundingClientRect();
+        return n.offsetParent !== null && rect.width > 0 && rect.height > 0;
+      });
+      if (!nodes.length) {
+        e.preventDefault();
+        p.focus();
+        return;
+      }
+      const first = nodes[0]!;
+      const last = nodes[nodes.length - 1]!;
+      if (e.shiftKey) {
+        if (document.activeElement === first || document.activeElement === p) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    window.addEventListener("keydown", onTab);
+    return () => {
+      window.removeEventListener("keydown", onTab);
+      document.body.style.overflow = prevOverflow;
+      // Return focus to whatever opened the modal (the trigger button).
+      // Guarded: some browsers set activeElement to <body> if the trigger
+      // was already blurred.
+      const prev = previousFocusRef.current;
+      if (prev && document.contains(prev)) {
+        try {
+          prev.focus();
+        } catch {
+          /* element no longer focusable */
+        }
+      }
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -65,11 +142,13 @@ export function ResumeModal() {
       onClick={() => setOpen(false)}
     >
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Résumé"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="resume-modal-panel w-full max-w-3xl overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl"
+        className="resume-modal-panel w-full max-w-3xl overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl focus:outline-none"
       >
         <div className="no-print sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50/95 px-6 py-3 backdrop-blur-sm">
           <p className="font-mono text-xs uppercase tracking-widest text-neutral-500">
