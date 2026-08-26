@@ -65,6 +65,12 @@
     #8B8F98  text-muted    neutral gray, captions/secondary copy
 */
 :root {
+  /* UA chrome (scrollbars, native form controls, ::selection, the
+     scrollbar-gutter) renders for a dark page -- without this the browser
+     draws default light scrollbars on the dark terminal theme, and native
+     inputs pick light styling. Mirrored as `light` on [data-theme="light"]
+     below. */
+  color-scheme: dark;
   --background: #08090b;
   --foreground: #f2f2f0;
   --card: #131417;
@@ -102,6 +108,7 @@
    just works. Primary accent still comes from --accent-blue, which the
    [data-accent] blocks below control independently of theme. */
 :root[data-theme="light"] {
+  color-scheme: light;
   --background: #f4f4f2;
   --foreground: #17181b;
   --card: #ffffff;
