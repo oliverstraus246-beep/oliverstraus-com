@@ -182,6 +182,20 @@
   --primary: #1d7a48;
   --ring: #1d7a48;
 }
+/* Light+blue: the signature #2f6fe0 passes on pure #fff (4.70) but the light
+   theme's actual --background is #f4f4f2, where it drops to 4.27 -- the
+   timeline role labels and links (Builder, CFO, Read the full case study,
+   Now:) sit on that surface and miss AA. On a light surface contrast rises
+   as text gets DARKER, so a slightly deeper cobalt (#2c66d8, the lightest
+   shade that clears 4.5 on #f4f4f2 at 4.77 and on #fff at 5.25) keeps the
+   signature blue while passing. dim set darker than main, same reasoning as
+   the other light accents. */
+:root[data-theme="light"][data-accent="blue"] {
+  --accent-blue: #2c66d8;
+  --accent-blue-dim: #1f57c0;
+  --primary: #2c66d8;
+  --ring: #2c66d8;
+}
 
 /* Dark-theme blue retuning. The signature #2f6fe0 (lum ~0.18) is tuned for
    fills/selection but as 11px text it misses AA on the dark surfaces --
@@ -190,12 +204,13 @@
    most visitors see. On a dark background contrast goes UP as the text gets
    LIGHTER, so the fix is a more luminous cobalt, not a darker one: #4280e8
    clears 4.5 on both surfaces (5.20 on background, 4.81 on card). Scoped to
-   dark+blue only -- light+blue already passes at 4.70 with #2f6fe0, and the
-   alternate dark accents (amber/violet/emerald) already pass on the dark
-   bg. ::selection drops to ~3.6:1 (foreground on the lighter blue), an
-   acceptable trade since selection is a transient, WCAG-lenient state and
-   the 30 persistent text elements matter more. No-JS visitors have no
-   data-theme/data-accent attributes and fall back to :root's #2f6fe0. */
+   dark+blue only -- light+blue gets its own deeper-cobalt override below
+   (it fails on #f4f4f2), and the alternate dark accents (amber/violet/
+   emerald) already pass on the dark bg. ::selection drops to ~3.6:1
+   (foreground on the lighter blue), an acceptable trade since selection is
+   a transient, WCAG-lenient state and the 30 persistent text elements
+   matter more. No-JS visitors have no data-theme/data-accent attributes and
+   fall back to :root's #2f6fe0. */
 :root[data-theme="dark"][data-accent="blue"] {
   --accent-blue: #4280e8;
   --accent-blue-dim: #6fa3ed;
