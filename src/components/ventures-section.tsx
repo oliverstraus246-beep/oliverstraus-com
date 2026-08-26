@@ -41,6 +41,23 @@ export function VenturesSection() {
                 <p className="text-pretty relative z-[2] mt-4 text-sm leading-relaxed text-muted-foreground">
                   {venture.description}
                 </p>
+                {venture.stack && venture.stack.length > 0 && (
+                  <div className="relative z-[2] mt-5 flex flex-wrap items-center gap-1.5">
+                    {venture.stack.slice(0, 3).map((tech) => (
+                      <span
+                        key={tech}
+                        className="border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                    {venture.stack.length > 3 && (
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        +{venture.stack.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="relative z-[2] mt-6 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors duration-300">
                   View details
                   <span

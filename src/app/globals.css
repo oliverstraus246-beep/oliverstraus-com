@@ -313,6 +313,22 @@
   animation: fade-up-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Hero scroll cue: a short accent segment travels down a thin track to
+   signal "there's more below." Loop only while the cue is visible (it
+   fades out on scroll, see scroll-cue.tsx). Killed by the global
+   prefers-reduced-motion rule like every other animation. */
+@keyframes scroll-cue {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+.animate-scroll-cue {
+  animation: scroll-cue 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 @keyframes modal-backdrop-in {
   from {
     opacity: 0;

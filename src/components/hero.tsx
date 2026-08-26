@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { CountUp } from "@/components/count-up";
 import { openResume } from "@/components/resume-modal";
+import { ScrollCue } from "@/components/scroll-cue";
 import { STATS } from "@/lib/stats";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -59,7 +60,7 @@ function prefersReducedMotion() {
 
 export function Hero() {
   const container = useRef<HTMLElement>(null);
-  const mobileLineRefs = useRef<Array<HTMLHeadingElement | null>>([]);
+  const mobileLineRefs = useRef<Array<HTMLElement | null>>([]);
   const desktopLineRefs = useRef<Array<HTMLDivElement | null>>([]);
   const glowARef = useRef<HTMLDivElement>(null);
   const glowBRef = useRef<HTMLDivElement>(null);
@@ -79,7 +80,7 @@ export function Hero() {
 
       const groups = HEADLINES.map((_, i) =>
         [mobileLineRefs.current[i], desktopLineRefs.current[i]].filter(
-          (el): el is HTMLHeadingElement | HTMLDivElement => el !== null,
+          (el): el is HTMLElement => el !== null,
         ),
       );
       if (groups.every((g) => g.length === 0)) return;
@@ -190,17 +191,28 @@ export function Hero() {
                 at any width (more wrapping on narrow screens just grows the
                 cell), so there's never overlap and never a hard-coded gap. */}
             <div className="grid">
-              {HEADLINES.map((headline, i) => (
-                <h1
-                  key={headline}
-                  ref={(el) => {
-                    mobileLineRefs.current[i] = el;
-                  }}
-                  className="col-start-1 row-start-1 whitespace-pre-line text-4xl font-black leading-[0.95] tracking-tight text-foreground opacity-0 first:opacity-100"
-                >
-                  {headline}
-                </h1>
-              ))}
+              {HEADLINES.map((headline, i) => {
+                // Only the first headline is the real <h1> (the page's single
+                // heading). The rest are decorative rotating taglines the
+                // crossfade plays through -- marked aria-hidden and demoted
+                // out of the heading hierarchy so the page has exactly one
+                // h1 for SEO and screen-reader landmark navigation, instead
+                // of four. GSAP crossfades them regardless of tag (refs are
+                // tag-agnostic), so the motion is unaffected.
+                const Tag = i === 0 ? "h1" : "div";
+                return (
+                  <Tag
+                    key={headline}
+                    ref={(el) => {
+                      mobileLineRefs.current[i] = el;
+                    }}
+                    aria-hidden={i === 0 ? undefined : true}
+                    className="col-start-1 row-start-1 whitespace-pre-line text-4xl font-black leading-[0.95] tracking-tight text-foreground opacity-0 first:opacity-100"
+                  >
+                    {headline}
+                  </Tag>
+                );
+              })}
             </div>
             <p className="mt-6 max-w-md text-lg text-muted-foreground">
               Now building software.
@@ -226,19 +238,25 @@ export function Hero() {
           that separation matters. pointer-events-none since it overlaps
           the photo and shouldn't block interaction with anything there. */}
       <div className="pointer-events-none absolute inset-0 z-10 mx-auto hidden max-w-6xl px-6 sm:block">
-        {HEADLINES.map((headline, i) => (
-          <div
-            key={headline}
-            ref={(el) => {
-              desktopLineRefs.current[i] = el;
-            }}
-            className={`absolute max-w-md opacity-0 first:opacity-100 ${DESKTOP_POSITION[i]}`}
-          >
-            <h1 className="whitespace-pre-line text-6xl font-black leading-[0.95] tracking-tight text-foreground lg:text-7xl">
-              {headline}
-            </h1>
-          </div>
-        ))}
+        {HEADLINES.map((headline, i) => {
+          const InnerTag = i === 0 ? "h1" : "div";
+          return (
+            <div
+              key={headline}
+              ref={(el) => {
+                desktopLineRefs.current[i] = el;
+              }}
+              className={`absolute max-w-md opacity-0 first:opacity-100 ${DESKTOP_POSITION[i]}`}
+            >
+              <InnerTag
+                aria-hidden={i === 0 ? undefined : true}
+                className="whitespace-pre-line text-6xl font-black leading-[0.95] tracking-tight text-foreground lg:text-7xl"
+              >
+                {headline}
+              </InnerTag>
+            </div>
+          );
+        })}
       </div>
 
       {/* Dashboard panel: fills the right side that used to sit empty for
@@ -275,6 +293,8 @@ export function Hero() {
           </a>
         </div>
       </div>
+
+      <ScrollCue />
     </section>
   );
 }

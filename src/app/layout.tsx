@@ -156,6 +156,15 @@ export default function RootLayout({
             worth it for a data blob crawlers read from raw HTML source
             rather than executing. */}
         <script type="application/ld+json">{JSON.stringify(PERSON_JSON_LD)}</script>
+        {/* Skip link: keyboard users tab past the nav straight to the page
+            content instead of tabbing through every header link first.
+            Visually hidden until focused, then snaps into view. */}
+        <a
+          href="#site-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:border focus:border-border focus:bg-card focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:text-foreground"
+        >
+          Skip to content
+        </a>
         <ScrollReset />
         <ScrollProgress />
         <BootSequence />
@@ -168,7 +177,7 @@ export default function RootLayout({
             push the fixed modal overlay onto extra blank pages -- see the
             @media print block in globals.css. On /resume this div IS the
             résumé's ancestor, so the print CSS leaves it alone there. */}
-        <div id="site-content" className="flex-1">
+        <div id="site-content" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </div>
         <Footer />
