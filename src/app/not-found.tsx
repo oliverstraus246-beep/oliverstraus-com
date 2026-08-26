@@ -4,6 +4,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Not Found",
   description: "The page you're looking for doesn't exist.",
+  // A 404 isn't a real page -- don't let it compete with real routes in the
+  // index. (Google drops 404s on its own, but noindex makes it explicit and
+  // covers other crawlers.) Inherits the root layout's canonical "/", which
+  // is harmless under noindex.
+  robots: { index: false },
 };
 
 // Composes with the root layout automatically (nav, footer, theme, fonts)

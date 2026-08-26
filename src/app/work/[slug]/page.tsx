@@ -18,7 +18,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const venture = getVenture(slug);
   if (!venture) return {};
-  const title = `${venture.name} — Oliver Straus`;
+  // Title is just the venture name -- the root layout's title.template
+  // ("%s | Oliver Straus") appends the site suffix, producing
+  // "The Reaper | Oliver Straus". Setting it to "The Reaper — Oliver Straus"
+  // here made the template append a SECOND suffix ("... — Oliver Straus |
+  // Oliver Straus"), duplicating the name in the <title> tag.
+  const title = venture.name;
+  const fullTitle = `${venture.name} | Oliver Straus`;
   // openGraph/twitter are NOT deep-merged with the root layout's values --
   // a child route's openGraph/twitter object entirely REPLACES the
   // parent's for that route, field for field. Verified against actual
@@ -29,8 +35,9 @@ export async function generateMetadata({
   return {
     title,
     description: venture.description,
+    alternates: { canonical: `/work/${venture.slug}` },
     openGraph: {
-      title,
+      title: fullTitle,
       description: venture.description,
       url: `https://oliverstraus.com/work/${venture.slug}`,
       siteName: "Oliver Straus",
@@ -39,7 +46,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: fullTitle,
       description: venture.description,
     },
   };

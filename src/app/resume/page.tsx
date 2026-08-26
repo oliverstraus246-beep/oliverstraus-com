@@ -7,6 +7,7 @@ import { ResumePrintButton } from "@/components/resume-print-button";
 export const metadata: Metadata = {
   title: "Résumé",
   description: "Oliver Straus's résumé.",
+  alternates: { canonical: "/resume" },
 };
 
 // Real, crawlable fallback destination -- every "Resume" trigger point

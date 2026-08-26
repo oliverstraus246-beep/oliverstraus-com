@@ -78,6 +78,11 @@ export const metadata: Metadata = {
     template: "%s | Oliver Straus",
   },
   description: DESCRIPTION,
+  alternates: {
+    // Canonical for the homepage (child routes override with their own
+    // alternates.canonical). metadataBase resolves this to the absolute URL.
+    canonical: "/",
+  },
   openGraph: {
     title: "Oliver Straus",
     description: DESCRIPTION,
