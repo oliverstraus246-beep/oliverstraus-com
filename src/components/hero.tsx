@@ -149,6 +149,19 @@ export function Hero() {
       ref={container}
       className="relative h-screen w-full overflow-hidden"
     >
+      {/* The page's single <h1>. The visible hero headlines below are rendered
+          twice -- once in a mobile layout (sm:hidden) and once in a desktop
+          layout (hidden sm:block) -- and only one of those layers is ever
+          on screen at a given viewport. If the <h1> lived inside either
+          layer it would be display:none (and thus removed from the
+          accessibility tree) on the other viewport, so the page would have
+          no h1 at all for half its visitors. An always-present sr-only h1
+          keeps exactly one heading in the a11y tree on every viewport and
+          for SEO, while the visible animated taglines stay purely
+          decorative (aria-hidden). The text matches the first visible
+          headline so a screen-reader user hears the same thing sighted
+          users see. */}
+      <h1 className="sr-only">Appointed CFO at fourteen.</h1>
       {/* An actually-visible gradient this time -- the previous version was
           88% transparent and barely read as a gradient at all. Two stops
           (blue behind the photo, a whisper of the warm accent lower-left)
@@ -180,7 +193,7 @@ export function Hero() {
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Denver, Colorado
             </p>
-            {/* Grid-stacked headlines: every <h1> occupies the same grid
+            {/* Grid-stacked headlines: every tagline occupies the same grid
                 cell (col-start-1 row-start-1), so they overlap for the
                 GSAP crossfade while the container auto-sizes to the TALLEST
                 headline. The old `relative h-[2.1em]` + `absolute inset-0`
@@ -192,25 +205,26 @@ export function Hero() {
                 cell), so there's never overlap and never a hard-coded gap. */}
             <div className="grid">
               {HEADLINES.map((headline, i) => {
-                // Only the first headline is the real <h1> (the page's single
-                // heading). The rest are decorative rotating taglines the
-                // crossfade plays through -- marked aria-hidden and demoted
-                // out of the heading hierarchy so the page has exactly one
-                // h1 for SEO and screen-reader landmark navigation, instead
-                // of four. GSAP crossfades them regardless of tag (refs are
-                // tag-agnostic), so the motion is unaffected.
-                const Tag = i === 0 ? "h1" : "div";
+                // All four are decorative rotating taglines the crossfade
+                // plays through. The page's single <h1> is the sr-only
+                // heading at the top of this section, so these visible
+                // taglines are demoted out of the heading hierarchy (plain
+                // divs) and marked aria-hidden -- exactly one h1 for SEO
+                // and screen-reader landmark navigation, instead of four
+                // (or two, from the mobile/desktop duplication). GSAP
+                // crossfades them regardless of tag (refs are tag-agnostic),
+                // so the motion is unaffected.
                 return (
-                  <Tag
+                  <div
                     key={headline}
                     ref={(el) => {
                       mobileLineRefs.current[i] = el;
                     }}
-                    aria-hidden={i === 0 ? undefined : true}
+                    aria-hidden="true"
                     className="col-start-1 row-start-1 whitespace-pre-line text-4xl font-black leading-[0.95] tracking-tight text-foreground opacity-0 first:opacity-100"
                   >
                     {headline}
-                  </Tag>
+                  </div>
                 );
               })}
             </div>
@@ -239,7 +253,6 @@ export function Hero() {
           the photo and shouldn't block interaction with anything there. */}
       <div className="pointer-events-none absolute inset-0 z-10 mx-auto hidden max-w-6xl px-6 sm:block">
         {HEADLINES.map((headline, i) => {
-          const InnerTag = i === 0 ? "h1" : "div";
           return (
             <div
               key={headline}
@@ -248,12 +261,12 @@ export function Hero() {
               }}
               className={`absolute max-w-md opacity-0 first:opacity-100 ${DESKTOP_POSITION[i]}`}
             >
-              <InnerTag
-                aria-hidden={i === 0 ? undefined : true}
+              <div
+                aria-hidden="true"
                 className="whitespace-pre-line text-6xl font-black leading-[0.95] tracking-tight text-foreground lg:text-7xl"
               >
                 {headline}
-              </InnerTag>
+              </div>
             </div>
           );
         })}
