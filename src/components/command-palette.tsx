@@ -34,6 +34,11 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Tracks whether the palette was open on the previous render, so the
+  // focus-restore effect below only fires on a real open->close transition
+  // -- not on initial mount (where open starts false and the else-branch
+  // would otherwise focus the trigger, hijacking initial page focus).
+  const wasOpenRef = useRef(false);
   const router = useRouter();
 
   const items = useMemo<CommandItem[]>(() => {
@@ -146,12 +151,19 @@ export function CommandPalette() {
   useEffect(() => {
     if (open) {
       inputRef.current?.focus();
-    } else {
-      // Restore focus to the trigger when the palette closes -- the
-      // activedescendant pattern leaves focus on the input, so hand it
-      // back to the trigger so keyboard users don't lose their place.
-      triggerRef.current?.focus();
+    } else if (wasOpenRef.current) {
+      // Restore focus to the trigger on a real close (open was true), not
+      // on initial mount. Focusing the trigger on mount hijacked initial
+      // page focus -- the skip-to-content link and the early nav links were
+      // unreachable by Tab because focus started on the ⌘K button
+      // mid-document. Skip the restore when the trigger is hidden (mobile:
+      // the button is display:none below the sm: breakpoint) so focus
+      // doesn't land on an invisible element -- it falls back to <body> as
+      // the palette's input unmounts.
+      const trigger = triggerRef.current;
+      if (trigger && trigger.offsetParent !== null) trigger.focus();
     }
+    wasOpenRef.current = open;
   }, [open]);
 
   function handleQueryChange(next: string) {

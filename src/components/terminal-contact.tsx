@@ -40,8 +40,17 @@ export function TerminalContact() {
   const answersRef = useRef({ email: "", name: "", reason: "" });
   const inputRef = useRef<HTMLInputElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  // Only auto-focus the input once the user has actually engaged with the
+  // terminal (clicked the transcript or tabbed into the input). Focusing on
+  // initial mount would hijack the skip-to-content link for keyboard users
+  // and pop the on-screen keyboard on mobile the instant the homepage loads
+  // -- before the visitor has decided to contact. The step-change focus
+  // still keeps the cursor in the input as the user advances email→name→
+  // reason, just not on the very first render.
+  const engagedRef = useRef(false);
 
   useEffect(() => {
+    if (!engagedRef.current) return;
     inputRef.current?.focus();
   }, [step]);
 
@@ -130,7 +139,10 @@ export function TerminalContact() {
       </div>
       <div
         ref={transcriptRef}
-        onClick={() => inputRef.current?.focus()}
+        onClick={() => {
+          engagedRef.current = true;
+          inputRef.current?.focus();
+        }}
         className="h-[360px] w-full overflow-y-auto p-4 font-mono text-sm"
       >
         {lines.map((line, i) => (
@@ -147,6 +159,9 @@ export function TerminalContact() {
               type={step === "email" ? "email" : "text"}
               value={value}
               onChange={(e) => setValue(e.target.value)}
+              onFocus={() => {
+                engagedRef.current = true;
+              }}
               autoComplete="off"
               autoCapitalize="off"
               spellCheck={false}
