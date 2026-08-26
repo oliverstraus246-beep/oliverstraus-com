@@ -15,6 +15,17 @@ interface CommandItem {
 
 const EMAIL = "oliverstraus246@gmail.com";
 
+// Lowercase + strip combining diacritics so the palette's filter is
+// accent-insensitive: "resume" matches "View Résumé". NFD decomposes
+// accented letters into their base + combining mark, then the regex
+// removes the combining marks (U+0300-U+036F), leaving the base letter.
+function fold(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 /**
  * Cmd/Ctrl+K quick-nav palette -- jump to any section, venture, or link
  * without touching the mouse. Fits the terminal aesthetic already
@@ -92,10 +103,14 @@ export function CommandPalette() {
 
   const filtered = useMemo(() => {
     if (!query.trim()) return items;
-    const q = query.toLowerCase();
+    // Case- and accent-insensitive match so "resume" finds "View Résumé" --
+    // the résumé item's label carries an accent that a plain
+    // .toLowerCase().includes() misses, sending the most common spelling
+    // to "No matches." fold() strips combining diacritics (NFD + remove
+    // the combining mark range) on both the query and each label/hint.
+    const q = fold(query);
     return items.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) || item.hint.toLowerCase().includes(q),
+      (item) => fold(item.label).includes(q) || fold(item.hint).includes(q),
     );
   }, [items, query]);
 
