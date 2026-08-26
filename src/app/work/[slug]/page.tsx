@@ -161,9 +161,9 @@ export default async function VenturePage({
                 ] as const
               ).map(([label, text]) => (
                 <div key={label}>
-                  <p className="font-mono text-[11px] uppercase tracking-widest text-accent-blue">
+                  <h2 className="font-mono text-[11px] uppercase tracking-widest text-accent-blue">
                     {label}
-                  </p>
+                  </h2>
                   <p className="text-pretty mt-3 text-sm leading-relaxed text-foreground/80">
                     {text}
                   </p>
@@ -201,9 +201,9 @@ export default async function VenturePage({
 
           {venture.stack && venture.stack.length > 0 && (
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+              <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                 Stack
-              </p>
+              </h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {venture.stack.map((tech) => (
                   <span
@@ -231,9 +231,9 @@ export default async function VenturePage({
       </div>
 
       <div className="mt-16 border-t border-border pt-10">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
           More ventures
-        </p>
+        </h2>
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
           {more.map((venture) => (
             <Link
