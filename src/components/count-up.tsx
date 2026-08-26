@@ -33,12 +33,17 @@ export function CountUp({ value }: { value: string }) {
     const target = parseFloat(numStr!);
     const decimals = numStr!.includes(".") ? numStr!.split(".")[1]!.length : 0;
 
-    setDisplay(`${prefix}${(0).toFixed(decimals)}${suffix}`);
-
+    // Don't snap to 0 here in the effect body -- that would flash the final
+    // value (SSR/paint) -> 0 -> count-up, especially visible for above-the-
+    // fold stats (the hero "At a glance" panel). Instead keep showing the
+    // real value until the observer fires, then start from 0 in the same
+    // tick the rAF begins -- off-screen numbers never flash, on-screen ones
+    // count up once on load (a nice effect, not a flicker).
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0]?.isIntersecting || started.current) return;
         started.current = true;
+        setDisplay(`${prefix}${(0).toFixed(decimals)}${suffix}`);
         const start = performance.now();
         function tick(now: number) {
           const progress = Math.min((now - start) / DURATION_MS, 1);

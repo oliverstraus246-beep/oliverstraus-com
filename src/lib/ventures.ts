@@ -247,6 +247,10 @@ export const VENTURES: readonly Venture[] = [
       { value: "11", label: "Hand-tuned color themes" },
       { value: "3", label: "Upstream bugs fixed" },
     ],
+    image: {
+      src: "/assets/ventures/the-reaper.jpg",
+      alt: "The Reaper — a handheld ESP32-S3 multi-band wireless pentesting toolkit with seven radios",
+    },
   },
 ] as const;
 

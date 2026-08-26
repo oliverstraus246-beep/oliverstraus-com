@@ -26,16 +26,20 @@ const LOG = [
   },
 ] as const;
 
+import { Reveal } from "@/components/reveal";
+
 export function PhilosophySection() {
   return (
     <section id="about" className="relative py-20">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          04 / About
-        </p>
-        <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-          How the work gets decided.
-        </h2>
+        <Reveal>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            04 / About
+          </p>
+          <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+            How the work gets decided.
+          </h2>
+        </Reveal>
 
         <div className="mt-16 overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-2 border-b border-border px-6 py-4">
@@ -49,11 +53,14 @@ export function PhilosophySection() {
 
           <div className="space-y-6 p-6 font-mono text-sm sm:p-10">
             {LOG.map((entry) => (
-              <div key={entry.tag} className="flex flex-col gap-1 sm:flex-row sm:gap-6">
-                <span className="shrink-0 text-muted-foreground">
+              <div
+                key={entry.tag}
+                className="flex flex-col gap-1 sm:flex-row sm:gap-6"
+              >
+                <span className="shrink-0 text-muted-foreground whitespace-pre">
                   [{entry.year}]
                 </span>
-                <span className="shrink-0 text-foreground">
+                <span className="shrink-0 text-foreground whitespace-pre">
                   {entry.tag.padEnd(14, " ")}
                 </span>
                 <span className="leading-relaxed text-foreground/80">

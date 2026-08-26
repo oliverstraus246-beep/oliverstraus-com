@@ -18,8 +18,13 @@ const EMAIL = "oliverstraus246@gmail.com";
 /**
  * Cmd/Ctrl+K quick-nav palette -- jump to any section, venture, or link
  * without touching the mouse. Fits the terminal aesthetic already
- * established (boot sequence, career.log, contact.sh) rather than
- * bolting on a generic library component.
+ * established (boot sequence, career.log, contact.sh).
+ *
+ * Accessibility: implemented as an ARIA 1.2 combobox. The input owns the
+ * single focus; the results are a listbox of role="option" items the input
+ * points at via aria-activedescendant, so a screen-reader user hears which
+ * item is active as they arrow through and Enter selects it. Tab is trapped
+ * inside the dialog while open, and focus returns to the trigger on close.
  */
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -27,6 +32,8 @@ export function CommandPalette() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const items = useMemo<CommandItem[]>(() => {
@@ -87,6 +94,9 @@ export function CommandPalette() {
     );
   }, [items, query]);
 
+  const listId = "command-palette-list";
+  const optionId = (i: number) => `command-palette-option-${i}`;
+
   function close() {
     setOpen(false);
     setQuery("");
@@ -108,18 +118,24 @@ export function CommandPalette() {
         return;
       }
       if (!open) return;
-      if (e.key === "Escape") close();
-      if (e.key === "ArrowDown") {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex((i) => (i + 1) % Math.max(filtered.length, 1));
-      }
-      if (e.key === "ArrowUp") {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setActiveIndex((i) => (i - 1 + Math.max(filtered.length, 1)) % Math.max(filtered.length, 1));
-      }
-      if (e.key === "Enter") {
+      } else if (e.key === "Enter") {
         e.preventDefault();
         select(filtered[activeIndex]);
+      } else if (e.key === "Tab") {
+        // Focus trap: keep Tab cycling back to the input (the only focusable
+        // element in the dialog). Options are navigated by arrow keys + aria-
+        // activedescendant, not Tab, per the combobox pattern.
+        e.preventDefault();
+        inputRef.current?.focus();
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -128,7 +144,14 @@ export function CommandPalette() {
   }, [open, filtered, activeIndex]);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open) {
+      inputRef.current?.focus();
+    } else {
+      // Restore focus to the trigger when the palette closes -- the
+      // activedescendant pattern leaves focus on the input, so hand it
+      // back to the trigger so keyboard users don't lose their place.
+      triggerRef.current?.focus();
+    }
   }, [open]);
 
   function handleQueryChange(next: string) {
@@ -139,10 +162,12 @@ export function CommandPalette() {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="hidden h-11 items-center gap-1.5 rounded-full border border-border px-3.5 font-mono text-[11px] text-muted-foreground transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:flex"
         aria-label="Open command palette"
+        aria-keyshortcuts="Meta+K"
       >
         <span aria-hidden="true">⌘</span>K
       </button>
@@ -153,6 +178,7 @@ export function CommandPalette() {
           onClick={close}
         >
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -167,6 +193,11 @@ export function CommandPalette() {
                 ref={inputRef}
                 value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
+                role="combobox"
+                aria-expanded="true"
+                aria-controls={listId}
+                aria-activedescendant={filtered.length ? optionId(activeIndex) : undefined}
+                aria-autocomplete="list"
                 placeholder="Jump to a section, venture, or link..."
                 className="w-full bg-transparent font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
@@ -175,19 +206,23 @@ export function CommandPalette() {
               </span>
             </div>
 
-            <ul className="max-h-80 overflow-y-auto py-2">
+            <ul
+              id={listId}
+              role="listbox"
+              aria-label="Commands"
+              className="max-h-80 overflow-y-auto py-2"
+            >
               {filtered.length === 0 && (
                 <li className="px-4 py-6 text-center font-mono text-sm text-muted-foreground">
                   No matches.
                 </li>
               )}
               {filtered.map((item, i) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
+                <li key={item.id} role="option" id={optionId(i)} aria-selected={i === activeIndex}>
+                  <div
                     onClick={() => select(item)}
-                    onMouseEnter={() => setActiveIndex(i)}
-                    className={`flex w-full items-center justify-between px-4 py-2.5 text-left font-mono text-sm transition-colors ${
+                    onMouseMove={() => setActiveIndex(i)}
+                    className={`flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left font-mono text-sm transition-colors ${
                       i === activeIndex
                         ? "bg-accent-blue/10 text-accent-blue"
                         : "text-foreground/80"
@@ -200,7 +235,7 @@ export function CommandPalette() {
                       )}
                     </span>
                     <span className="text-xs text-muted-foreground">{item.hint}</span>
-                  </button>
+                  </div>
                 </li>
               ))}
             </ul>

@@ -1,4 +1,5 @@
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { Reveal } from "@/components/reveal";
 import { SpotlightCard } from "@/components/spotlight-card";
 import { VENTURES } from "@/lib/ventures";
 
@@ -6,12 +7,14 @@ export function VenturesSection() {
   return (
     <section id="work" className="relative py-20">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          02 / Work
-        </p>
-        <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-          {VENTURES.length} ventures. Built, run, or led solo.
-        </h2>
+        <Reveal>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            02 / Work
+          </p>
+          <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+            {VENTURES.length} ventures. Built, run, or led solo.
+          </h2>
+        </Reveal>
 
         <ScrollReveal className="mt-16 grid grid-cols-1 gap-5 md:grid-cols-2">
           {VENTURES.map((venture, i) => {

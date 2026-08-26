@@ -31,6 +31,7 @@ export function ThemeSwitcher() {
   const [mode, setMode] = useState<ThemeMode>("dark");
   const [accent, setAccent] = useState<ThemeAccent>("blue");
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const storedMode = localStorage.getItem("theme");
@@ -46,6 +47,20 @@ export function ThemeSwitcher() {
     }
   }, []);
 
+  // Focus management: move focus into the menu when it opens (first item),
+  // and hand it back to the trigger when it closes -- same pattern as the nav
+  // overlay, so keyboard users get a predictable path instead of losing focus.
+  const didOpenRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      didOpenRef.current = true;
+      const firstItem = rootRef.current?.querySelector<HTMLElement>("[role='menuitemradio'], [role='menuitem']");
+      firstItem?.focus();
+    } else if (didOpenRef.current) {
+      triggerRef.current?.focus();
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e: PointerEvent) {
@@ -55,6 +70,26 @@ export function ThemeSwitcher() {
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
+      // Arrow-key roving between the menu's radio items, per the menu
+      // pattern. Home/End jump to the first/last; arrows move by one.
+      const items = Array.from(
+        rootRef.current?.querySelectorAll<HTMLElement>("[role='menuitemradio']") ?? [],
+      );
+      if (items.length === 0) return;
+      const currentIndex = items.findIndex((el) => el === document.activeElement);
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        e.preventDefault();
+        items[(currentIndex + 1) % items.length]?.focus();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        items[(currentIndex - 1 + items.length) % items.length]?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        items[0]?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        items[items.length - 1]?.focus();
+      }
     }
     window.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("keydown", onKeyDown);
@@ -79,6 +114,7 @@ export function ThemeSwitcher() {
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Theme settings"
@@ -102,11 +138,12 @@ export function ThemeSwitcher() {
           <p className="px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Appearance
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-1.5">
+          <div role="group" aria-label="Appearance" className="mt-2 grid grid-cols-2 gap-1.5">
             <button
               type="button"
+              role="menuitemradio"
+              aria-checked={mode === "dark"}
               onClick={() => chooseMode("dark")}
-              aria-pressed={mode === "dark"}
               className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 font-mono text-xs transition-colors duration-150 active:scale-95 ${
                 mode === "dark"
                   ? "border-accent-blue text-accent-blue"
@@ -118,8 +155,9 @@ export function ThemeSwitcher() {
             </button>
             <button
               type="button"
+              role="menuitemradio"
+              aria-checked={mode === "light"}
               onClick={() => chooseMode("light")}
-              aria-pressed={mode === "light"}
               className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 font-mono text-xs transition-colors duration-150 active:scale-95 ${
                 mode === "light"
                   ? "border-accent-blue text-accent-blue"
@@ -134,14 +172,15 @@ export function ThemeSwitcher() {
           <p className="mt-4 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Accent
           </p>
-          <div className="mt-2 flex items-center gap-1.5">
+          <div role="group" aria-label="Accent color" className="mt-2 flex items-center gap-1.5">
             {ACCENTS.map((a) => (
               <button
                 key={a.id}
                 type="button"
-                onClick={() => chooseAccent(a.id)}
+                role="menuitemradio"
+                aria-checked={accent === a.id}
                 aria-label={`${a.label} accent`}
-                aria-pressed={accent === a.id}
+                onClick={() => chooseAccent(a.id)}
                 className="relative flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 active:scale-90"
               >
                 <span

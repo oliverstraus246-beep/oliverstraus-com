@@ -6,6 +6,7 @@ import { Footer } from "@/components/footer";
 import { Nav } from "@/components/nav";
 import { ResumeModal } from "@/components/resume-modal";
 import { ScrollReset } from "@/components/scroll-reset";
+import { ScrollProgress } from "@/components/scroll-progress";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -156,6 +157,7 @@ export default function RootLayout({
             rather than executing. */}
         <script type="application/ld+json">{JSON.stringify(PERSON_JSON_LD)}</script>
         <ScrollReset />
+        <ScrollProgress />
         <BootSequence />
         <Cursor />
         <div className="grain-overlay no-print" aria-hidden="true" />

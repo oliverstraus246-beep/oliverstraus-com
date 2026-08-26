@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Reveal } from "@/components/reveal";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { TimelineProgress } from "@/components/timeline-progress";
 
 interface TimelineEntry {
   readonly date: string;
@@ -127,18 +129,23 @@ export function TimelineSection() {
   return (
     <section id="timeline" className="relative py-20">
       <div className="mx-auto max-w-6xl px-6">
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          03 / Timeline
-        </p>
-        <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-          How it built up.
-        </h2>
+        <Reveal>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            03 / Timeline
+          </p>
+          <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+            How it built up.
+          </h2>
+        </Reveal>
 
-        <ScrollReveal className="mt-16 max-w-3xl border-l border-border">
-          {TIMELINE.map((entry) => (
-            <TimelineRow key={entry.name} entry={entry} />
-          ))}
-        </ScrollReveal>
+        <div className="relative mt-16 max-w-3xl">
+          <TimelineProgress />
+          <ScrollReveal>
+            {TIMELINE.map((entry) => (
+              <TimelineRow key={entry.name} entry={entry} />
+            ))}
+          </ScrollReveal>
+        </div>
       </div>
     </section>
   );
