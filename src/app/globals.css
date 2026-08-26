@@ -254,6 +254,13 @@
   html {
     @apply font-sans overflow-x-hidden;
     scroll-behavior: smooth;
+    /* Reserve the vertical scrollbar gutter even on pages shorter than the
+       viewport, so centered max-w-* content doesn't shift ~15px left/right
+       as the classic scrollbar appears and disappears between long and
+       short routes. No-op on overlay-scrollbar platforms (macOS/mobile),
+       which have a zero-width gutter -- only evens out Windows/other
+       classic-scrollbar layouts. */
+    scrollbar-gutter: stable;
   }
   section[id] {
     scroll-margin-top: 5rem;
