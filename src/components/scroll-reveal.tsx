@@ -53,8 +53,21 @@ export function ScrollReveal({
 
       items.forEach((item, i) => {
         const dir = DIRECTIONS[i % DIRECTIONS.length]!;
+        // opacity (not autoAlpha/visibility:hidden) deliberately: this
+        // component wraps real content (the skills grid, the stats band).
+        // visibility:hidden pulls items out of the screen-reader a11y tree
+        // until they scroll into view, but a SR user who navigates without
+        // sighted scrolling reaches the section heading (rendered via Reveal,
+        // which uses opacity for this same reason) and then the content
+        // below it is absent -- they can't move to it, so they never trigger
+        // the scroll that would reveal it. opacity:0 keeps the items in the
+        // a11y tree and readable while still visually hidden + translated
+        // off-position for the slam-in. Matches the decision documented in
+        // reveal.tsx. (The wrapped content isn't interactive -- skill chips
+        // and stat cards are spans/divs -- so invisible-but-clickable
+        // during the brief pre-reveal window isn't a concern here.)
         gsap.set(item, {
-          autoAlpha: 0,
+          opacity: 0,
           x: dir.x,
           y: dir.y,
           rotate: dir.rotate,
@@ -66,7 +79,7 @@ export function ScrollReveal({
         once: true,
         onEnter: (batch) =>
           gsap.to(batch, {
-            autoAlpha: 1,
+            opacity: 1,
             x: 0,
             y: 0,
             rotate: 0,
