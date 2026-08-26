@@ -4,10 +4,32 @@ import { ResumeContent } from "@/components/resume-content";
 import { ResumePresetPicker } from "@/components/resume-preset-picker";
 import { ResumePrintButton } from "@/components/resume-print-button";
 
+const FULL_TITLE = "Résumé | Oliver Straus";
+const DESCRIPTION = "Oliver Straus's résumé — appointed CFO at 14, builder since. Skills, education, and professional experience.";
+
 export const metadata: Metadata = {
   title: "Résumé",
-  description: "Oliver Straus's résumé.",
+  description: DESCRIPTION,
   alternates: { canonical: "/resume" },
+  // openGraph/twitter replace the root layout's values field for field (a
+  // child route's object entirely REPLACES the parent's -- verified on the
+  // venture pages), so without this /resume inherited the homepage's card
+  // (title "Oliver Straus", url "/", homepage description). The image comes
+  // from resume/opengraph-image.tsx below, same file convention as the
+  // venture and root images.
+  openGraph: {
+    title: FULL_TITLE,
+    description: DESCRIPTION,
+    url: "https://oliverstraus.com/resume",
+    siteName: "Oliver Straus",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: FULL_TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 // Real, crawlable fallback destination -- every "Resume" trigger point
