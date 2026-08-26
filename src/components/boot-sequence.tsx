@@ -49,6 +49,15 @@ export function BootSequence() {
     // throttled device without ever being mistakable for "stuck forever."
     const watchdog = setTimeout(finish, 12000);
 
+    // Escape dismisses the boot overlay for keyboard users -- the visible
+    // Skip button is the mouse/touch affordance, but a keyboard user who
+    // lands on the page shouldn't have to Tab-locate the button to skip
+    // the animation. Escape mirrors the dialog-dismissal convention.
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") finish();
+    }
+    window.addEventListener("keydown", onKey);
+
     (async () => {
       try {
         for (let i = 0; i < LINES.length; i++) {
@@ -68,6 +77,7 @@ export function BootSequence() {
     return () => {
       finishedRef.current = true;
       clearTimeout(watchdog);
+      window.removeEventListener("keydown", onKey);
     };
   }, []);
 
@@ -89,7 +99,17 @@ export function BootSequence() {
       onClick={finish}
       aria-hidden={stage === "outro"}
     >
-      <div className="mx-auto w-full max-w-2xl">
+      <div
+        className="mx-auto w-full max-w-2xl"
+        // The boot lines are decorative atmosphere, not page content. Without
+        // this, a screen-reader user who reads into the overlay hears the 11
+        // terminal lines ("$ ssh oliver@...", "sudo apt install...", etc.)
+        // announced as real content. aria-hidden keeps them out of the a11y
+        // tree while the Skip button (a sibling of this div) stays focusable
+        // for keyboard users. The page's skip link already routes SR users
+        // straight to #site-content, bypassing the overlay entirely.
+        aria-hidden="true"
+      >
         {shown.map((line, i) => (
           <p
             key={i}
