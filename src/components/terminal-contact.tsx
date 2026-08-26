@@ -178,7 +178,10 @@ export function TerminalContact() {
                   ? "Press Enter to retry"
                   : (PROMPTS[step as ContactField] ?? "Contact input")
               }
-              className="flex-1 bg-transparent font-mono text-sm text-accent-blue caret-accent-blue outline-none"
+              // py-1 grows the tap target to ~28px (WCAG 2.2 AA 24px minimum)
+              // for mobile typists. The form row is items-center, so the "$"
+              // prompt stays vertically aligned with the taller input.
+              className="flex-1 bg-transparent py-1 font-mono text-sm text-accent-blue caret-accent-blue outline-none"
             />
           </form>
         )}

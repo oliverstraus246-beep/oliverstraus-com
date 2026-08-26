@@ -94,7 +94,10 @@ export default async function VenturePage({
       <script type="application/ld+json">{JSON.stringify(ventureJsonLd)}</script>
       <Link
         href="/#work"
-        className="group animate-fade-up inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+        // py-1.5 -my-1.5 enlarges the tap target to ~28px (WCAG 2.2 AA 24px
+        // minimum) with the negative margin cancelling the box growth so
+        // the link's visual position is unchanged.
+        className="group animate-fade-up inline-flex items-center gap-1.5 py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
       >
         <span className="transition-transform duration-300 group-hover:-translate-x-1">
           &larr;
@@ -244,7 +247,10 @@ export default async function VenturePage({
           </h2>
           <Link
             href="/work"
-            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+            // py-1.5 -my-1.5 enlarges the tap target to ~28px (WCAG 2.2 AA
+            // 24px minimum) with the negative margin cancelling the box
+            // growth so the link's visual position is unchanged.
+            className="inline-flex items-center py-1.5 -my-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
           >
             All ventures &rarr;
           </Link>

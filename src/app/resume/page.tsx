@@ -21,7 +21,10 @@ export default function ResumePage() {
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/"
-          className="font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+          // py-1.5 -my-1.5 enlarges the tap target to ~28px (WCAG 2.2 AA 24px
+          // minimum) with the negative margin cancelling the box growth so
+          // the link's visual position is unchanged.
+          className="inline-flex items-center py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
         >
           &larr; Back
         </Link>

@@ -160,7 +160,13 @@ function TimelineRow({ entry }: { entry: TimelineEntry }) {
         {entry.href && (
           <Link
             href={entry.href}
-            className="group/link mt-4 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+            // py-1.5 -my-1.5: grows the tap target to ~28px tall (clearing the
+            // WCAG 2.2 AA 24px minimum) while the negative vertical margin
+            // cancels the box growth in the flow, so the link text stays at
+            // exactly the same position and the surrounding spacing is
+            // unchanged. The hit area simply extends 6px above and below the
+            // visible text -- invisible enlargement, no visual shift.
+            className="group/link mt-4 inline-flex items-center gap-1.5 py-1.5 -my-1.5 font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
           >
             {entry.cta ?? "Read more"}
             <span aria-hidden="true" className="transition-transform duration-300 group-hover/link:translate-x-1">

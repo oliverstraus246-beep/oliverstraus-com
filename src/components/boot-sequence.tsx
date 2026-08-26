@@ -112,7 +112,10 @@ export function BootSequence() {
         <button
           type="button"
           onClick={finish}
-          className="absolute bottom-8 right-8 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-accent-blue"
+          // py-1.5 grows the tap target to ~28px (WCAG 2.2 AA 24px minimum);
+          // the button is absolute-positioned so the extra height extends it
+          // upward from its bottom-8 anchor, no flow impact.
+          className="absolute bottom-8 right-8 py-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-accent-blue"
         >
           Skip &rarr;
         </button>
