@@ -61,8 +61,17 @@ export function CountUp({ value }: { value: string }) {
   }, [value]);
 
   return (
-    <span ref={ref} className="tabular-nums">
-      {display}
+    <span className="tabular-nums">
+      {/* The animated count churns textContent ~60x/s for 1.2s. Exposing
+       * that to assistive tech means a screen-reader user who reaches the
+       * stat mid-animation hears a transient wrong value ($87K instead of
+       * $250K), and the rapid changes would flood a live region. Hide the
+       * moving digits and give AT the real final value in a stable sr-only
+       * sibling so the number is always correct, animation or not. */}
+      <span ref={ref} aria-hidden="true">
+        {display}
+      </span>
+      <span className="sr-only">{value}</span>
     </span>
   );
 }

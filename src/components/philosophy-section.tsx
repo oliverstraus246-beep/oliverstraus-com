@@ -68,7 +68,7 @@ export function PhilosophySection() {
                 </span>
               </div>
             ))}
-            <div className="flex items-center gap-2 pt-2 text-foreground">
+            <div className="flex items-center gap-2 pt-2 text-foreground" aria-hidden="true">
               <span>$</span>
               <span className="h-4 w-2 animate-pulse bg-foreground" />
             </div>
