@@ -17,9 +17,30 @@ export async function generateMetadata({
   const { slug } = await params;
   const venture = getVenture(slug);
   if (!venture) return {};
+  const title = `${venture.name} — Oliver Straus`;
+  // openGraph/twitter are NOT deep-merged with the root layout's values --
+  // a child route's openGraph/twitter object entirely REPLACES the
+  // parent's for that route, field for field. Verified against actual
+  // rendered <head> output: an earlier version of this that only set
+  // {title, description} silently dropped og:type, og:site_name,
+  // og:locale, and downgraded twitter:card from summary_large_image to
+  // plain summary. Every field the root sets has to be repeated here too.
   return {
-    title: `${venture.name} — Oliver Straus`,
+    title,
     description: venture.description,
+    openGraph: {
+      title,
+      description: venture.description,
+      url: `https://oliverstraus.com/work/${venture.slug}`,
+      siteName: "Oliver Straus",
+      locale: "en_US",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: venture.description,
+    },
   };
 }
 
