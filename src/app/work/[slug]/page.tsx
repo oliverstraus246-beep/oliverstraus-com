@@ -232,7 +232,10 @@ export default async function VenturePage({
               href={venture.repoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+              // py-1.5 -my-1.5 enlarges the tap target to ~28px (WCAG 2.2 AA
+              // 24px minimum); the bare text-xs link was ~14px. Negative
+              // margin cancels the box growth so position is unchanged.
+              className="inline-flex items-center py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
             >
               View on GitLab &rarr;
             </a>
