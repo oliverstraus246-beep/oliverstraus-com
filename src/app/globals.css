@@ -473,9 +473,9 @@
   --resume-bg: #faf8f4;
   --resume-sidebar-bg: #f0ebe1;
   --resume-text: #292420;
-  --resume-muted: #7d7468;
+  --resume-muted: #6e6559; /* 5.40 on #faf8f4, 4.82 on sidebar #f0ebe1 -- AA pass; was #7d7468 (4.33/3.87 fail) */
   --resume-border: #e2d9c9;
-  --resume-accent: #8a6d3b;
+  --resume-accent: #8a6d3b; /* decorative timeline dot only (aria-hidden), never text -- 4.57 on #faf8f4 OK */
 }
 [data-resume-preset="terminal"] {
   --resume-bg: #0c0f12;
