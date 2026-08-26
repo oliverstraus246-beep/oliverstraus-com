@@ -152,6 +152,57 @@
   --ring: #2fa86c;
 }
 
+/* Light-theme accent retuning. The vibrant accents above are tuned for the
+   dark background and fail WCAG AA on the light theme's near-white surfaces
+   (measured: amber 2.25:1, emerald 3.03:1, violet 3.85:1 on white). Here each
+   accent uses the lightest shade of its hue that still clears 4.5:1 on #fff,
+   so the accent stays as vibrant as AA allows rather than dropping to a
+   muddy brown. The signature blue already passes at 4.70:1 on white and is
+   left untouched.
+   --accent-blue-dim is set DARKER than the main accent here (the opposite
+   of dark theme, where dim is lighter): a lighter tint can't hit contrast on
+   white at all, and a darker dim keeps a visible hover change (the timeline
+   link's hover:text-accent-blue-dim) while raising contrast for the few
+   places dim is used as plain text (boot sequence, command palette). */
+:root[data-theme="light"][data-accent="amber"] {
+  --accent-blue: #94631a;
+  --accent-blue-dim: #7a5012;
+  --primary: #94631a;
+  --ring: #94631a;
+}
+:root[data-theme="light"][data-accent="violet"] {
+  --accent-blue: #7a5cd0;
+  --accent-blue-dim: #6346b8;
+  --primary: #7a5cd0;
+  --ring: #7a5cd0;
+}
+:root[data-theme="light"][data-accent="emerald"] {
+  --accent-blue: #1d7a48;
+  --accent-blue-dim: #176b3e;
+  --primary: #1d7a48;
+  --ring: #1d7a48;
+}
+
+/* Dark-theme blue retuning. The signature #2f6fe0 (lum ~0.18) is tuned for
+   fills/selection but as 11px text it misses AA on the dark surfaces --
+   measured 4.24:1 on --background and 3.92:1 on --card, across 30 elements
+   (links, role labels, section categories), and dark+blue is the DEFAULT
+   most visitors see. On a dark background contrast goes UP as the text gets
+   LIGHTER, so the fix is a more luminous cobalt, not a darker one: #4280e8
+   clears 4.5 on both surfaces (5.20 on background, 4.81 on card). Scoped to
+   dark+blue only -- light+blue already passes at 4.70 with #2f6fe0, and the
+   alternate dark accents (amber/violet/emerald) already pass on the dark
+   bg. ::selection drops to ~3.6:1 (foreground on the lighter blue), an
+   acceptable trade since selection is a transient, WCAG-lenient state and
+   the 30 persistent text elements matter more. No-JS visitors have no
+   data-theme/data-accent attributes and fall back to :root's #2f6fe0. */
+:root[data-theme="dark"][data-accent="blue"] {
+  --accent-blue: #4280e8;
+  --accent-blue-dim: #6fa3ed;
+  --primary: #4280e8;
+  --ring: #4280e8;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
