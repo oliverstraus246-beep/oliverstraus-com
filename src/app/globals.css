@@ -242,6 +242,18 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+  /* Hide the default <summary> disclosure triangle cross-browser. The
+     timeline rows render their own indicator (a "More"/"Less" label plus
+     a rotated ›), so the UA's native triangle would double up in
+     Safari/WebKit. list-style:none covers Firefox (summary is list-item
+     there); ::-webkit-details-marker covers Chrome/Safari. Applied
+     globally in base so any future <details> benefits too. */
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     transition-property: background-color, color;
