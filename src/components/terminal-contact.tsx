@@ -119,7 +119,7 @@ export function TerminalContact() {
   const inputDisabled = step === "submitting" || step === "done";
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card transition-colors duration-200 focus-within:border-accent-blue">
       <div className="flex items-center gap-2 border-b border-border px-6 py-4">
         <span className="h-3 w-3 rounded-full bg-muted-foreground/30" />
         <span className="h-3 w-3 rounded-full bg-muted-foreground/30" />

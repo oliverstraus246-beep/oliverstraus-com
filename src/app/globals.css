@@ -222,6 +222,19 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Solid 2px full-opacity ring on keyboard focus for every element that
+     doesn't disable it. The base * rule above only sets outline-COLOR (ring
+     at 50% alpha), leaving the browser default `auto 1px` outline -- a weak,
+     semi-transparent indicator that varied in weight across elements. This
+     gives plain links (logo, nav, footer socials, "Get in touch", case-study
+     CTAs, back links) one consistent, strongly visible indicator. Elements
+     with their own `focus-visible:ring-*` (buttons, venture cards, timeline
+     <summary>) set `focus-visible:outline-none` in the utilities layer, which
+     overrides this, so they keep their box-shadow ring and never double up. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     transition-property: background-color, color;
