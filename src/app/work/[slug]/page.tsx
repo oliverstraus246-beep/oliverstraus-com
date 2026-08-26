@@ -238,9 +238,17 @@ export default async function VenturePage({
       </div>
 
       <div className="mt-16 border-t border-border pt-10">
-        <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          More ventures
-        </h2>
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            More ventures
+          </h2>
+          <Link
+            href="/work"
+            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+          >
+            All ventures &rarr;
+          </Link>
+        </div>
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
           {more.map((venture) => (
             <Link

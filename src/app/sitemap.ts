@@ -11,6 +11,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: base, changeFrequency: "monthly", priority: 1.0 },
     { url: `${base}/resume`, changeFrequency: "monthly", priority: 0.6 },
+    // The venture hub. Lower priority than the individual ventures (which
+    // carry the actual content) but high enough to be crawled as their
+    // index parent.
+    { url: `${base}/work`, changeFrequency: "monthly", priority: 0.7 },
     ...VENTURES.map((venture) => ({
       url: `${base}/work/${venture.slug}`,
       changeFrequency: "monthly" as const,
