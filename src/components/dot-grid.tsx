@@ -208,6 +208,16 @@ export function DotGrid({
     const wrap = wrapperRef.current;
     if (!wrap) return;
 
+    // Reduced motion: the proximity color shift (dots near the cursor
+    // light up) is a reactive highlight, not motion, so it stays -- the draw
+    // loop reads pointerRef for color regardless. But the GSAP inertia push +
+    // elastic return (mousemove) and the click shockwave ARE positional
+    // motion, and GSAP writes inline styles directly so the global
+    // @media (prefers-reduced-motion) CSS block doesn't touch them. Gate them.
+    const reducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const onMove = (e: MouseEvent) => {
       const now = performance.now();
       const pr = pointerRef.current;
@@ -234,30 +244,33 @@ export function DotGrid({
       pr.x = e.clientX - rect.left;
       pr.y = e.clientY - rect.top;
 
-      for (const dot of dotsRef.current) {
-        const dist = Math.hypot(dot.cx - pr.x, dot.cy - pr.y);
-        if (speed > speedTrigger && dist < proximity && !dot._inertiaApplied) {
-          dot._inertiaApplied = true;
-          gsap.killTweensOf(dot);
-          const pushX = dot.cx - pr.x + vx * 0.005;
-          const pushY = dot.cy - pr.y + vy * 0.005;
-          gsap.to(dot, {
-            inertia: { xOffset: pushX, yOffset: pushY, resistance },
-            onComplete: () => {
-              gsap.to(dot, {
-                xOffset: 0,
-                yOffset: 0,
-                duration: returnDuration,
-                ease: "elastic.out(1,0.75)",
-              });
-              dot._inertiaApplied = false;
-            },
-          });
+      if (!reducedMotion) {
+        for (const dot of dotsRef.current) {
+          const dist = Math.hypot(dot.cx - pr.x, dot.cy - pr.y);
+          if (speed > speedTrigger && dist < proximity && !dot._inertiaApplied) {
+            dot._inertiaApplied = true;
+            gsap.killTweensOf(dot);
+            const pushX = dot.cx - pr.x + vx * 0.005;
+            const pushY = dot.cy - pr.y + vy * 0.005;
+            gsap.to(dot, {
+              inertia: { xOffset: pushX, yOffset: pushY, resistance },
+              onComplete: () => {
+                gsap.to(dot, {
+                  xOffset: 0,
+                  yOffset: 0,
+                  duration: returnDuration,
+                  ease: "elastic.out(1,0.75)",
+                });
+                dot._inertiaApplied = false;
+              },
+            });
+          }
         }
       }
     };
 
     const onClick = (e: MouseEvent) => {
+      if (reducedMotion) return;
       const rect = canvasRef.current!.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;

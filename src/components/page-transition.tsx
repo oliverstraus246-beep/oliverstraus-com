@@ -27,6 +27,17 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   useGSAP(
     () => {
+      // Reduced motion: snap visible instantly. The @media
+      // (prefers-reduced-motion) CSS block only kills CSS animations/transitions
+      // -- GSAP writes inline styles directly, so it bypasses that rule and the
+      // fade would still play. Match the other GSAP components and skip the tween.
+      const reduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduced) {
+        gsap.set(ref.current, { autoAlpha: 1 });
+        return;
+      }
       gsap.fromTo(
         ref.current,
         { autoAlpha: 0 },
