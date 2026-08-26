@@ -30,7 +30,19 @@ export default function Home() {
               Open a channel.
             </h2>
             <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              oliverstraus246@gmail.com · (303) 946-4224
+              <a
+                href="mailto:oliverstraus246@gmail.com"
+                className="transition-colors hover:text-accent-blue"
+              >
+                oliverstraus246@gmail.com
+              </a>
+              {" · "}
+              <a
+                href="tel:+13039464224"
+                className="transition-colors hover:text-accent-blue"
+              >
+                (303) 946-4224
+              </a>
             </p>
             <p className="mt-3 max-w-md font-mono text-xs text-muted-foreground">
               <span className="text-accent-blue">Now:</span> GED sprint ·
