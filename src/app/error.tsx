@@ -23,6 +23,11 @@ export default function Error({
 
   return (
     <main className="mx-auto flex min-h-[70vh] max-w-2xl flex-col justify-center px-6 py-32">
+      {/* Visible "500" is a styled eyebrow, not a heading -- give
+          screen-reader users navigating by headings an actual page
+          heading without changing the terminal aesthetic. Mirrors
+          not-found.tsx. */}
+      <h1 className="sr-only">Something went wrong</h1>
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
         500
       </p>
@@ -51,13 +56,16 @@ export default function Error({
         <button
           type="button"
           onClick={() => unstable_retry()}
-          className="group inline-flex w-fit items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+          // py-1.5 -my-1.5 enlarges the tap target to ~28px (WCAG 2.2 AA 24px
+          // minimum) with the negative margin cancelling the box growth so
+          // the button's visual position is unchanged.
+          className="group inline-flex w-fit items-center gap-1.5 py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="group inline-flex w-fit items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+          className="group inline-flex w-fit items-center gap-1.5 py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
         >
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
             &larr;

@@ -51,7 +51,10 @@ export default function NotFound() {
       </div>
       <Link
         href="/"
-        className="group mt-8 inline-flex w-fit items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+        // py-1.5 -my-1.5 enlarges the tap target to ~28px (WCAG 2.2 AA 24px
+        // minimum) with the negative margin cancelling the box growth so the
+        // link's visual position is unchanged.
+        className="group mt-8 inline-flex w-fit items-center gap-1.5 py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
       >
         <span className="transition-transform duration-300 group-hover:-translate-x-1">
           &larr;
