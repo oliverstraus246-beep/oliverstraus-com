@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
   DEFAULT_RESUME_PRESET,
   RESUME_PRESETS,
@@ -23,22 +23,31 @@ function readStored(): ResumePresetId {
  * mounts its own picker and its own ResumeContent, so selection syncs
  * through localStorage + a same-tab custom event (storage events don't
  * fire in the tab that made the change).
+ *
+ * Implemented with useSyncExternalStore rather than a useState + effect
+ * that calls setState on mount (which the react-hooks/set-state-in-effect
+ * rule flags, and rightly -- it's the "sync from an external store on
+ * mount" anti-pattern). useSyncExternalStore is built for this: subscribe
+ * to the change events, snapshot reads localStorage, and the server
+ * snapshot returns the default so hydration matches and the real value
+ * is picked up cleanly post-hydration. The snapshot returns a primitive
+ * string, so Object.is keeps it stable across renders (no re-render loop).
  */
-export function useResumePreset() {
-  const [preset, setPresetState] = useState<ResumePresetId>(DEFAULT_RESUME_PRESET);
+function subscribe(callback: () => void) {
+  window.addEventListener(CHANGE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
 
-  useEffect(() => {
-    setPresetState(readStored());
-    function onChange() {
-      setPresetState(readStored());
-    }
-    window.addEventListener(CHANGE_EVENT, onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener(CHANGE_EVENT, onChange);
-      window.removeEventListener("storage", onChange);
-    };
-  }, []);
+export function useResumePreset() {
+  const preset = useSyncExternalStore(
+    subscribe,
+    readStored,
+    () => DEFAULT_RESUME_PRESET,
+  );
 
   function setPreset(id: ResumePresetId) {
     window.localStorage.setItem(STORAGE_KEY, id);

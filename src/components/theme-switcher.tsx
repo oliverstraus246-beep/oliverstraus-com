@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
 export type ThemeMode = "dark" | "light";
@@ -13,9 +13,35 @@ const ACCENTS: ReadonlyArray<{ id: ThemeAccent; label: string; swatch: string }>
   { id: "emerald", label: "Emerald", swatch: "#2fa86c" },
 ];
 
-function applyTheme(mode: ThemeMode, accent: ThemeAccent) {
+const THEME_CHANGE_EVENT = "theme-change";
+
+// Module-scope: writing to document.documentElement.dataset from inside a
+// component trips react-hooks/immutability (modifying a global defined
+// outside the hook). Kept out here as a plain helper so the component just
+// calls it, same as the original applyTheme.
+function applyToDom(mode: ThemeMode, accent: ThemeAccent) {
   document.documentElement.dataset.theme = mode;
   document.documentElement.dataset.accent = accent;
+}
+
+function readMode(): ThemeMode {
+  if (typeof window === "undefined") return "dark";
+  return window.localStorage.getItem("theme") === "light" ? "light" : "dark";
+}
+
+function readAccent(): ThemeAccent {
+  if (typeof window === "undefined") return "blue";
+  const a = window.localStorage.getItem("accent");
+  return a === "amber" || a === "violet" || a === "emerald" ? a : "blue";
+}
+
+function subscribeTheme(callback: () => void) {
+  window.addEventListener(THEME_CHANGE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(THEME_CHANGE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
 }
 
 /**
@@ -28,24 +54,20 @@ function applyTheme(mode: ThemeMode, accent: ThemeAccent) {
  */
 export function ThemeSwitcher() {
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<ThemeMode>("dark");
-  const [accent, setAccent] = useState<ThemeAccent>("blue");
+  // Theme + accent are read from localStorage via useSyncExternalStore rather
+  // than useState + a mount effect that calls setState (which the
+  // react-hooks/set-state-in-effect rule flags). The blocking
+  // beforeInteractive script in layout.tsx sets data-theme/data-accent on
+  // <html> before first paint, so the page is already correct visually; this
+  // state just mirrors that for the switcher's own UI (the Moon/Sun icon,
+  // the checked swatch). The server snapshot returns the default so
+  // hydration matches, and the real persisted value is picked up cleanly
+  // post-hydration. Snapshots return primitives, so Object.is keeps them
+  // stable (no re-render loop).
+  const mode = useSyncExternalStore(subscribeTheme, readMode, () => "dark" as ThemeMode);
+  const accent = useSyncExternalStore(subscribeTheme, readAccent, () => "blue" as ThemeAccent);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const storedMode = localStorage.getItem("theme");
-    const storedAccent = localStorage.getItem("accent");
-    if (storedMode === "dark" || storedMode === "light") setMode(storedMode);
-    if (
-      storedAccent === "blue" ||
-      storedAccent === "amber" ||
-      storedAccent === "violet" ||
-      storedAccent === "emerald"
-    ) {
-      setAccent(storedAccent);
-    }
-  }, []);
 
   // Focus management: move focus into the menu when it opens (first item),
   // and hand it back to the trigger when it closes -- same pattern as the nav
@@ -99,16 +121,23 @@ export function ThemeSwitcher() {
     };
   }, [open]);
 
+  // Persist + apply: write the DOM dataset (the actual styling hook), write
+  // localStorage, and dispatch the change event so useSyncExternalStore
+  // re-snapshots and this component's mode/accent re-render. No local
+  // setState -- the store is the single source of truth.
+  function persist(nextMode: ThemeMode, nextAccent: ThemeAccent) {
+    applyToDom(nextMode, nextAccent);
+    window.localStorage.setItem("theme", nextMode);
+    window.localStorage.setItem("accent", nextAccent);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+  }
+
   function chooseMode(next: ThemeMode) {
-    setMode(next);
-    localStorage.setItem("theme", next);
-    applyTheme(next, accent);
+    persist(next, accent);
   }
 
   function chooseAccent(next: ThemeAccent) {
-    setAccent(next);
-    localStorage.setItem("accent", next);
-    applyTheme(mode, next);
+    persist(mode, next);
   }
 
   return (
