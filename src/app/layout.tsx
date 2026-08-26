@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { BootSequence } from "@/components/boot-sequence";
 import { Cursor } from "@/components/cursor";
@@ -90,6 +90,18 @@ export const metadata: Metadata = {
     title: "Oliver Straus",
     description: DESCRIPTION,
   },
+};
+
+// Real values, matching --background in globals.css for each color scheme
+// -- controls mobile browser chrome (Android Chrome's address bar tint,
+// iOS Safari's status bar once added to the home screen), not the site's
+// own manual dark/light toggle (that's a separate, JS-driven thing this
+// static media-query tag can't and shouldn't try to track).
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#08090b" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
+  ],
 };
 
 const PERSON_JSON_LD = {
