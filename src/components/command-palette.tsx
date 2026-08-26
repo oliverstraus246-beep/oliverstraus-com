@@ -151,7 +151,18 @@ export function CommandPalette() {
   useEffect(() => {
     if (open) {
       inputRef.current?.focus();
-    } else if (wasOpenRef.current) {
+      // Lock background scroll while the modal overlay is open, matching
+      // the nav menu and résumé modal. The palette is role="dialog"
+      // aria-modal="true", so a wheel/gesture scrolling the page behind
+      // the fixed overlay is a real-focus leak out of the dialog.
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      wasOpenRef.current = true;
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+    if (wasOpenRef.current) {
       // Restore focus to the trigger on a real close (open was true), not
       // on initial mount. Focusing the trigger on mount hijacked initial
       // page focus -- the skip-to-content link and the early nav links were
@@ -224,11 +235,6 @@ export function CommandPalette() {
               aria-label="Commands"
               className="max-h-80 overflow-y-auto py-2"
             >
-              {filtered.length === 0 && (
-                <li className="px-4 py-6 text-center font-mono text-sm text-muted-foreground">
-                  No matches.
-                </li>
-              )}
               {filtered.map((item, i) => (
                 <li key={item.id} role="option" id={optionId(i)} aria-selected={i === activeIndex}>
                   <div
@@ -251,6 +257,20 @@ export function CommandPalette() {
                 </li>
               ))}
             </ul>
+            {filtered.length === 0 && (
+              // Outside the listbox: a bare <li> with no role="option"
+              // inside role="listbox" is invalid ARIA (listbox children
+              // must be options/groups). role="status" is an implicit
+              // polite live region, so a screen-reader user hears
+              // "No matches." announced when filtering yields nothing,
+              // instead of an empty listbox with no explanation.
+              <p
+                role="status"
+                className="px-4 py-6 text-center font-mono text-sm text-muted-foreground"
+              >
+                No matches.
+              </p>
+            )}
           </div>
         </div>
       )}
