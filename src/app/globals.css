@@ -373,8 +373,10 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
@@ -430,8 +432,24 @@
    print area and its descendants) rather than a separately maintained
    static PDF, so it can never drift out of sync with resume.ts. Targets
    .resume-print-area (the content itself) so this scopes correctly both
-   from the in-page modal and the standalone /resume page. */
+   from the in-page modal and the standalone /resume page.
+
+   Two earlier bugs this block fixes:
+   - The résumé used to be position:absolute inset:0, which forced its
+     height to exactly one page and clipped anything taller. It now keeps
+     auto height and flows across as many pages as it needs.
+   - When printing from the in-page modal, the modal's position:fixed
+     overlay repeated on every page (print spec: fixed elements re-print
+     per page) and the visibility:hidden-but-still-in-flow homepage behind
+     it added several blank pages -- together producing the "the résumé
+     downloads 5 times" symptom. data-print-resume="modal" (set in
+     resume-modal.tsx while open) drops #site-content entirely and
+     neutralizes the fixed overlay so the résumé prints exactly once. */
 @media print {
+  @page {
+    margin: 0.5in;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -441,14 +459,56 @@
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .resume-print-area {
-    position: absolute;
-    inset: 0;
-    max-width: none;
-    box-shadow: none;
-    border-radius: 0;
-  }
   .no-print {
     display: none !important;
+  }
+
+  /* Printing from the in-page modal: drop the homepage behind it (it's a
+     sibling of #site-content, so hiding #site-content can't hide the
+     résumé) and neutralize the fixed overlay so it no longer repeats per
+     page. The inner panel's max-width / rounding / shadow are stripped so
+     the résumé fills the printable width. */
+  body[data-print-resume="modal"] #site-content {
+    display: none !important;
+  }
+  body[data-print-resume="modal"] .resume-modal-overlay {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  body[data-print-resume="modal"] .resume-modal-panel {
+    max-width: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* Printing from the standalone /resume route: zero the page chrome's
+     padding and the résumé's card wrapper so they don't push blank space
+     or clip the content. */
+  .resume-page-main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  .resume-page-card {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* Let the résumé flow naturally across pages (static, auto height)
+     instead of being clipped to one page. Stripped of its card styling so
+     it reads as a plain document to the printer. */
+  .resume-print-area {
+    position: static !important;
+    inset: auto !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 }

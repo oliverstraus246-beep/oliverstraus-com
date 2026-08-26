@@ -30,6 +30,12 @@ export interface Venture {
   timeframe?: string | null;
   stack?: readonly string[];
   repoUrl?: string;
+  // Optional hero image for the /work/[slug] detail page. Provide a file
+  // already dropped into public/ (e.g. "/assets/ventures/sectra.png") plus a
+  // real alt string and it renders as a bordered figure above the body.
+  // Absent for every venture until Oliver supplies a real screenshot/photo
+  // -- never a placeholder, per this file's no-fabrication rule.
+  image?: { src: string; alt: string };
   // Real numbers only, pulled from the same facts as `highlights`/`body` --
   // no comma formatting (CountUp's parser expects a bare number plus an
   // optional unit suffix, e.g. "272MB" or "9294").
@@ -90,7 +96,7 @@ export const VENTURES: readonly Venture[] = [
     timeframe: "2026 — Present",
     stack: ["Electron", "React", "TypeScript", "Python", "FastAPI", "Socket.IO", "Whisper", "Ollama"],
     metrics: [
-      { value: "80", label: "Object classes detected live" },
+      { value: "1", label: "Custom wake-word trained" },
       { value: "0", label: "Per-request API cost" },
       { value: "4", label: "Parametric CAD primitives" },
     ],

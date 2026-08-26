@@ -51,12 +51,24 @@ async function logHoneypotHit(request: NextRequest, path: string) {
   }
 }
 
-function buildCspHeader(nonce: string) {
+// Static, nonce-free CSP. A per-request nonce (the stricter pattern from the
+// Next.js CSP guide) is incompatible with this site's static prerendering:
+// Next.js injects nonces during server-side rendering from the request CSP
+// header, but statically prerendered pages are built once at build time with
+// no request headers, so no nonce is ever attached to the <script> tags. With
+// script-src 'nonce-…' 'strict-dynamic', that blocked every chunk, the RSC
+// payload, the theme-init, and the boot failsafe — the site rendered as a
+// non-interactive shell (no hydration, no nav/modal/animations/theme switch),
+// the exact "boot overlay stuck" signature. 'unsafe-inline' is the docs'
+// recommended fallback for non-sensitive static sites and keeps prerendering.
+// All other directives (object-src 'none', frame-ancestors 'none', base-uri,
+// form-action, UIR) stay — those carry the real protection here.
+function buildCspHeader() {
   const isDev = process.env.NODE_ENV === "development";
   return `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""};
-    style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`};
+    script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""};
+    style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data:;
     font-src 'self';
     connect-src 'self';
@@ -83,14 +95,9 @@ export function proxy(request: NextRequest) {
     });
   }
 
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const contentSecurityPolicy = buildCspHeader(nonce);
+  const contentSecurityPolicy = buildCspHeader();
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
-
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = NextResponse.next();
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
   return response;
 }

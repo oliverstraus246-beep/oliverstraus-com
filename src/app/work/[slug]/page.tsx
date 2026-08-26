@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { VENTURES, getVenture } from "@/lib/ventures";
@@ -93,6 +94,20 @@ export default async function VenturePage({
         </span>
         Work
       </Link>
+
+      {venture.image && (
+        <figure className="mt-8 overflow-hidden rounded-2xl border border-border bg-card">
+          <Image
+            src={venture.image.src}
+            alt={venture.image.alt}
+            width={1200}
+            height={675}
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            priority
+            className="h-auto w-full object-cover"
+          />
+        </figure>
+      )}
 
       <div className="grid grid-cols-1 gap-x-16 gap-y-12 lg:mt-10 lg:grid-cols-[1fr_260px]">
         {/* Main column */}

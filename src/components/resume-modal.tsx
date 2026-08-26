@@ -29,6 +29,25 @@ export function ResumeModal() {
     return () => window.removeEventListener(OPEN_EVENT, onOpen);
   }, []);
 
+  // While the modal is open, flag <body> so the print stylesheet knows
+  // the résumé is being printed from here (not the standalone /resume
+  // route, where the modal stays closed and the résumé lives inside
+  // #site-content). Two things break printing from the modal otherwise:
+  //   1. This overlay is position:fixed, which in print repeats on every
+  //      page -- so the résumé reprinted once per page of the tall
+  //      homepage behind it ("downloaded 5 times").
+  //   2. The homepage behind it is visibility:hidden but still in flow,
+  //      adding the blank pages that became those extra copies.
+  // data-print-resume="modal" lets globals.css neutralize the overlay's
+  // fixed positioning and drop #site-content for the duration of the print.
+  useEffect(() => {
+    if (!open) return;
+    document.body.dataset.printResume = "modal";
+    return () => {
+      delete document.body.dataset.printResume;
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -42,7 +61,7 @@ export function ResumeModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[95] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8 backdrop-blur-sm sm:px-6"
+      className="resume-modal-overlay fixed inset-0 z-[95] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8 backdrop-blur-sm sm:px-6"
       onClick={() => setOpen(false)}
     >
       <div
@@ -50,7 +69,7 @@ export function ResumeModal() {
         aria-modal="true"
         aria-label="Résumé"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl"
+        className="resume-modal-panel w-full max-w-3xl overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl"
       >
         <div className="no-print sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50/95 px-6 py-3 backdrop-blur-sm">
           <p className="font-mono text-xs uppercase tracking-widest text-neutral-500">

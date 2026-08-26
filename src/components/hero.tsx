@@ -66,6 +66,17 @@ export function Hero() {
 
   useGSAP(
     () => {
+      // Reduced motion: skip the scroll-pinned crossfade entirely. The CSS
+      // baseline below (`opacity-0 first:opacity-100`) shows only the first
+      // headline with zero JS, and crucially there's no scroll-jacking pin --
+      // the global @media (prefers-reduced-motion) CSS nukes CSS transitions
+      // but GSAP drives motion via rAF/inline transforms, which bypass that
+      // rule, so the scroll-jack would otherwise still trap reduced-motion
+      // visitors. Returning before gsap.set means nothing is ever hidden,
+      // so the no-JS fallback (first headline visible) is exactly what
+      // reduced-motion users get.
+      if (prefersReducedMotion()) return;
+
       const groups = HEADLINES.map((_, i) =>
         [mobileLineRefs.current[i], desktopLineRefs.current[i]].filter(
           (el): el is HTMLHeadingElement | HTMLDivElement => el !== null,
@@ -168,14 +179,24 @@ export function Hero() {
             <p className="mb-4 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Denver, Colorado
             </p>
-            <div className="relative h-[2.1em]">
+            {/* Grid-stacked headlines: every <h1> occupies the same grid
+                cell (col-start-1 row-start-1), so they overlap for the
+                GSAP crossfade while the container auto-sizes to the TALLEST
+                headline. The old `relative h-[2.1em]` + `absolute inset-0`
+                sized the box to 2.1em of the inherited 16px base (34px), not
+                the 48px headline -- so a 2-4 line headline overflowed the box
+                and overlapped the "Now building software." paragraph below by
+                ~41px on phones. Grid makes the height track the real content
+                at any width (more wrapping on narrow screens just grows the
+                cell), so there's never overlap and never a hard-coded gap. */}
+            <div className="grid">
               {HEADLINES.map((headline, i) => (
                 <h1
                   key={headline}
                   ref={(el) => {
                     mobileLineRefs.current[i] = el;
                   }}
-                  className="absolute inset-0 whitespace-pre-line text-5xl font-black leading-[0.95] tracking-tight text-foreground opacity-0 first:opacity-100"
+                  className="col-start-1 row-start-1 whitespace-pre-line text-4xl font-black leading-[0.95] tracking-tight text-foreground opacity-0 first:opacity-100"
                 >
                   {headline}
                 </h1>

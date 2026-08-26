@@ -41,7 +41,12 @@ describe("Cursor", () => {
   it("does not activate for prefers-reduced-motion users, leaving the native cursor alone", () => {
     mockMatchMedia(true);
     const { container } = render(<Cursor />);
-    expect(container.querySelectorAll("line")).toHaveLength(0);
+    // Markup still renders (hydration-stable: server and reduced-motion
+    // client produce the same hidden DOM) but stays hidden via opacity-0,
+    // and the body never gets custom-cursor-active so the native cursor
+    // remains. The effect that would reveal it never runs under reduced
+    // motion.
     expect(document.body.classList.contains("custom-cursor-active")).toBe(false);
+    expect(container.querySelector("[class*='opacity-0']")).not.toBeNull();
   });
 });

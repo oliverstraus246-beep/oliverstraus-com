@@ -15,6 +15,13 @@ const DIRECTIONS = [
   { x: 0, y: 140, rotate: 0 },
 ] as const;
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 /**
  * Wraps a list/grid container and reveals its direct children by slamming
  * them in from alternating directions (left/right/below) as they cross into
@@ -31,6 +38,14 @@ export function ScrollReveal({
 
   useGSAP(
     () => {
+      // Reduced motion: leave items in their natural flow. The global
+      // @media (prefers-reduced-motion) CSS only kills CSS transitions --
+      // GSAP's rAF-driven transforms bypass it, so without this gate the
+      // items would still be slammed in from +-140px with rotation. Returning
+      // before gsap.set means nothing is hidden, so content is visible
+      // immediately with no entrance animation.
+      if (prefersReducedMotion()) return;
+
       const items = gsap.utils.toArray<HTMLElement>(
         Array.from(ref.current?.children ?? []),
       );

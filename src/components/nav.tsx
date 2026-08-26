@@ -20,6 +20,7 @@ export function Nav() {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   function close() {
     setOpen(false);
@@ -34,11 +35,40 @@ export function Nav() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  // Move focus into the menu when it opens, and hand it back to the trigger
+  // when it closes -- keyboard/screen-reader users get a predictable focus
+  // path instead of landing on an overlay with no focus, or losing focus
+  // when it dismisses. Skips the initial mount so it never steals focus to
+  // the menu button on page load.
+  const didOpenRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      didOpenRef.current = true;
+      const first = linkRefs.current.find((el): el is HTMLAnchorElement => !!el);
+      first?.focus();
+    } else if (didOpenRef.current) {
+      menuBtnRef.current?.focus();
+    }
+  }, [open]);
+
+  const prefersReducedMotion = () =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   useGSAP(
     () => {
       const links = linkRefs.current.filter(
         (el): el is HTMLAnchorElement => el !== null,
       );
+      // Reduced motion: toggle instantly. The global CSS reduces
+      // transitions but GSAP bypasses it, and a plain early return would
+      // leave the overlay at its CSS opacity-0 even when open (invisible but
+      // pointer-events-auto). Snapping autoAlpha keeps it usable.
+      if (prefersReducedMotion()) {
+        gsap.set(overlayRef.current, { autoAlpha: open ? 1 : 0 });
+        gsap.set(links, { opacity: 1, y: 0 });
+        return;
+      }
       if (open) {
         gsap.to(overlayRef.current, {
           autoAlpha: 1,
@@ -70,7 +100,7 @@ export function Nav() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <header className="no-print fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2.5" onClick={close}>
             <Image
@@ -92,17 +122,18 @@ export function Nav() {
 
             <a
               href="#contact"
-              className="hidden h-10 items-center rounded-full border border-border px-4 font-mono text-xs uppercase tracking-widest transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:inline-flex"
+              className="hidden h-11 items-center rounded-full border border-border px-4 font-mono text-xs uppercase tracking-widest transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:inline-flex"
             >
               Get in touch
             </a>
 
             <button
               type="button"
+              ref={menuBtnRef}
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              className="relative z-[70] flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-full border border-border transition-colors duration-150 hover:border-accent-blue"
+              className="relative z-[70] flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-full border border-border transition-colors duration-150 hover:border-accent-blue"
             >
               <span
                 className={`h-px w-4 bg-foreground transition-transform ${open ? "translate-y-[3.5px] rotate-45" : ""}`}
@@ -121,6 +152,11 @@ export function Nav() {
           open ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!open}
+        // inert removes the hidden overlay's links from the tab order and
+        // the accessibility tree entirely -- opacity/pointer-events alone
+        // don't, so a closed menu used to leave four invisible links
+        // reachable via Tab. Mirrors aria-hidden and toggles with it.
+        inert={!open}
       >
         <nav className="mx-auto flex w-full max-w-4xl flex-col gap-2">
           {LINKS.map((link, i) => (

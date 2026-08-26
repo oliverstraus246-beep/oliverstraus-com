@@ -84,7 +84,7 @@ export function ThemeSwitcher() {
         aria-label="Theme settings"
         aria-expanded={open}
         aria-haspopup="true"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue"
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue"
       >
         {mode === "dark" ? (
           <Moon className="h-4 w-4" aria-hidden="true" />
@@ -142,7 +142,7 @@ export function ThemeSwitcher() {
                 onClick={() => chooseAccent(a.id)}
                 aria-label={`${a.label} accent`}
                 aria-pressed={accent === a.id}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 active:scale-90"
+                className="relative flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 active:scale-90"
               >
                 <span
                   className="h-5 w-5 rounded-full ring-1 ring-inset ring-black/10"

@@ -30,6 +30,12 @@ export function Cursor() {
     active.current = true;
 
     const dot = dotRef.current!;
+    // Reveal the cursor mark only once the effect actually wires it up.
+    // The markup renders hidden (opacity-0) so the server and the first
+    // client render always agree -- a reduced-motion client never runs
+    // this effect, so the mark stays hidden there (no hydration mismatch,
+    // no static X stuck in the corner). See the render note below.
+    dot.style.opacity = "1";
     const xTo = gsap.quickTo(dot, "x", { duration: 0.15, ease: "power3" });
     const yTo = gsap.quickTo(dot, "y", { duration: 0.15, ease: "power3" });
 
@@ -61,12 +67,17 @@ export function Cursor() {
     };
   }, []);
 
-  if (prefersReducedMotion()) return null;
-
+  // Always render the markup (hidden by default) so the server render and
+  // the first client render match regardless of the visitor's motion
+  // preference. The effect above reveals it (opacity -> 1) only on a
+  // non-reduced-motion client; a reduced-motion client never runs that
+  // effect, so the mark stays opacity-0 -- no static cursor stuck in the
+  // corner, and no React #418 hydration mismatch from a render-time branch
+  // on window.matchMedia (which is undefined on the server).
   return (
     <div
       ref={dotRef}
-      className="pointer-events-none fixed left-0 top-0 z-[200]"
+      className="no-print pointer-events-none fixed left-0 top-0 z-[200] opacity-0"
       aria-hidden="true"
     >
       <div

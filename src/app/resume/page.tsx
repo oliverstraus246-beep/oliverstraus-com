@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 // reached this way rather than through the modal.
 export default function ResumePage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-16 pt-28 sm:px-6 sm:pt-32">
+    <main className="resume-page-main mx-auto max-w-3xl px-4 pb-16 pt-28 sm:px-6 sm:pt-32">
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/"
@@ -27,7 +27,7 @@ export default function ResumePage() {
         <ResumePresetPicker />
         <ResumePrintButton />
       </div>
-      <div className="overflow-hidden rounded-2xl shadow-2xl">
+      <div className="resume-page-card overflow-hidden rounded-2xl shadow-2xl">
         <ResumeContent />
       </div>
     </main>

@@ -158,9 +158,17 @@ export default function RootLayout({
         <ScrollReset />
         <BootSequence />
         <Cursor />
-        <div className="grain-overlay" aria-hidden="true" />
+        <div className="grain-overlay no-print" aria-hidden="true" />
         <Nav />
-        <div className="flex-1">{children}</div>
+        {/* id="site-content" lets the print stylesheet drop this whole
+            subtree when the résumé prints from the in-page modal (the modal
+            is a sibling of this div), so the tall homepage behind it can't
+            push the fixed modal overlay onto extra blank pages -- see the
+            @media print block in globals.css. On /resume this div IS the
+            résumé's ancestor, so the print CSS leaves it alone there. */}
+        <div id="site-content" className="flex-1">
+          {children}
+        </div>
         <Footer />
         <ResumeModal />
       </body>

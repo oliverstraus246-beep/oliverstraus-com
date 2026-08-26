@@ -12,7 +12,7 @@ const NAVIGATION = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-border">
+    <footer className="no-print border-t border-border">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-[1fr_auto_auto]">
           <div>
@@ -65,7 +65,7 @@ export function Footer() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-blue opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-blue" />
             </span>
-            Available for opportunities
+            Open to remote part-time work &amp; internships
           </div>
         </div>
       </div>

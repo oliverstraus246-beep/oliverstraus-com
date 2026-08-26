@@ -141,7 +141,7 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden h-10 items-center gap-1.5 rounded-full border border-border px-3.5 font-mono text-[11px] text-muted-foreground transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:flex"
+        className="hidden h-11 items-center gap-1.5 rounded-full border border-border px-3.5 font-mono text-[11px] text-muted-foreground transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue sm:flex"
         aria-label="Open command palette"
       >
         <span aria-hidden="true">⌘</span>K

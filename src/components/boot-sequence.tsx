@@ -83,7 +83,7 @@ export function BootSequence() {
   return (
     <div
       id="boot-sequence-overlay"
-      className={`fixed inset-0 z-[100] flex flex-col justify-end overflow-hidden bg-background px-6 pb-[18vh] font-mono text-sm text-foreground sm:px-16 sm:text-base ${
+      className={`no-print fixed inset-0 z-[100] flex flex-col justify-end overflow-hidden bg-background px-6 pb-[18vh] font-mono text-sm text-foreground sm:px-16 sm:text-base ${
         stage === "outro" ? "animate-boot-outro pointer-events-none" : ""
       }`}
       onClick={finish}
