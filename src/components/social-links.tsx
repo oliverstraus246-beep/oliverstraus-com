@@ -9,15 +9,20 @@ export const PLATFORMS = [
 ] as const;
 
 export function SocialLinks() {
+  // gap-3 (12px), not gap-2 -- so the py-1.5 -my-1.5 hit-box enlargement on
+  // each link (6px expansion per side) touches but doesn't overlap the
+  // neighbor. Bare text-sm links were ~20px, below the WCAG 2.2 AA 24px
+  // minimum; this grows the tap box to ~32px with the negative margin
+  // cancelling the box growth so visual position is unchanged.
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col gap-3">
       {PLATFORMS.map((platform) => (
         <li key={platform.label}>
           <a
             href={platform.href}
             target="_blank"
             rel="noreferrer noopener"
-            className="font-mono text-sm text-foreground/80 transition-colors hover:text-accent-blue"
+            className="inline-flex items-center py-1.5 -my-1.5 font-mono text-sm text-foreground/80 transition-colors hover:text-accent-blue"
           >
             {platform.label}
           </a>

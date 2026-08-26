@@ -29,7 +29,7 @@ export function Footer() {
             <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
               Navigation
             </p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 space-y-3">
               {NAVIGATION.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -40,7 +40,11 @@ export function Footer() {
                         openResume();
                       }
                     }}
-                    className="text-sm text-foreground/80 transition-colors hover:text-accent-blue"
+                    // py-1.5 -my-1.5 grows the tap box to ~32px (WCAG 2.2 AA
+                    // 24px minimum) with no visual shift; space-y-3 (12px) on
+                    // the list keeps the 6px-per-side hit-box expansion from
+                    // overlapping the neighbor.
+                    className="inline-flex items-center py-1.5 -my-1.5 text-sm text-foreground/80 transition-colors hover:text-accent-blue"
                   >
                     {link.label}
                   </Link>
