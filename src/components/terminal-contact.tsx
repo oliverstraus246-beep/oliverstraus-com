@@ -143,6 +143,14 @@ export function TerminalContact() {
           engagedRef.current = true;
           inputRef.current?.focus();
         }}
+        // Live region: prompts, validation errors, "Sending...", and the
+        // success/failure outcome are all rendered as new <p> lines here, so
+        // without aria-live a screen-reader user gets no announcement of
+        // status changes or errors (WCAG 3.3.1, 4.1.3). Polite so it
+        // doesn't interrupt; the echoed input line also announces, which
+        // confirms what the form received.
+        aria-live="polite"
+        aria-label="Contact transcript"
         className="h-[360px] w-full overflow-y-auto p-4 font-mono text-sm"
       >
         {lines.map((line, i) => (

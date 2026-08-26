@@ -91,7 +91,17 @@ export function ThemeSwitcher() {
       }
     }
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      // Tab dismisses the dropdown and moves focus to the next control
+      // naturally (per the menu pattern) -- without this, Tab leaves the
+      // menu open while focus moves out from under it.
+      if (e.key === "Tab") {
+        setOpen(false);
+        return;
+      }
       // Arrow-key roving between the menu's radio items, per the menu
       // pattern. Home/End jump to the first/last; arrows move by one.
       const items = Array.from(
