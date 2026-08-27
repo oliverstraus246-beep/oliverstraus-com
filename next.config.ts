@@ -22,6 +22,16 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  experimental: {
+    // Enables React's <ViewTransition> integration. Used in layout.tsx to
+    // crossfade page content on client-side route navigations -- a subtle
+    // premium touch, no slides. The header is anchored out of the
+    // transition (see globals.css) so it never flickers, and the whole
+    // thing is duration-zeroed under prefers-reduced-motion. Without
+    // browser support the site works normally, transitions just don't
+    // animate.
+    viewTransition: true,
+  },
   async headers() {
     return [
       {

@@ -512,6 +512,17 @@
   stroke: var(--accent-blue);
 }
 
+/* Route-navigation crossfade (React ViewTransition in layout.tsx). A short,
+   eased fade between pages -- no positional movement, so it stays within the
+   site's restraint even though it runs on every client-side navigation. The
+   `*` selectors target the view-transition pseudo-elements (old/new snapshots
+   + the group wrapper), which the regular `*` rule above does NOT cover
+   (they're not real DOM elements). */
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 220ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -520,6 +531,14 @@
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+  }
+  /* View transitions are their own animation surface -- zero them so route
+     changes are instant for reduced-motion users, the browser's default. */
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
   }
 }
 

@@ -40,8 +40,20 @@ export function BootSequence() {
   const [shown, setShown] = useState<string[]>([]);
   const [stage, setStage] = useState<"running" | "outro" | "done">("running");
   const finishedRef = useRef(false);
+  // The boot intro plays at most once per page load. The effect depends on
+  // [isHome] so the pathname gate works during SSR, but that means a
+  // client-side navigation from a case study *to* home re-runs the effect
+  // and would replay the whole blocking 4.5s overlay every time someone
+  // clicks "home" after already browsing -- the original mount-once code
+  // never did this. didInitRef is set on the very first effect run
+  // regardless of the landing route, so a sub-route arrival consumes the
+  // one play and a later client-side nav home doesn't re-block the page.
+  const didInitRef = useRef(false);
 
   useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+
     // Sub-routes skip the intro entirely: the render guard below
     // (`!isHome || ...`) returns null, so the overlay never paints on a case
     // study or the résumé. This early return also prevents the watchdog and

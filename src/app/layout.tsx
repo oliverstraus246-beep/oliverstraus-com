@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ViewTransition } from "react";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { BootSequence } from "@/components/boot-sequence";
 import { BackToTop } from "@/components/back-to-top";
@@ -185,7 +186,14 @@ export default function RootLayout({
             @media print block in globals.css. On /resume this div IS the
             résumé's ancestor, so the print CSS leaves it alone there. */}
         <div id="site-content" tabIndex={-1} className="flex-1 focus:outline-none">
-          {children}
+          {/* Crossfade page content on client-side route navigations (React
+              ViewTransition). The header, footer, nav overlay, and cursor are
+              siblings outside this wrapper, so they're not part of the named
+              transition group -- they crossfade to themselves in the root
+              snapshot, which is pixel-identical and thus invisible. Only the
+              main content area visibly fades between routes. Duration-zeroed
+              under prefers-reduced-motion (see globals.css). */}
+          <ViewTransition>{children}</ViewTransition>
         </div>
         <Footer />
         <ResumeModal />
