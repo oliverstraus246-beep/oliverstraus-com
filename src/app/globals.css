@@ -434,6 +434,27 @@
   animation: scroll-cue 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+/* Hero ambient: the warm accent glow "breathes" -- a 9s opacity oscillation on
+   the faint lower-left radial. Mobile has no mouse to drive the parallax the
+   two glows follow on desktop, so without this the hero is perfectly static on
+   a phone; the breathe gives it a low, slow ambient life. Deliberately only
+   the warm whisper (the prominent blue glow stays still -- pulsing the main
+   accent would read as a loading state, not atmosphere). GSAP drives the
+   glows' x/y transforms for parallax; this animates opacity only, so the two
+   never fight over the same property. The global prefers-reduced-motion rule
+   kills it (and CSS animation) for visitors who opt out. */
+@keyframes glow-breathe {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.animate-glow-breathe {
+  animation: glow-breathe 9s ease-in-out infinite;
+}
+
 @keyframes modal-backdrop-in {
   from {
     opacity: 0;

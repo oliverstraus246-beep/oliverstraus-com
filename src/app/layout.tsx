@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { BootSequence } from "@/components/boot-sequence";
+import { BackToTop } from "@/components/back-to-top";
 import { Cursor } from "@/components/cursor";
 import { Footer } from "@/components/footer";
 import { Nav } from "@/components/nav";
@@ -172,6 +173,7 @@ export default function RootLayout({
         </a>
         <ScrollReset />
         <ScrollProgress />
+        <BackToTop />
         <BootSequence />
         <Cursor />
         <div className="grain-overlay no-print" aria-hidden="true" />

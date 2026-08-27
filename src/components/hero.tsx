@@ -78,6 +78,20 @@ export function Hero() {
       // reduced-motion users get.
       if (prefersReducedMotion()) return;
 
+      // Scroll-pinned crossfade is a desktop flourish. On a touch device the
+      // pin forces ~1.6 screens of captive scroll just to cycle four short
+      // lines, which reads as a stuck page rather than an effect, and touch
+      // has no hover to justify the parallax either. Skip the whole tween
+      // below the sm breakpoint (640px, where the desktop headline layer
+      // takes over): the CSS baseline shows only the first headline with zero
+      // JS, so a phone gets one strong line, the scroll cue, and normal
+      // scrolling -- no scroll-jack, no trapped gesture.
+      if (
+        typeof window !== "undefined" &&
+        !window.matchMedia("(min-width: 640px)").matches
+      )
+        return;
+
       const groups = HEADLINES.map((_, i) =>
         [mobileLineRefs.current[i], desktopLineRefs.current[i]].filter(
           (el): el is HTMLElement => el !== null,
@@ -175,7 +189,7 @@ export function Hero() {
       />
       <div
         ref={glowBRef}
-        className="absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_15%_85%,color-mix(in_oklch,var(--accent-warm),transparent_92%)_0%,transparent_70%)]"
+        className="animate-glow-breathe absolute inset-0 bg-[radial-gradient(ellipse_55%_50%_at_15%_85%,color-mix(in_oklch,var(--accent-warm),transparent_92%)_0%,transparent_70%)]"
       />
 
       {/* No photo: removed entirely per Oliver's explicit instruction ("we

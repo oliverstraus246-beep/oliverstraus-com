@@ -22,6 +22,25 @@ if (!window.matchMedia) {
     }) as typeof window.matchMedia
 }
 
+// jsdom also doesn't ship IntersectionObserver. Components that track
+// visibility (useScrollSpy, useInView, CountUp, DotGrid) construct it during
+// their layout effects; a no-op stub keeps them from throwing in tests. The
+// callback is intentionally never invoked -- tests that need real intersection
+// behavior mock it themselves. Matches the matchMedia pattern above.
+if (!window.IntersectionObserver) {
+  window.IntersectionObserver = class {
+    readonly root = null
+    readonly rootMargin = ""
+    readonly thresholds: ReadonlyArray<number> = []
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return []
+    }
+  } as unknown as typeof IntersectionObserver
+}
+
 afterEach(() => {
   cleanup()
 })

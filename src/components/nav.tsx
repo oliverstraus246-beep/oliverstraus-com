@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { CommandPalette } from "@/components/command-palette";
 import { openResume } from "@/components/resume-modal";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { useScrollSpy } from "@/lib/use-scroll-spy";
 
 // Section anchors are prefixed with "/" so they resolve from every route,
 // not just the homepage -- "#work" on /resume or /work/[slug] silently does
@@ -21,11 +22,45 @@ const LINKS = [
   { href: "/#contact", label: "Contact" },
 ];
 
+// Inline desktop section nav. The full-screen overlay menu (LINKS above) is
+// the mobile nav; on wide screens, quick-scroll links to each section sit
+// in the header itself so a desktop visitor doesn't have to open the menu
+// to jump around. `id` keys each link to the scrollspy section(s) that mark
+// it active. Resume opens the modal and is never "active" -- it isn't a
+// scroll target. Contact is intentionally NOT here: the "Get in touch" pill
+// in the right cluster is the contact CTA, so a second "Contact" link would
+// just duplicate it.
+interface SectionLink {
+  id: string;
+  href: string;
+  label: string;
+  isResume?: boolean;
+}
+const SECTION_LINKS: readonly SectionLink[] = [
+  { id: "work", href: "/#work", label: "Work" },
+  { id: "about", href: "/#about", label: "About" },
+  { id: "resume", href: "/resume", label: "Resume", isResume: true },
+];
+
+// Sections the scrollspy watches. Timeline and Skills don't have their own
+// nav link, so they roll up to the nearest preceding link's active state --
+// keeps a link highlighted through the whole mid-page scroll instead of
+// going blank between named sections.
+const SPY_IDS = ["work", "timeline", "about", "skills", "contact"];
+
 export function Nav() {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const activeId = useScrollSpy(SPY_IDS);
+
+  function isSectionActive(link: SectionLink) {
+    if (link.id === "work") return activeId === "work" || activeId === "timeline";
+    if (link.id === "about") return activeId === "about" || activeId === "skills";
+    if (link.id === "contact") return activeId === "contact";
+    return false; // Resume isn't a scroll target.
+  }
 
   function close() {
     setOpen(false);
@@ -178,6 +213,49 @@ export function Nav() {
             </span>
           </Link>
 
+          {/* Inline desktop section nav. Hidden below md (the hamburger
+              overlay covers mobile). Inert while that overlay is open so
+              keyboard focus can't leak behind it, matching the logo and the
+              right-hand controls. The underline draws on hover and stays
+              drawn for the active section (scrollspy, above). */}
+          <nav
+            className="hidden items-center gap-7 md:flex"
+            aria-label="Sections"
+            inert={open}
+          >
+            {SECTION_LINKS.map((link) => {
+              const active = isSectionActive(link);
+              return (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  onClick={(e) => {
+                    if (link.isResume) {
+                      e.preventDefault();
+                      openResume();
+                    }
+                  }}
+                  aria-current={active ? "true" : undefined}
+                  className={`group relative inline-flex items-center py-2 font-mono text-[11px] uppercase tracking-widest transition-colors duration-150 ${
+                    active
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute bottom-0.5 left-0 h-px w-full origin-left bg-accent-blue transition-transform duration-300 ease-out ${
+                      active
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-100"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
+          </nav>
+
           <div className="flex items-center gap-3">
             {/* Inert while the menu is open so the command palette, theme
                 switcher, and "Get in touch" link -- all behind the overlay --
@@ -200,7 +278,17 @@ export function Nav() {
               type="button"
               ref={menuBtnRef}
               onClick={() => setOpen((v) => !v)}
-              aria-label={open ? "Close menu" : "Open menu"}
+              // Stable accessible name, not a toggled "Open"/"Close" pair: this
+              // button is `inert` while the menu is open (see below), so it's
+              // removed from the accessibility tree exactly when the overlay's
+              // own "Close menu" button is the live close control. A dynamic
+              // "Close menu" label here would duplicate that button's name
+              // (two elements, same accessible name) for as long as both are
+              // in the DOM -- ambiguous for AT and for role queries. Keeping
+              // "Open menu" means the only state in which this button is ever
+              // exposed to AT is closed, where "Open menu" is exactly right;
+              // aria-expanded carries the open/closed state without relabeling.
+              aria-label="Open menu"
               aria-expanded={open}
               aria-haspopup="true"
               // The header (z-50) sits below the overlay (z-60), so this
@@ -268,12 +356,16 @@ export function Nav() {
                 }
                 close();
               }}
-              className="group flex items-baseline gap-4 border-b border-border py-4 font-mono text-5xl font-black tracking-tight text-foreground transition-colors hover:text-accent-blue sm:text-7xl"
+              className="group relative flex items-baseline gap-4 border-b border-border py-4 font-mono text-5xl font-black tracking-tight text-foreground transition-colors hover:text-accent-blue sm:text-7xl"
             >
               <span className="text-lg text-accent-blue-dim/60 sm:text-2xl">
                 0{i + 1}
               </span>
               {link.label}
+              <span
+                aria-hidden="true"
+                className="absolute bottom-[-1px] left-0 h-0.5 w-full origin-left scale-x-0 bg-accent-blue transition-transform duration-300 ease-out group-hover:scale-x-100"
+              />
             </Link>
           ))}
         </nav>

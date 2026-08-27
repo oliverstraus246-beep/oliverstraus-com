@@ -126,7 +126,7 @@ const TIMELINE: readonly TimelineEntry[] = [
 function TimelineRow({ entry }: { entry: TimelineEntry }) {
   return (
     <details className="group relative pb-10 pl-8 last:pb-0">
-      <summary className="cursor-pointer list-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+      <summary className="cursor-pointer list-none rounded-md px-2 -mx-2 py-1.5 transition-colors duration-150 hover:bg-foreground/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         <span
           aria-hidden="true"
           className="absolute left-0 top-1.5 h-2.5 w-2.5 -translate-x-1/2 rounded-full border-2 border-accent-blue bg-background transition-colors duration-300 group-open:border-accent-blue group-open:bg-accent-blue"

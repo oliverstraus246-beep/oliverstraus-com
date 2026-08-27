@@ -31,7 +31,7 @@ export function SkillsSection() {
                 {group.items.split(", ").map((item) => (
                   <span
                     key={item}
-                    className="border border-border px-2.5 py-1 font-mono text-xs text-foreground/80"
+                    className="border border-border px-2.5 py-1 font-mono text-xs text-foreground/80 transition-colors duration-150 hover:border-accent-blue/50 hover:text-foreground"
                   >
                     {item}
                   </span>

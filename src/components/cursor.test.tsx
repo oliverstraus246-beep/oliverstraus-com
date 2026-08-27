@@ -4,7 +4,13 @@ import { Cursor } from "./cursor";
 
 function mockMatchMedia(reduced: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: reduced,
+    // The cursor checks two different queries: prefers-reduced-motion (the
+    // `reduced` arg controls this) and (hover: hover) (a real pointer is
+    // present). A single `matches: reduced` value for every query made the
+    // hover check false under the default reduced=false case, so the effect
+    // bailed before adding the cursor class -- failing both activation
+    // tests. Resolve hover queries to true regardless of the motion setting.
+    matches: query.includes("hover") ? true : reduced,
     media: query,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
