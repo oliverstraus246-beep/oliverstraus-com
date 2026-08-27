@@ -5,6 +5,7 @@ import { PhilosophySection } from "@/components/philosophy-section";
 import { StatsSection } from "@/components/stats-section";
 import { SkillsSection } from "@/components/skills-section";
 import { TerminalContact } from "@/components/terminal-contact";
+import { CopyButton } from "@/components/copy-button";
 import { Reveal } from "@/components/reveal";
 import { DotGrid } from "@/components/dot-grid";
 
@@ -36,6 +37,11 @@ export default function Home() {
               >
                 oliverstraus246@gmail.com
               </a>
+              <CopyButton
+                value="oliverstraus246@gmail.com"
+                label="email"
+                className="ml-1"
+              />
               {" · "}
               <a
                 href="tel:+13039464224"
