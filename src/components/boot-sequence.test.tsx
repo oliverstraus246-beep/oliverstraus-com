@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, act } from "@testing-library/react"
 import { BootSequence } from "./boot-sequence"
 
+// BootSequence now gates on usePathname() so the intro only plays on "/".
+// Default the mock to the homepage so the existing behavior tests below
+// (which assume the overlay runs) stay valid; the sub-route test overrides
+// it per-test.
+const pathnameMock = vi.fn(() => "/")
+vi.mock("next/navigation", () => ({
+  usePathname: () => pathnameMock(),
+}))
+
 function mockMatchMedia(reduced: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: reduced,
@@ -15,6 +24,7 @@ describe("BootSequence", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     mockMatchMedia(false)
+    pathnameMock.mockReturnValue("/")
   })
 
   afterEach(() => {
@@ -73,5 +83,19 @@ describe("BootSequence", () => {
     })
 
     expect(container.firstChild).toBeNull()
+  })
+
+  it("never plays on sub-routes (case studies, résumé, etc.)", async () => {
+    pathnameMock.mockReturnValue("/work/sectra")
+    const { container } = render(<BootSequence />)
+
+    await act(async () => {
+      await vi.runAllTimersAsync()
+    })
+
+    // No overlay, no boot lines -- a reload on a project page shouldn't
+    // re-introduce the site.
+    expect(container.firstChild).toBeNull()
+    expect(screen.queryByText("$ ssh oliver@oliverstraus.com")).not.toBeInTheDocument()
   })
 })

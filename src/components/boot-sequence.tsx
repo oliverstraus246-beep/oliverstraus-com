@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const LINES = [
   "$ ssh oliver@oliverstraus.com",
@@ -28,11 +29,26 @@ function prefersReducedMotion() {
 }
 
 export function BootSequence() {
+  const pathname = usePathname();
+  // The boot intro is a homepage moment -- it's mounted in the global
+  // layout, but replaying the whole "ssh into oliverstraus.com" sequence on
+  // every reload of a case study or the résumé reads as the site
+  // re-introducing itself after you've already arrived. usePathname returns
+  // the real path during SSR, so `isHome` is false on the very first render
+  // of any sub-route and the overlay never paints even a single frame there.
+  const isHome = pathname === "/";
   const [shown, setShown] = useState<string[]>([]);
   const [stage, setStage] = useState<"running" | "outro" | "done">("running");
   const finishedRef = useRef(false);
 
   useEffect(() => {
+    // Sub-routes skip the intro entirely: the render guard below
+    // (`!isHome || ...`) returns null, so the overlay never paints on a case
+    // study or the résumé. This early return also prevents the watchdog and
+    // Escape listeners from attaching on pages where the overlay doesn't
+    // exist. No setStage here -- setting state in an effect is a lint
+    // violation and unnecessary, since `isHome` alone gates the DOM.
+    if (!isHome) return;
     if (prefersReducedMotion()) {
       finish();
       return;
@@ -79,7 +95,7 @@ export function BootSequence() {
       clearTimeout(watchdog);
       window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [isHome]);
 
   function finish() {
     if (finishedRef.current) return;
@@ -88,7 +104,7 @@ export function BootSequence() {
     setTimeout(() => setStage("done"), OUTRO_DURATION_MS);
   }
 
-  if (stage === "done") return null;
+  if (!isHome || stage === "done") return null;
 
   return (
     <div
