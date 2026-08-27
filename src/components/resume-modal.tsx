@@ -150,27 +150,45 @@ export function ResumeModal() {
         onClick={(e) => e.stopPropagation()}
         className="resume-modal-panel w-full max-w-3xl overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl focus:outline-none"
       >
-        <div className="no-print sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50/95 px-6 py-3 backdrop-blur-sm">
-          <p className="font-mono text-xs uppercase tracking-widest text-neutral-500">
-            Résumé
-          </p>
-          <ResumePresetPicker />
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors duration-150 hover:border-neutral-900 hover:text-neutral-900 active:scale-95"
-            >
-              Download PDF
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close résumé"
-              className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors duration-150 hover:border-neutral-900 hover:text-neutral-900 active:scale-95"
-            >
-              Close
-            </button>
+        <div className="no-print sticky top-0 z-10 border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-sm">
+          {/* Header row: label + actions. On sm+ the preset picker sits
+              inline between them (one row, fits ~768px panel). On mobile it
+              drops to its own row below so the four style buttons don't wrap
+              into a multi-line block -- a 166px sticky header was eating ~20%
+              of the viewport while reading a 3700px résumé. Two picker
+              instances are fine: only one is visible at any breakpoint (the
+              other is display:none, removed from the a11y tree), and both
+              stay in sync via the shared localStorage + change-event store. */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <p className="font-mono text-xs uppercase tracking-widest text-neutral-500">
+              Résumé
+            </p>
+            <div className="hidden sm:block">
+              <ResumePresetPicker />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors duration-150 hover:border-neutral-900 hover:text-neutral-900 active:scale-95"
+              >
+                Download PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close résumé"
+                className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors duration-150 hover:border-neutral-900 hover:text-neutral-900 active:scale-95"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          {/* Mobile-only preset row: horizontally scrollable, never wraps,
+              so the four buttons stay on a single ~40px line instead of
+              stacking into a tall block. */}
+          <div className="px-4 pb-3 sm:hidden">
+            <ResumePresetPicker className="overflow-x-auto" />
           </div>
         </div>
         <ResumeContent />
