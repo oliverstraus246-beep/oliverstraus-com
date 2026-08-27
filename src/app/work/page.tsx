@@ -93,7 +93,12 @@ export default function WorkIndexPage() {
           <SpotlightCard
             key={venture.slug}
             href={`/work/${venture.slug}`}
-            className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 hover:shadow-[0_0_24px_-14px_var(--accent-blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue"
+            // p-5 sm:p-8 matches the homepage VentureGrid so the /work index
+            // and the homepage #work section read as one design, not two --
+            // an earlier version used p-8 on every viewport, which on a 390px
+            // phone left only ~282px of content width inside 32px of padding
+            // per side (the dense, over-padded "cluttered" feel on mobile).
+            className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 hover:shadow-[0_0_24px_-14px_var(--accent-blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue sm:p-8"
           >
             <div className="absolute inset-x-0 top-0 h-px bg-border transition-colors duration-300 group-hover:bg-accent-blue/40" />
             <div className="relative z-[2] flex items-start justify-between gap-4">
@@ -101,7 +106,7 @@ export default function WorkIndexPage() {
                 <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                   {venture.role}
                 </p>
-                <h2 className="text-balance mt-2 text-2xl font-bold tracking-tight">
+                <h2 className="text-balance mt-2 text-xl font-bold tracking-tight sm:text-2xl">
                   {venture.name}
                 </h2>
               </div>
@@ -109,11 +114,11 @@ export default function WorkIndexPage() {
                 {String(i + 1).padStart(2, "0")} / {String(VENTURES.length).padStart(2, "0")}
               </span>
             </div>
-            <p className="text-pretty relative z-[2] mt-4 text-sm leading-relaxed text-muted-foreground">
+            <p className="text-pretty relative z-[2] mt-3 text-sm leading-relaxed text-muted-foreground sm:mt-4">
               {venture.description}
             </p>
             {venture.stack && venture.stack.length > 0 && (
-              <div className="relative z-[2] mt-5 flex flex-wrap items-center gap-1.5">
+              <div className="relative z-[2] mt-4 flex flex-wrap items-center gap-1.5 sm:mt-5">
                 {venture.stack.slice(0, 3).map((tech) => (
                   <span
                     key={tech}
@@ -129,7 +134,7 @@ export default function WorkIndexPage() {
                 )}
               </div>
             )}
-            <div className="relative z-[2] mt-6 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors duration-300">
+            <div className="relative z-[2] mt-5 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors duration-300 sm:mt-6">
               View details
               <span
                 aria-hidden="true"

@@ -30,31 +30,43 @@ export default function Home() {
             <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
               Open a channel.
             </h2>
-            <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              <a
-                href="mailto:oliverstraus246@gmail.com"
-                className="transition-colors hover:text-accent-blue"
-              >
-                oliverstraus246@gmail.com
-              </a>
-              <CopyButton
-                value="oliverstraus246@gmail.com"
-                label="email"
-                className="ml-1"
-              />
-              {" · "}
-              <a
-                href="tel:+13039464224"
-                className="transition-colors hover:text-accent-blue"
-              >
-                (303) 946-4224
-              </a>
-              <CopyButton
-                value="+13039464224"
-                label="phone number"
-                className="ml-1"
-              />
-            </p>
+            <div className="mt-4 flex flex-col gap-2 text-base sm:flex-row sm:flex-wrap sm:items-center sm:gap-0 sm:text-sm">
+              <span className="inline-flex items-center">
+                <a
+                  href="mailto:oliverstraus246@gmail.com"
+                  // min-h-[28px] so the inline link clears the WCAG 2.2 AA
+                  // 24px touch minimum on mobile -- a bare text link inherits
+                  // only its line-height (~18-20px), too small a target on a
+                  // phone. Stacked (flex-col) on mobile with gap-2 so email
+                  // and phone are two distinct tap rows instead of a wrapping
+                  // inline run that collides with the copy buttons.
+                  className="inline-flex min-h-[28px] items-center transition-colors hover:text-accent-blue"
+                >
+                  oliverstraus246@gmail.com
+                </a>
+                <CopyButton
+                  value="oliverstraus246@gmail.com"
+                  label="email"
+                  className="ml-1"
+                />
+              </span>
+              <span className="hidden px-1 text-muted-foreground sm:inline">
+                ·
+              </span>
+              <span className="inline-flex items-center">
+                <a
+                  href="tel:+13039464224"
+                  className="inline-flex min-h-[28px] items-center transition-colors hover:text-accent-blue"
+                >
+                  (303) 946-4224
+                </a>
+                <CopyButton
+                  value="+13039464224"
+                  label="phone number"
+                  className="ml-1"
+                />
+              </span>
+            </div>
             <p className="mt-3 max-w-md font-mono text-xs text-muted-foreground">
               <span className="text-accent-blue">Now:</span> GED sprint ·
               building Sectra · Colorado community college-bound. Open to

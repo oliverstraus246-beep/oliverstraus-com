@@ -280,7 +280,7 @@ export function Hero() {
         <div className="mt-auto pb-20 sm:hidden">
           <div className="max-w-lg">
             <div className="border-t border-border pt-5">
-              <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                 At a glance
               </p>
               <div className="grid grid-cols-3 gap-3">
@@ -289,7 +289,7 @@ export function Hero() {
                     <p className="text-2xl font-black tracking-tight text-foreground">
                       <CountUp value={stat.value} />
                     </p>
-                    <p className="mt-1 font-mono text-[10px] uppercase leading-tight tracking-widest text-muted-foreground">
+                    <p className="mt-1 font-mono text-[11px] uppercase leading-tight tracking-widest text-muted-foreground">
                       {stat.label}
                     </p>
                   </div>

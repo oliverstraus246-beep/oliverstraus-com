@@ -46,7 +46,7 @@ export function ScrollCue() {
       aria-hidden="true"
       className="no-print motion-reduce:hidden pointer-events-none absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1.5"
     >
-      <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-muted-foreground">
+      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
         Scroll
       </span>
       <span className="relative h-9 w-px overflow-hidden bg-border">

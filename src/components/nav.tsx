@@ -390,7 +390,7 @@ export function Nav() {
               // minimum) with the negative margin cancelling the box growth
               // so visual position is unchanged; gap-6 keeps the 6px-per-side
               // hit-box expansion from touching a neighbor.
-              className="inline-flex items-center py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors duration-150 hover:text-accent-blue"
+              className="inline-flex min-w-6 justify-center items-center py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors duration-150 hover:text-accent-blue"
             >
               {platform.label}
             </a>

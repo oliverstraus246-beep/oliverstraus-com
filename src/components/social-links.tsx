@@ -22,7 +22,13 @@ export function SocialLinks() {
             href={platform.href}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center py-1.5 -my-1.5 font-mono text-sm text-foreground/80 transition-colors hover:text-accent-blue"
+            // min-w-6 (24px) so a one-glyph label like "X" still meets the
+            // WCAG 2.2 AA touch-target minimum on width -- without it the X
+            // link's hit box is only ~8px wide, effectively untappable on a
+            // phone. py-1.5 -my-1.5 grows height to ~32px with negative
+            // margin cancelling the box growth so visual position is
+            // unchanged; gap-3 keeps the per-side expansion from a neighbor.
+            className="inline-flex min-w-6 justify-center items-center py-1.5 -my-1.5 font-mono text-sm text-foreground/80 transition-colors hover:text-accent-blue"
           >
             {platform.label}
           </a>
