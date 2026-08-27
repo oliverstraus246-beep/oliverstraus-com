@@ -103,6 +103,38 @@
   --dot-grid-base: #232a3d;
 }
 
+/* Scale the whole layout up on large displays. The site is built entirely
+   in rem -- Tailwind's type, spacing, and container (max-w-*) scales all
+   derive from the root font-size -- so bumping html font-size at wide
+   breakpoints proportionally grows text, padding, AND max-widths together.
+   The design's proportions stay intact; it just stops reading as a tiny
+   centered strip on a 2560px+ monitor (reported live as "insanely tiny"
+   on a big display, because content capped at max-w-6xl / 1152px at the
+   16px base left most of a large screen empty). Mobile and tablet (below
+   xl) keep the 16px base the layout was designed against. The raw px values
+   a few small mono labels use (text-[10px] etc.) are intentionally fixed
+   and stay put; everything proportional grows. */
+@media (min-width: 1280px) {
+  html {
+    font-size: 17px;
+  }
+}
+@media (min-width: 1536px) {
+  html {
+    font-size: 18.5px;
+  }
+}
+@media (min-width: 1920px) {
+  html {
+    font-size: 20.5px;
+  }
+}
+@media (min-width: 2560px) {
+  html {
+    font-size: 22px;
+  }
+}
+
 /* Light theme -- near-white warm-neutral (not stark #fff), same structural
    roles as dark so every component that consumes --background/--card/etc
    just works. Primary accent still comes from --accent-blue, which the

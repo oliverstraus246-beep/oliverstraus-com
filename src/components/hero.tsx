@@ -266,6 +266,38 @@ export function Hero() {
             </a>
           </div>
         </div>
+
+        {/* Mobile-only "At a glance" stats. The desktop dashboard panel
+            below (hidden sm:block) surfaces these numbers on large screens;
+            without this counterpart, a phone visitor doesn't see $250K
+            donated / CFO-at-14 / venture count until the buried StatsSection
+            ~9 screens down -- the exact "important info is at the very
+            bottom on mobile" complaint. mt-auto pushes it to the bottom of
+            the hero's flex-col (filling the empty lower half of the h-dvh
+            hero that just held gradient on mobile), and pb-20 clears the
+            ScrollCue anchored at bottom-5. Same STATS source + CountUp as
+            the desktop panel and StatsSection, so all three can't drift. */}
+        <div className="mt-auto pb-20 sm:hidden">
+          <div className="max-w-lg">
+            <div className="border-t border-border pt-5">
+              <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                At a glance
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {STATS.map((stat) => (
+                  <div key={stat.label}>
+                    <p className="text-2xl font-black tracking-tight text-foreground">
+                      <CountUp value={stat.value} />
+                    </p>
+                    <p className="mt-1 font-mono text-[10px] uppercase leading-tight tracking-widest text-muted-foreground">
+                      {stat.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Desktop-only headline layer. A direct child of the section

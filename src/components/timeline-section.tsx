@@ -125,7 +125,7 @@ const TIMELINE: readonly TimelineEntry[] = [
 // toggling and navigating never collide.
 function TimelineRow({ entry }: { entry: TimelineEntry }) {
   return (
-    <details className="group relative pb-10 pl-8 last:pb-0">
+    <details className="group relative pb-6 pl-8 last:pb-0 sm:pb-10">
       <summary className="cursor-pointer list-none rounded-md px-2 -mx-2 py-1.5 transition-colors duration-150 hover:bg-foreground/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         <span
           aria-hidden="true"
@@ -181,21 +181,21 @@ function TimelineRow({ entry }: { entry: TimelineEntry }) {
 
 export function TimelineSection() {
   return (
-    <section id="timeline" className="relative py-20">
+    <section id="timeline" className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
             03 / Timeline
           </p>
-          <h2 className="text-balance mt-4 max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+          <h2 className="text-balance mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-5xl">
             How it built up.
           </h2>
           <p className="mt-4 max-w-md text-sm text-muted-foreground">
-            Click any entry for the full story.
+            Tap any entry for the full story.
           </p>
         </Reveal>
 
-        <div className="relative mt-16 max-w-3xl">
+        <div className="relative mt-10 max-w-3xl sm:mt-16">
           <TimelineProgress />
           <ScrollReveal>
             {TIMELINE.map((entry) => (
