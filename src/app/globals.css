@@ -617,7 +617,18 @@
     margin: 0.5in;
   }
 
-  body * {
+  /* Scope the résumé isolation to pages that actually have a
+     .resume-print-area (the standalone /resume route, or the modal when
+     it's open -- `if (!open) return null` in resume-modal.tsx keeps it out
+     of the DOM otherwise). An unscoped `body * { visibility: hidden }`
+     here ran on EVERY page, so printing a case study or the homepage --
+     which have no .resume-print-area to re-show -- produced fully blank
+     pages (everything hidden, nothing visible). With :has(), non-résumé
+     pages skip this block entirely and print their content normally;
+     nav/footer/grain are already .no-print. :has has universal modern
+     support; without it the rule simply doesn't match and the page
+     prints normally (a fine, non-blank fallback). */
+  body:has(.resume-print-area) * {
     visibility: hidden;
   }
   .resume-print-area,
