@@ -95,7 +95,7 @@ export function ResumeContent() {
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1 px-8 py-10 sm:px-10 sm:py-12">
+      <div className="resume-main min-w-0 flex-1 px-8 py-10 sm:px-10 sm:py-12">
         <div className="grid grid-cols-3 gap-4 border-b border-[var(--resume-border)] pb-6">
           {RESUME.stats.map((stat) => (
             <div key={stat.label}>

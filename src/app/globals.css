@@ -645,8 +645,26 @@
      resume-modal.tsx while open) drops #site-content entirely and
      neutralizes the fixed overlay so the résumé prints exactly once. */
 @media print {
+  /* Default page margin for anything that isn't the résumé (a visitor
+     printing the homepage, etc.). The résumé opts into the named page
+     below via `page: resume` so its background can bleed edge-to-edge. */
   @page {
     margin: 0.5in;
+  }
+
+  /* Résumé-only named page: zero margin so the preset background fills the
+     whole sheet edge-to-edge instead of sitting inside a 0.5in white page
+     frame. With a dark preset (Terminal) that frame read as a glaring
+     "giant white border" around the dark content; with light presets it
+     was merely generous side space. Full-bleed removes it entirely. The
+     text's breathing room moves INTO the columns (the padding overrides
+     below), so content stays comfortably off the edge while the color
+     runs to the paper. Named pages (`page:` + `@page name`) are supported
+     in all evergreen browsers as of 2024+; where unsupported, `page:`
+     is ignored and the default 0.5in @page above applies -- graceful
+     fallback to the previous (framed) behavior, never broken. */
+  @page resume {
+    margin: 0;
   }
 
   /* Print only the résumé, with zero blank pages.
@@ -737,12 +755,32 @@
 
   /* Let the résumé flow naturally across pages (static, auto height)
      instead of being clipped to one page. Stripped of its card styling so
-     it reads as a plain document to the printer. */
+     it reads as a plain document to the printer. `page: resume` opts the
+     résumé into the zero-margin named page above so its background bleeds
+     full-bleed (no white page frame around dark presets). */
   .resume-print-area {
     position: static !important;
     inset: auto !important;
     max-width: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    page: resume;
+  }
+
+  /* With the page margin now zero (full-bleed background), the column
+     padding becomes the text's only margin from the paper edge. The
+     screen values (sidebar sm:px-6 = 0.25in, main sm:px-10 = 0.42in)
+     are uneven and the sidebar's 0.25in is too tight against a bleeded
+     edge -- bump both to a comfortable, roughly symmetric ~0.4in so the
+     text reads as deliberately inset rather than cramped against the
+     color's edge. Vertical padding is left to the columns' existing
+     sm:py-12 (0.5in), already comfortable. */
+  .resume-print-area aside {
+    padding-left: 0.4in !important;
+    padding-right: 0.3in !important;
+  }
+  .resume-print-area .resume-main {
+    padding-left: 0.35in !important;
+    padding-right: 0.45in !important;
   }
 }
