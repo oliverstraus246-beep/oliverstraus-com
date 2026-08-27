@@ -617,19 +617,43 @@
     margin: 0.5in;
   }
 
-  /* Scope the résumé isolation to pages that actually have a
-     .resume-print-area (the standalone /resume route, or the modal when
-     it's open -- `if (!open) return null` in resume-modal.tsx keeps it out
-     of the DOM otherwise). An unscoped `body * { visibility: hidden }`
-     here ran on EVERY page, so printing a case study or the homepage --
-     which have no .resume-print-area to re-show -- produced fully blank
-     pages (everything hidden, nothing visible). With :has(), non-résumé
-     pages skip this block entirely and print their content normally;
-     nav/footer/grain are already .no-print. :has has universal modern
-     support; without it the rule simply doesn't match and the page
-     prints normally (a fine, non-blank fallback). */
-  body:has(.resume-print-area) * {
-    visibility: hidden;
+  /* Print only the résumé, with zero blank pages.
+     ----------------------------------------------------------------
+     Two earlier approaches each had a failure mode that produced the
+     "résumé downloads as ~11 blank pages" symptom in some browsers:
+       1. `body * { visibility: hidden }` then re-showing .resume-print-area.
+          visibility:hidden keeps elements in flow -- their boxes still
+          occupy height. The résumé's in-flow ancestors (and any tall
+          sibling not caught by .no-print) pushed the document across many
+          empty pages. Chromium's print engine happened to collapse that
+          extra layout, but Firefox/Safari did not, so the bug was
+          browser-specific and invisible in a Chromium-only test.
+       2. The screen layout's `min-h-full` + `flex flex-col` body with a
+          `flex-1` #site-content. In some print engines a 100% min-height
+          on body plus a flex-grow child forced the child to fill a full
+          page even when the résumé was shorter, adding blank space.
+     The fix: display:none (not visibility:hidden) on every body-level
+     subtree that doesn't contain the résumé, so they contribute zero
+     layout; and neutralize the min-height/flex fillers on the print path.
+     display:none is the canonical "print only this element" technique
+     precisely because it removes layout, which visibility never does.
+     Scoped with :has() to résumé pages only; non-résumé pages skip this
+     block and print normally. The data-print-resume="modal" rules below
+     stay as a fallback for browsers without :has() support. */
+  body:has(.resume-print-area) > *:not(:has(.resume-print-area)) {
+    display: none !important;
+  }
+  /* Zero the screen layout's height fillers so they can't force blank
+     pages when printing. body is min-h-full flex flex-col and
+     #site-content is flex-1 -- correct on screen, wrong for print. */
+  body:has(.resume-print-area) {
+    min-height: 0 !important;
+    height: auto !important;
+    display: block !important;
+  }
+  body:has(.resume-print-area) #site-content {
+    flex: none !important;
+    min-height: 0 !important;
   }
   .resume-print-area,
   .resume-print-area * {
