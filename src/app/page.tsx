@@ -49,6 +49,11 @@ export default function Home() {
               >
                 (303) 946-4224
               </a>
+              <CopyButton
+                value="+13039464224"
+                label="phone number"
+                className="ml-1"
+              />
             </p>
             <p className="mt-3 max-w-md font-mono text-xs text-muted-foreground">
               <span className="text-accent-blue">Now:</span> GED sprint ·
