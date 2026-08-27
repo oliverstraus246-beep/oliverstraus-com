@@ -161,7 +161,15 @@ export function Hero() {
   return (
     <section
       ref={container}
-      className="relative h-screen w-full overflow-hidden"
+      // h-screen (100vh) base for browsers without dynamic viewport support;
+      // upgraded to 100dvh where supported. On iOS Safari, 100vh extends
+      // behind the address bar, which hid the ScrollCue at bottom-5 entirely
+      // on iPhone. 100dvh tracks the *visible* viewport so the cue (and any
+      // bottom-anchored hero content) stays in view. Safe for the desktop
+      // scroll-pinned crossfade: dvh == vh on desktop (no dynamic chrome), and
+      // the pin is gated to >=640px anyway, so the section height never shifts
+      // mid-pin on the only viewport where the pin runs.
+      className="relative h-screen supports-[height:100dvh]:h-dvh w-full overflow-hidden"
     >
       {/* The page's single <h1>. The visible hero headlines below are rendered
           twice -- once in a mobile layout (sm:hidden) and once in a desktop
