@@ -314,7 +314,16 @@ export function Nav() {
 
       <div
         ref={overlayRef}
-        className={`fixed inset-0 z-[60] flex flex-col justify-center bg-background px-6 opacity-0 ${
+        // flex-col without justify-center: the <nav> below takes flex-1 and
+        // centers its own links, while the social row sits in-flow at the
+        // bottom (not absolute). Earlier the overlay was justify-center with
+        // the social row absolute bottom-8 -- on a short viewport (landscape
+        // phone, ~390px tall) the centered four text-5xl links extended down
+        // past the absolute social row and overlapped it by ~75px. In-flow
+        // layout can't overlap. overflow-y-auto is the safety net for an
+        // ultra-short viewport where links + social still exceed the height:
+        // the overlay scrolls instead of clipping the social row off-screen.
+        className={`nav-menu fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-background px-6 opacity-0 ${
           open ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!open}
@@ -337,12 +346,16 @@ export function Nav() {
           type="button"
           onClick={close}
           aria-label="Close menu"
-          className="absolute right-6 top-6 flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-full border border-border transition-colors duration-150 hover:border-accent-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          // sticky (not absolute) so it stays pinned at the top-right while
+          // the overlay scrolls on an ultra-short viewport, and in-flow so it
+          // doesn't overlap the nav links the way an absolute element can.
+          // self-end right-aligns it in the flex-col without stretching.
+          className="sticky top-6 self-end flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-full border border-border transition-colors duration-150 hover:border-accent-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <span className="h-px w-4 translate-y-[3.5px] rotate-45 bg-foreground" />
           <span className="h-px w-4 -translate-y-[3.5px] -rotate-45 bg-foreground" />
         </button>
-        <nav className="mx-auto flex w-full max-w-4xl flex-col gap-2">
+        <nav className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-2">
           {LINKS.map((link, i) => (
             <Link
               key={link.href}
@@ -371,14 +384,17 @@ export function Nav() {
           ))}
         </nav>
 
-        {/* Social row pinned to the bottom of the open overlay. On mobile a
-            visitor who opens the menu to find a channel shouldn't have to
-            dismiss it and scroll to the footer to reach LinkedIn/GitLab/etc.
-            -- these sit a thumb-reach away below the big links. absolute (not
-            in the flex flow) so the centered links keep their vertical
-            centering; the whole overlay is inert + opacity-0 when closed, so
-            these are hidden and removed from the tab order alongside it. */}
-        <div className="absolute bottom-8 left-0 right-0 mx-auto flex w-full max-w-4xl justify-center gap-6 px-6">
+        {/* Social row at the bottom of the open overlay, in-flow (not
+           absolute). On mobile a visitor who opens the menu to find a
+           channel shouldn't have to dismiss it and scroll to the footer to
+           reach LinkedIn/GitLab/etc. -- these sit a thumb-reach away below
+           the big links. In-flow so it can never overlap the nav links (an
+           earlier absolute bottom-8 version overlapped them on a short
+           landscape viewport); the nav above takes flex-1 and centers its
+           links in the remaining space. The whole overlay is inert +
+           opacity-0 when closed, so these are hidden and removed from the
+           tab order alongside it. */}
+        <div className="mx-auto flex w-full max-w-4xl justify-center gap-6 px-6 py-8">
           {PLATFORMS.map((platform) => (
             <a
               key={platform.label}

@@ -135,6 +135,20 @@
   }
 }
 
+/* Short viewports -- a landscape phone is wide enough to trip the sm:
+   breakpoint (so the full-screen menu's links jump to text-7xl) but not
+   tall enough to fit four of them. The menu is scrollable as a fallback,
+   but shrinking the links to a short-viewport size lets them all fit
+   without scrolling. max-height (not max-width) so a tall tablet in
+   portrait is unaffected -- only genuinely short screens compact. */
+@media (max-height: 520px) {
+  .nav-menu nav > a {
+    font-size: 1.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
 /* Light theme -- near-white warm-neutral (not stark #fff), same structural
    roles as dark so every component that consumes --background/--card/etc
    just works. Primary accent still comes from --accent-blue, which the
