@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { VENTURES } from "@/lib/ventures";
 import { PLATFORMS } from "@/components/social-links";
 import { openResume } from "@/components/resume-modal";
+import { toggleTheme } from "@/components/theme-switcher";
 
 interface CommandItem {
   id: string;
@@ -81,6 +82,16 @@ export function CommandPalette() {
           navigator.clipboard.writeText(EMAIL);
           setCopied(true);
         },
+      },
+      {
+        id: "toggle-theme",
+        // Keyboard-only path to the dark/light flip -- the header has a
+        // Moon/Sun button, but a palette user never has to leave the
+        // keyboard to toggle it. "dark"/"light" are in the hint so typing
+        // either surfaces this command.
+        label: "Toggle Theme",
+        hint: "Dark / Light",
+        run: () => toggleTheme(),
       },
     ];
 

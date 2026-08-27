@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { CommandPalette } from "@/components/command-palette";
 import { openResume } from "@/components/resume-modal";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { PLATFORMS } from "@/components/social-links";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
 
 // Section anchors are prefixed with "/" so they resolve from every route,
@@ -369,6 +370,32 @@ export function Nav() {
             </Link>
           ))}
         </nav>
+
+        {/* Social row pinned to the bottom of the open overlay. On mobile a
+            visitor who opens the menu to find a channel shouldn't have to
+            dismiss it and scroll to the footer to reach LinkedIn/GitLab/etc.
+            -- these sit a thumb-reach away below the big links. absolute (not
+            in the flex flow) so the centered links keep their vertical
+            centering; the whole overlay is inert + opacity-0 when closed, so
+            these are hidden and removed from the tab order alongside it. */}
+        <div className="absolute bottom-8 left-0 right-0 mx-auto flex w-full max-w-4xl justify-center gap-6 px-6">
+          {PLATFORMS.map((platform) => (
+            <a
+              key={platform.label}
+              href={platform.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={close}
+              // py-1.5 -my-1.5 grows the tap box to ~28px (WCAG 2.2 AA 24px
+              // minimum) with the negative margin cancelling the box growth
+              // so visual position is unchanged; gap-6 keeps the 6px-per-side
+              // hit-box expansion from touching a neighbor.
+              className="inline-flex items-center py-1.5 -my-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors duration-150 hover:text-accent-blue"
+            >
+              {platform.label}
+            </a>
+          ))}
+        </div>
       </div>
     </>
   );

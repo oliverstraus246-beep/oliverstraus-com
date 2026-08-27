@@ -35,6 +35,23 @@ function readAccent(): ThemeAccent {
   return a === "amber" || a === "violet" || a === "emerald" ? a : "blue";
 }
 
+// Module-scope theme mutators for callers outside this component (the
+// command palette's "Toggle Theme" command). They mirror persist()'s
+// effects exactly -- apply the DOM dataset, write localStorage, and
+// dispatch the change event so any useSyncExternalStore subscriber
+// re-snapshots -- so the toggle stays in sync with the header switcher's
+// own UI (the Moon/Sun icon flips) rather than the two disagreeing.
+export function setThemeMode(next: ThemeMode) {
+  if (typeof window === "undefined") return;
+  applyToDom(next, readAccent());
+  window.localStorage.setItem("theme", next);
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+}
+
+export function toggleTheme() {
+  setThemeMode(readMode() === "dark" ? "light" : "dark");
+}
+
 function subscribeTheme(callback: () => void) {
   window.addEventListener(THEME_CHANGE_EVENT, callback);
   window.addEventListener("storage", callback);
