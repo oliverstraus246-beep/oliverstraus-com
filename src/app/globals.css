@@ -178,10 +178,16 @@
   --ring: #94631a;
 }
 :root[data-theme="light"][data-accent="violet"] {
-  --accent-blue: #7a5cd0;
+  /* #7a5cd0 passes on pure #fff (4.92) but the light theme's actual
+     --background is #f4f4f2, where it drops to 4.47 -- just under the 4.5 AA
+     bar for the small accent-blue text that sits on the page background
+     (timeline role labels, "Now:", résumé links). A touch deeper
+     (#7456c8) clears 4.88 on #f4f4f2 and 5.37 on #fff while staying the
+     same violet. dim already passes at 6.15 and stays darker than main. */
+  --accent-blue: #7456c8;
   --accent-blue-dim: #6346b8;
-  --primary: #7a5cd0;
-  --ring: #7a5cd0;
+  --primary: #7456c8;
+  --ring: #7456c8;
 }
 :root[data-theme="light"][data-accent="emerald"] {
   --accent-blue: #1d7a48;
