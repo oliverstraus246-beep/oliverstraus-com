@@ -252,6 +252,29 @@ export const VENTURES: readonly Venture[] = [
       alt: "The Reaper — a handheld ESP32-S3 multi-band wireless pentesting toolkit with seven radios",
     },
   },
+  {
+    slug: "wingman",
+    role: "Builder",
+    name: "Wingman",
+    description:
+      "Wingman is a real-time meeting and conversation copilot that runs entirely on local inference — speech-to-text and language-model reasoning both execute on-device, with no cloud API call at any stage.",
+    highlights: [
+      "Real-time speech-to-text through a local Whisper model — no cloud STT API",
+      "Conversational reasoning through a local LLM via Ollama — no cloud LLM API",
+      "Fully local pipeline end to end, from audio capture to generated response — zero cloud API dependency at any stage",
+      "Packaged as a standalone Electron desktop app",
+    ],
+    caseStudy: {
+      problem:
+        "A meeting copilot that routes audio and conversation content through a cloud API is a privacy liability by design — every word spoken leaves the machine and gets logged somewhere outside your control.",
+      approach:
+        "Wingman replaces every cloud dependency with a local equivalent: a local Whisper model handles speech-to-text, and a local model running through Ollama handles the conversational reasoning, chained into one real-time pipeline.",
+      outcome:
+        "A working real-time speech-to-response pipeline running entirely on local inference, packaged as a standalone Electron desktop app with no cloud API dependency at any stage.",
+    },
+    timeframe: "2026",
+    stack: ["Electron", "Whisper", "Ollama"],
+  },
 ] as const;
 
 export function getVenture(slug: string): Venture | undefined {
