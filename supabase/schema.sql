@@ -34,6 +34,12 @@ alter table honeypot_hits enable row level security;
 -- Visitor tracking pixel, written by src/app/api/track/route.ts. Same
 -- service_role-only RLS posture as the tables above: the anon/publishable
 -- key can't read or write this table, only the server-side route can.
+--
+-- view_id is a client-generated UUID shared by exactly two writes per page
+-- view: the initial insert (on load) and one later update to duration_ms
+-- (on tab-hide/pagehide, once the visitor's actual time-on-page is known).
+-- It's how the second write finds the first row again -- there's no visitor
+-- session/auth to key off instead.
 create table if not exists page_views (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -43,7 +49,12 @@ create table if not exists page_views (
   user_agent text,
   country text,
   region text,
-  city text
+  city text,
+  view_id uuid,
+  viewport_width integer,
+  viewport_height integer,
+  language text,
+  duration_ms integer
 );
 
 alter table page_views enable row level security;
@@ -53,3 +64,16 @@ create index if not exists page_views_created_at_idx
 
 create index if not exists page_views_path_created_at_idx
   on page_views (path, created_at);
+
+create index if not exists page_views_view_id_idx
+  on page_views (view_id);
+
+-- Migration for the already-live table (created before the columns above
+-- existed) -- safe to run again on a fresh table too, every clause is
+-- idempotent.
+alter table page_views add column if not exists view_id uuid;
+alter table page_views add column if not exists viewport_width integer;
+alter table page_views add column if not exists viewport_height integer;
+alter table page_views add column if not exists language text;
+alter table page_views add column if not exists duration_ms integer;
+create index if not exists page_views_view_id_idx on page_views (view_id);
