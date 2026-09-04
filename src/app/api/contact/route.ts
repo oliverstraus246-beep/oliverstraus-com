@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getClientIp, hashIp } from "@/lib/security";
+import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
 
 const ContactSchema = z.object({
   email: z.string().trim().min(3).max(320).email(),
@@ -86,6 +86,12 @@ export async function POST(request: NextRequest) {
   }
 
   const ip_hash = await hashIp(getClientIp(request));
+
+  if (await isIpBlocked(ip_hash)) {
+    // Same response shape as success -- a blocked sender learns nothing
+    // from the response that would tell them they've been singled out.
+    return NextResponse.json({ ok: true });
+  }
 
   const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60_000).toISOString();
   const rateCheck = await fetch(

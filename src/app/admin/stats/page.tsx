@@ -1,3 +1,4 @@
+import { blockIp, unblockIp } from "@/app/admin/actions";
 import { countBy, csvDownloadHref, supabaseReadHeaders, toCsv } from "@/lib/admin-stats";
 
 // Never prerendered (auth-gated, needs a live DB read every time).
@@ -26,6 +27,7 @@ interface PageViewRow {
 // view or RPC function) if this ever needs to cover more history than one
 // REST fetch can hold.
 const SAMPLE_SIZE = 5000;
+const ACTIVE_WINDOW_MINUTES = 5;
 
 // Deliberately not a real UA-parsing library -- a personal site's traffic
 // is overwhelmingly mainstream browsers/OSes, and a dependency buys more
@@ -78,6 +80,7 @@ interface Visitor {
   firstSeen: string;
   lastSeen: string;
   location: string;
+  active: boolean;
   rows: PageViewRow[];
 }
 
@@ -89,18 +92,26 @@ function groupByVisitor(rows: PageViewRow[]): Visitor[] {
     byHash.set(row.ip_hash, list);
   }
 
+  const now = Date.now();
+  const activeWindowMs = ACTIVE_WINDOW_MINUTES * 60_000;
+
   const visitors: Visitor[] = [...byHash.entries()].map(([ipHash, visitRows]) => {
     // Rows arrive newest-first (the query is ordered that way); the last
     // element of each group is that visitor's oldest sampled row.
     const sorted = [...visitRows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     const newest = sorted[0]!;
     const oldest = sorted[sorted.length - 1]!;
+    // "Active" is a heuristic, not a real presence signal: no duration
+    // beacon yet (they haven't left/hidden the tab) and the view started
+    // recently enough that they haven't just left it open for hours.
+    const active = newest.duration_ms == null && now - new Date(newest.created_at).getTime() < activeWindowMs;
     return {
       ipHash,
       visitCount: sorted.length,
       firstSeen: oldest.created_at,
       lastSeen: newest.created_at,
       location: [newest.city, newest.region, newest.country].filter(Boolean).join(", ") || "Unknown",
+      active,
       rows: sorted,
     };
   });
@@ -108,25 +119,29 @@ function groupByVisitor(rows: PageViewRow[]): Visitor[] {
   return visitors.sort((a, b) => (a.lastSeen < b.lastSeen ? 1 : -1));
 }
 
-async function getStats() {
+async function getStats(pathFilter: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
 
-  const [countRes, rowsRes] = await Promise.all([
-    fetch(`${url}/rest/v1/page_views?select=id`, {
+  const filterQuery = pathFilter ? `&path=ilike.*${encodeURIComponent(pathFilter)}*` : "";
+
+  const [countRes, rowsRes, blockedRes] = await Promise.all([
+    fetch(`${url}/rest/v1/page_views?select=id${filterQuery}`, {
       method: "HEAD",
       headers: { ...supabaseReadHeaders(key), Prefer: "count=exact" },
       cache: "no-store",
     }),
     fetch(
-      `${url}/rest/v1/page_views?select=path,referrer,ip_hash,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at&order=created_at.desc&limit=${SAMPLE_SIZE}`,
+      `${url}/rest/v1/page_views?select=path,referrer,ip_hash,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at&order=created_at.desc&limit=${SAMPLE_SIZE}${filterQuery}`,
       { headers: supabaseReadHeaders(key), cache: "no-store" },
     ),
+    fetch(`${url}/rest/v1/blocked_ips?select=ip_hash`, { headers: supabaseReadHeaders(key), cache: "no-store" }),
   ]);
 
   const totalViews = Number(countRes.headers.get("content-range")?.split("/")[1] ?? 0);
   const rows = (await rowsRes.json()) as PageViewRow[];
+  const blockedSet = new Set(blockedRes.ok ? ((await blockedRes.json()) as { ip_hash: string }[]).map((b) => b.ip_hash) : []);
 
   const now = Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -153,6 +168,8 @@ async function getStats() {
     })),
   );
 
+  const visitors = groupByVisitor(rows);
+
   return {
     totalViews,
     sampleSize: rows.length,
@@ -168,7 +185,9 @@ async function getStats() {
     topOS: countBy(rows.map((r) => (r.user_agent ? parseOS(r.user_agent) : null)), "Unknown"),
     topDeviceTypes: countBy(rows.map((r) => deviceType(r)), "Unknown"),
     topLanguages: countBy(rows.map((r) => r.language), "Unknown"),
-    visitors: groupByVisitor(rows),
+    visitors,
+    activeNow: visitors.filter((v) => v.active),
+    blockedSet,
   };
 }
 
@@ -180,10 +199,18 @@ function formatDuration(ms: number): string {
   return `${minutes}m ${seconds}s`;
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, live }: { label: string; value: string | number; live?: boolean }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        {live && (
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          </span>
+        )}
+        {label}
+      </p>
       <p className="mt-1 text-3xl font-black tracking-tight text-foreground">{value}</p>
     </div>
   );
@@ -206,10 +233,46 @@ function BreakdownTable({ title, rows }: { title: string; rows: [string, number]
   );
 }
 
-function VisitorRow({ visitor }: { visitor: Visitor }) {
+function BlockButton({ ipHash, blocked }: { ipHash: string; blocked: boolean }) {
+  if (blocked) {
+    return (
+      <form action={unblockIp} onClick={(e) => e.stopPropagation()}>
+        <input type="hidden" name="ipHash" value={ipHash} />
+        <button
+          type="submit"
+          className="font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+        >
+          Unblock
+        </button>
+      </form>
+    );
+  }
+  return (
+    <form action={blockIp}>
+      <input type="hidden" name="ipHash" value={ipHash} />
+      <input type="hidden" name="reason" value="Blocked from /admin/stats" />
+      <button
+        type="submit"
+        className="font-mono text-[11px] uppercase tracking-widest text-red-400 transition-colors hover:text-red-300"
+      >
+        Block
+      </button>
+    </form>
+  );
+}
+
+function VisitorRow({ visitor, blocked }: { visitor: Visitor; blocked: boolean }) {
   return (
     <details className="border-t border-border/50 [&_summary::-webkit-details-marker]:hidden">
-      <summary className="grid cursor-pointer grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-4 py-2.5 text-sm transition-colors hover:bg-foreground/[0.03]">
+      <summary className="grid cursor-pointer grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 px-4 py-2.5 text-sm transition-colors hover:bg-foreground/[0.03]">
+        {visitor.active ? (
+          <span className="relative flex h-2 w-2" title="Active in the last 5 minutes">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+          </span>
+        ) : (
+          <span className="h-2 w-2" />
+        )}
         <span className="truncate font-mono text-foreground/80">{visitor.ipHash.slice(0, 12)}&hellip;</span>
         <span className="text-foreground/80">{visitor.location}</span>
         <span className="font-mono text-foreground">
@@ -220,9 +283,12 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
         </span>
       </summary>
       <div className="bg-foreground/[0.02] px-4 py-3">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          First seen {new Date(visitor.firstSeen).toLocaleString()}
-        </p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            First seen {new Date(visitor.firstSeen).toLocaleString()}
+          </p>
+          <BlockButton ipHash={visitor.ipHash} blocked={blocked} />
+        </div>
         <table className="mt-2 w-full text-left text-sm">
           <thead>
             <tr className="text-muted-foreground">
@@ -258,8 +324,13 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
   );
 }
 
-export default async function AdminStatsPage() {
-  const stats = await getStats();
+interface PageProps {
+  searchParams: Promise<{ path?: string }>;
+}
+
+export default async function AdminStatsPage({ searchParams }: PageProps) {
+  const { path: pathFilter = "" } = await searchParams;
+  const stats = await getStats(pathFilter);
 
   if (!stats) {
     return (
@@ -290,7 +361,29 @@ export default async function AdminStatsPage() {
         salted, one-way hash of their IP -- the raw address is never stored.
       </p>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <form method="get" className="mt-4 flex items-center gap-2">
+        <input
+          type="text"
+          name="path"
+          defaultValue={pathFilter}
+          placeholder="Filter by path, e.g. /work"
+          className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent-blue focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="font-mono text-xs uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+        >
+          Filter
+        </button>
+        {pathFilter && (
+          <a href="/admin/stats" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            Clear
+          </a>
+        )}
+      </form>
+
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
+        <StatCard label="Active now" value={stats.activeNow.length} live={stats.activeNow.length > 0} />
         <StatCard label="Total views (all-time)" value={stats.totalViews.toLocaleString()} />
         <StatCard label="Unique visitors (sample)" value={stats.uniqueVisitors.toLocaleString()} />
         <StatCard label="Last 24 hours" value={stats.viewsLast24h.toLocaleString()} />
@@ -320,7 +413,7 @@ export default async function AdminStatsPage() {
           <p className="p-4 text-sm text-muted-foreground">No visitors yet.</p>
         )}
         {stats.visitors.map((visitor) => (
-          <VisitorRow key={visitor.ipHash} visitor={visitor} />
+          <VisitorRow key={visitor.ipHash} visitor={visitor} blocked={stats.blockedSet.has(visitor.ipHash)} />
         ))}
       </div>
     </>

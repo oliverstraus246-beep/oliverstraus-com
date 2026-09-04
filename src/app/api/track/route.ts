@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getClientIp, hashIp } from "@/lib/security";
+import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
 
 // Self-hosted visitor pixel: VisitTracker (components/visit-tracker.tsx)
 // beacons here twice per page view -- once on load (a "view" insert) and
@@ -76,6 +76,11 @@ export async function POST(request: NextRequest) {
   if (!view.success) return new NextResponse(null, { status: 204 });
 
   const ip_hash = await hashIp(getClientIp(request));
+  // Blocked visitors get the same silent 204 a real beacon gets -- their
+  // page view just never lands, no signal back that they've been singled
+  // out. The duration beacon above already no-ops harmlessly against a
+  // view_id that was never written.
+  if (await isIpBlocked(ip_hash)) return new NextResponse(null, { status: 204 });
 
   try {
     await fetch(`${url}/rest/v1/page_views`, {

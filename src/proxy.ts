@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getClientIp, hashIp } from "@/lib/security";
+import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
 
 // Fake sensitive-looking paths. A hit means a scanner or bot, not a real
 // visitor -- nothing real is ever mounted at any of these.
@@ -148,7 +148,9 @@ async function logAdminAuthAttempt(ipHash: string, success: boolean) {
 // HTTP Basic Auth via this one check is the whole access control. Simplest
 // thing that actually gates a single-owner admin section: no session table,
 // no cookie, the browser's own credential prompt handles it.
-async function checkAdminAuth(request: NextRequest): Promise<"authorized" | "unauthorized" | "locked"> {
+async function checkAdminAuth(
+  request: NextRequest,
+): Promise<"authorized" | "unauthorized" | "locked" | "blocked"> {
   const user = process.env.ADMIN_STATS_USER;
   const pass = process.env.ADMIN_STATS_PASSWORD;
   if (!user || !pass) return "unauthorized"; // not configured -- fail closed, not open
@@ -157,6 +159,7 @@ async function checkAdminAuth(request: NextRequest): Promise<"authorized" | "una
   if (!header?.startsWith("Basic ")) return "unauthorized"; // no attempt made yet -- don't log, don't rate-limit
 
   const ipHash = await hashIp(getClientIp(request));
+  if (await isIpBlocked(ipHash)) return "blocked";
   if ((await recentFailedAttempts(ipHash)) >= LOCKOUT_MAX_FAILURES) return "locked";
 
   const decoded = atob(header.slice("Basic ".length));
@@ -180,6 +183,13 @@ function locked() {
   return new NextResponse("Too many failed attempts. Try again later.", { status: 429 });
 }
 
+function blocked() {
+  return new NextResponse("Not Found", {
+    status: 404,
+    headers: { "Content-Type": "text/plain" },
+  });
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -188,6 +198,7 @@ export async function proxy(request: NextRequest) {
   // (/admin/stats, /admin/contacts, ...) go through actual auth.
   if (pathname.startsWith("/admin/")) {
     const status = await checkAdminAuth(request);
+    if (status === "blocked") return blocked();
     if (status === "locked") return locked();
     if (status === "unauthorized") return unauthorized();
   }

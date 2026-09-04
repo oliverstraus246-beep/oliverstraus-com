@@ -93,3 +93,16 @@ alter table admin_auth_attempts enable row level security;
 
 create index if not exists admin_auth_attempts_ip_hash_created_at_idx
   on admin_auth_attempts (ip_hash, created_at);
+
+-- Manual blocklist, managed from /admin/security (block/unblock buttons on
+-- scanner IPs, visitors, and honeypot hits). Checked by the contact form
+-- and tracking pixel (src/lib/security.ts's isIpBlocked) before they write
+-- anything. Primary key is the ip_hash itself -- one row per blocked
+-- source, "block" is idempotent (upsert), "unblock" is a delete by key.
+create table if not exists blocked_ips (
+  ip_hash text primary key,
+  reason text,
+  created_at timestamptz not null default now()
+);
+
+alter table blocked_ips enable row level security;
