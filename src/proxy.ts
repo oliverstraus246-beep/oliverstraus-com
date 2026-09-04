@@ -82,28 +82,91 @@ function buildCspHeader() {
     .trim();
 }
 
-// The stats dashboard (src/app/admin/stats) has no user-facing login form --
+// Byte-by-byte XOR accumulation instead of `===` -- a naive string compare
+// short-circuits on the first mismatched character, so its timing leaks how
+// many leading characters of a guess were correct. This always walks the
+// full length of the longer input and folds the length difference in too,
+// so a wrong-length guess doesn't return measurably faster than a
+// right-length wrong guess.
+function timingSafeEqual(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < Math.max(aBytes.length, bBytes.length); i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return diff === 0;
+}
+
+const LOCKOUT_MAX_FAILURES = 5;
+const LOCKOUT_WINDOW_MINUTES = 15;
+
+function supabaseReadHeaders(key: string) {
+  return { apikey: key, Authorization: `Bearer ${key}` };
+}
+
+// Only requests that actually presented an Authorization header count as an
+// "attempt" for lockout purposes -- a browser's very first hit on an
+// unauthenticated tab has no header at all (that's what triggers the native
+// prompt), and penalizing that would lock Oliver out of his own dashboard
+// just for opening it in a fresh browser/session.
+async function recentFailedAttempts(ipHash: string): Promise<number> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return 0;
+
+  const since = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60_000).toISOString();
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/admin_auth_attempts?select=id&ip_hash=eq.${ipHash}&success=eq.false&created_at=gte.${since}`,
+      { headers: supabaseReadHeaders(key) },
+    );
+    if (!res.ok) return 0;
+    return ((await res.json()) as unknown[]).length;
+  } catch {
+    return 0;
+  }
+}
+
+async function logAdminAuthAttempt(ipHash: string, success: boolean) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return;
+
+  try {
+    await fetch(`${url}/rest/v1/admin_auth_attempts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...supabaseReadHeaders(key), Prefer: "return=minimal" },
+      body: JSON.stringify({ ip_hash: ipHash, success }),
+    });
+  } catch {
+    // Logging must never break the auth decision itself.
+  }
+}
+
+// The stats dashboard (src/app/admin/*) has no user-facing login form --
 // HTTP Basic Auth via this one check is the whole access control. Simplest
-// thing that actually gates a single-owner admin page: no session table,
-// no cookie, the browser's own credential prompt handles it. Constant-time
-// isn't needed here (the values compared are per-request strings against
-// env-configured secrets, not a hash search over a real credential store).
-function isAuthorizedAdmin(request: NextRequest): boolean {
+// thing that actually gates a single-owner admin section: no session table,
+// no cookie, the browser's own credential prompt handles it.
+async function checkAdminAuth(request: NextRequest): Promise<"authorized" | "unauthorized" | "locked"> {
   const user = process.env.ADMIN_STATS_USER;
   const pass = process.env.ADMIN_STATS_PASSWORD;
-  if (!user || !pass) return false; // not configured -- fail closed, not open
+  if (!user || !pass) return "unauthorized"; // not configured -- fail closed, not open
 
   const header = request.headers.get("authorization");
-  if (!header?.startsWith("Basic ")) return false;
+  if (!header?.startsWith("Basic ")) return "unauthorized"; // no attempt made yet -- don't log, don't rate-limit
+
+  const ipHash = await hashIp(getClientIp(request));
+  if ((await recentFailedAttempts(ipHash)) >= LOCKOUT_MAX_FAILURES) return "locked";
 
   const decoded = atob(header.slice("Basic ".length));
   const separatorIndex = decoded.indexOf(":");
-  if (separatorIndex === -1) return false;
+  const providedUser = separatorIndex === -1 ? decoded : decoded.slice(0, separatorIndex);
+  const providedPass = separatorIndex === -1 ? "" : decoded.slice(separatorIndex + 1);
 
-  return (
-    decoded.slice(0, separatorIndex) === user &&
-    decoded.slice(separatorIndex + 1) === pass
-  );
+  const ok = timingSafeEqual(providedUser, user) && timingSafeEqual(providedPass, pass);
+  void logAdminAuthAttempt(ipHash, ok);
+  return ok ? "authorized" : "unauthorized";
 }
 
 function unauthorized() {
@@ -113,11 +176,20 @@ function unauthorized() {
   });
 }
 
-export function proxy(request: NextRequest) {
+function locked() {
+  return new NextResponse("Too many failed attempts. Try again later.", { status: 429 });
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/admin") && !isAuthorizedAdmin(request)) {
-    return unauthorized();
+  // Trailing slash matters: bare "/admin" stays in HONEYPOT_PATHS below,
+  // indistinguishable from every other fake decoy path. Only real subpaths
+  // (/admin/stats, /admin/contacts, ...) go through actual auth.
+  if (pathname.startsWith("/admin/")) {
+    const status = await checkAdminAuth(request);
+    if (status === "locked") return locked();
+    if (status === "unauthorized") return unauthorized();
   }
 
   if (HONEYPOT_PATHS.has(pathname)) {

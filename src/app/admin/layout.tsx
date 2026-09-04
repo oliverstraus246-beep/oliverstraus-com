@@ -1,0 +1,37 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+// Applies to every page under /admin -- proxy.ts is the actual gate (Basic
+// Auth + failed-attempt lockout); this is just the shared shell (nav +
+// container) plus a belt-and-suspenders noindex on top of robots.txt.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+const ADMIN_LINKS = [
+  { href: "/admin/stats", label: "Stats" },
+  { href: "/admin/contacts", label: "Contacts" },
+  { href: "/admin/security", label: "Security" },
+] as const;
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-border">
+        <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Admin</span>
+          {ADMIN_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm text-foreground/80 transition-colors hover:text-accent-blue"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+      <main className="mx-auto max-w-6xl px-6 py-16">{children}</main>
+    </div>
+  );
+}

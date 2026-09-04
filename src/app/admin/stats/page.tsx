@@ -1,13 +1,7 @@
-import type { Metadata } from "next";
+import { countBy, csvDownloadHref, supabaseReadHeaders, toCsv } from "@/lib/admin-stats";
 
-// Never prerendered (auth-gated, needs a live DB read every time) and never
-// indexed -- robots.txt disallows /admin too, but that's a request, not
-// enforcement; the actual gate is proxy.ts's Basic Auth check, which runs
-// before this component ever executes.
+// Never prerendered (auth-gated, needs a live DB read every time).
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
 
 interface PageViewRow {
   path: string;
@@ -32,13 +26,6 @@ interface PageViewRow {
 // view or RPC function) if this ever needs to cover more history than one
 // REST fetch can hold.
 const SAMPLE_SIZE = 5000;
-
-function supabaseHeaders(key: string) {
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-  };
-}
 
 // Deliberately not a real UA-parsing library -- a personal site's traffic
 // is overwhelmingly mainstream browsers/OSes, and a dependency buys more
@@ -73,13 +60,16 @@ function deviceType(row: PageViewRow): string {
   return "Unknown";
 }
 
-function countBy(values: (string | null)[], fallback: string) {
-  const counts = new Map<string, number>();
-  for (const raw of values) {
-    const key = raw?.trim() || fallback;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+// document.referrer arrives as a full URL ("https://www.google.com/search?q=...");
+// grouping by hostname instead of the raw string is what makes "top
+// referrers" actually useful rather than one row per unique query string.
+function referrerLabel(referrer: string | null): string | null {
+  if (!referrer) return null;
+  try {
+    return new URL(referrer).hostname.replace(/^www\./, "");
+  } catch {
+    return referrer;
   }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
 }
 
 interface Visitor {
@@ -126,12 +116,12 @@ async function getStats() {
   const [countRes, rowsRes] = await Promise.all([
     fetch(`${url}/rest/v1/page_views?select=id`, {
       method: "HEAD",
-      headers: { ...supabaseHeaders(key), Prefer: "count=exact" },
+      headers: { ...supabaseReadHeaders(key), Prefer: "count=exact" },
       cache: "no-store",
     }),
     fetch(
       `${url}/rest/v1/page_views?select=path,referrer,ip_hash,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at&order=created_at.desc&limit=${SAMPLE_SIZE}`,
-      { headers: supabaseHeaders(key), cache: "no-store" },
+      { headers: supabaseReadHeaders(key), cache: "no-store" },
     ),
   ]);
 
@@ -149,6 +139,20 @@ async function getStats() {
     ? Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length)
     : null;
 
+  const csv = toCsv(
+    rows.map((r) => ({
+      created_at: r.created_at,
+      path: r.path,
+      referrer: r.referrer ?? "",
+      country: r.country ?? "",
+      region: r.region ?? "",
+      city: r.city ?? "",
+      language: r.language ?? "",
+      duration_ms: r.duration_ms ?? "",
+      ip_hash: r.ip_hash,
+    })),
+  );
+
   return {
     totalViews,
     sampleSize: rows.length,
@@ -156,12 +160,9 @@ async function getStats() {
     viewsLast24h,
     viewsLast7d,
     avgDurationMs,
-    durationsSampleSize: durations.length,
+    csvHref: csvDownloadHref(csv),
     topPaths: countBy(rows.map((r) => r.path), "(unknown)"),
-    topReferrers: countBy(
-      rows.map((r) => r.referrer),
-      "Direct / no referrer",
-    ),
+    topReferrers: countBy(rows.map((r) => referrerLabel(r.referrer)), "Direct / no referrer"),
     topCountries: countBy(rows.map((r) => r.country), "Unknown"),
     topBrowsers: countBy(rows.map((r) => (r.user_agent ? parseBrowser(r.user_agent) : null)), "Unknown"),
     topOS: countBy(rows.map((r) => (r.user_agent ? parseOS(r.user_agent) : null)), "Unknown"),
@@ -211,8 +212,12 @@ function VisitorRow({ visitor }: { visitor: Visitor }) {
       <summary className="grid cursor-pointer grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-4 py-2.5 text-sm transition-colors hover:bg-foreground/[0.03]">
         <span className="truncate font-mono text-foreground/80">{visitor.ipHash.slice(0, 12)}&hellip;</span>
         <span className="text-foreground/80">{visitor.location}</span>
-        <span className="font-mono text-foreground">{visitor.visitCount} visit{visitor.visitCount === 1 ? "" : "s"}</span>
-        <span className="whitespace-nowrap text-muted-foreground">{new Date(visitor.lastSeen).toLocaleString()}</span>
+        <span className="font-mono text-foreground">
+          {visitor.visitCount} visit{visitor.visitCount === 1 ? "" : "s"}
+        </span>
+        <span className="whitespace-nowrap text-muted-foreground">
+          {new Date(visitor.lastSeen).toLocaleString()}
+        </span>
       </summary>
       <div className="bg-foreground/[0.02] px-4 py-3">
         <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -258,18 +263,27 @@ export default async function AdminStatsPage() {
 
   if (!stats) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-16 text-foreground">
+      <>
         <h1 className="text-2xl font-bold">Stats unavailable</h1>
         <p className="mt-2 text-muted-foreground">
           Supabase env vars aren&apos;t configured on this environment.
         </p>
-      </main>
+      </>
     );
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-16 text-foreground">
-      <h1 className="text-3xl font-black tracking-tight">Visitor stats</h1>
+    <>
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <h1 className="text-3xl font-black tracking-tight">Visitor stats</h1>
+        <a
+          href={stats.csvHref}
+          download="page_views.csv"
+          className="font-mono text-xs uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+        >
+          Download CSV
+        </a>
+      </div>
       <p className="mt-2 text-sm text-muted-foreground">
         Breakdowns are computed over the {stats.sampleSize.toLocaleString()} most recent page views.
         Total views is an exact count of everything ever logged. Every visitor is identified only by a
@@ -295,6 +309,7 @@ export default async function AdminStatsPage() {
         <BreakdownTable title="Browsers" rows={stats.topBrowsers} />
         <BreakdownTable title="Operating systems" rows={stats.topOS} />
         <BreakdownTable title="Device type" rows={stats.topDeviceTypes} />
+        <BreakdownTable title="Languages" rows={stats.topLanguages} />
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
@@ -308,6 +323,6 @@ export default async function AdminStatsPage() {
           <VisitorRow key={visitor.ipHash} visitor={visitor} />
         ))}
       </div>
-    </main>
+    </>
   );
 }

@@ -77,3 +77,19 @@ alter table page_views add column if not exists viewport_height integer;
 alter table page_views add column if not exists language text;
 alter table page_views add column if not exists duration_ms integer;
 create index if not exists page_views_view_id_idx on page_views (view_id);
+
+-- Failed/succeeded Basic Auth attempts against /admin/*, written by
+-- proxy.ts's checkAdminAuth. Powers both the lockout (5 failures in 15
+-- minutes from one ip_hash -> 429s until the window ages out) and the
+-- "who's poking at my admin panel" view on /admin/security.
+create table if not exists admin_auth_attempts (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  ip_hash text not null,
+  success boolean not null
+);
+
+alter table admin_auth_attempts enable row level security;
+
+create index if not exists admin_auth_attempts_ip_hash_created_at_idx
+  on admin_auth_attempts (ip_hash, created_at);
