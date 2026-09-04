@@ -19,7 +19,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-background text-foreground">
       <nav className="border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
-          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Admin</span>
+          <Link
+            href="/admin"
+            className="font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+          >
+            Admin
+          </Link>
           {ADMIN_LINKS.map((link) => (
             <Link
               key={link.href}

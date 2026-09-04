@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
 
 // Fake sensitive-looking paths. A hit means a scanner or bot, not a real
-// visitor -- nothing real is ever mounted at any of these.
+// visitor -- nothing real is ever mounted at any of these. "/admin" used to
+// be one of these (a decoy indistinguishable from the others), but a real
+// dashboard now lives there -- it goes through checkAdminAuth below instead.
 const HONEYPOT_PATHS = new Set([
   "/wp-admin",
   "/wp-login.php",
@@ -13,7 +15,6 @@ const HONEYPOT_PATHS = new Set([
   "/.env.production",
   "/.git/config",
   "/.git/HEAD",
-  "/admin",
   "/administrator",
   "/administrator/index.php",
   "/phpmyadmin",
@@ -193,10 +194,9 @@ function blocked() {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Trailing slash matters: bare "/admin" stays in HONEYPOT_PATHS below,
-  // indistinguishable from every other fake decoy path. Only real subpaths
-  // (/admin/stats, /admin/contacts, ...) go through actual auth.
-  if (pathname.startsWith("/admin/")) {
+  // Covers the real /admin landing page itself plus every real subpath
+  // (/admin/stats, /admin/contacts, ...).
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     const status = await checkAdminAuth(request);
     if (status === "blocked") return blocked();
     if (status === "locked") return locked();
