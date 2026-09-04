@@ -82,8 +82,43 @@ function buildCspHeader() {
     .trim();
 }
 
+// The stats dashboard (src/app/admin/stats) has no user-facing login form --
+// HTTP Basic Auth via this one check is the whole access control. Simplest
+// thing that actually gates a single-owner admin page: no session table,
+// no cookie, the browser's own credential prompt handles it. Constant-time
+// isn't needed here (the values compared are per-request strings against
+// env-configured secrets, not a hash search over a real credential store).
+function isAuthorizedAdmin(request: NextRequest): boolean {
+  const user = process.env.ADMIN_STATS_USER;
+  const pass = process.env.ADMIN_STATS_PASSWORD;
+  if (!user || !pass) return false; // not configured -- fail closed, not open
+
+  const header = request.headers.get("authorization");
+  if (!header?.startsWith("Basic ")) return false;
+
+  const decoded = atob(header.slice("Basic ".length));
+  const separatorIndex = decoded.indexOf(":");
+  if (separatorIndex === -1) return false;
+
+  return (
+    decoded.slice(0, separatorIndex) === user &&
+    decoded.slice(separatorIndex + 1) === pass
+  );
+}
+
+function unauthorized() {
+  return new NextResponse("Authentication required.", {
+    status: 401,
+    headers: { "WWW-Authenticate": 'Basic realm="admin", charset="UTF-8"' },
+  });
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/admin") && !isAuthorizedAdmin(request)) {
+    return unauthorized();
+  }
 
   if (HONEYPOT_PATHS.has(pathname)) {
     // Fire-and-forget: a slow or failed log write must never delay or break

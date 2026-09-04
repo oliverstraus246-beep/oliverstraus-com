@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /admin
 
 # Allow all major AI crawlers for search visibility
 User-agent: GPTBot
