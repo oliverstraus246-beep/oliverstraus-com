@@ -17,7 +17,12 @@ const ADMIN_LINKS = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <nav className="border-b border-border">
+      {/* pt-20/24: the site's <header> is position:fixed, height 75px, z-50 --
+          every other page clears it with top padding on its own main content
+          (e.g. resume/page.tsx's pt-28, work/page.tsx's pt-32). Without it,
+          this nav starts at y=0 and renders completely hidden behind the
+          fixed header instead of below it. */}
+      <nav className="border-b border-border pt-28 sm:pt-32">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
           <Link
             href="/admin"
