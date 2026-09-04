@@ -15,7 +15,7 @@ export const RESUME_PRESETS: readonly ResumePreset[] = [
   {
     id: "ledger",
     name: "Ledger",
-    description: "Warm paper tone, serif headers — built for finance and admissions readers.",
+    description: "Warm paper tone, serif headers, built for finance and admissions readers.",
     swatch: "#f0ebe1",
     headingFont: "serif",
   },
@@ -29,14 +29,14 @@ export const RESUME_PRESETS: readonly ResumePreset[] = [
   {
     id: "blueprint",
     name: "Blueprint",
-    description: "Cool, technical, monospace labels — built for engineering reviewers.",
+    description: "Cool, technical, monospace labels, built for engineering reviewers.",
     swatch: "#e7edf7",
     headingFont: "mono",
   },
   {
     id: "brief",
     name: "Brief",
-    description: "Plain black and white, zero color — the safest ATS-conservative option.",
+    description: "Plain black and white, zero color: the safest ATS-conservative option.",
     swatch: "#ffffff",
     headingFont: "sans",
   },

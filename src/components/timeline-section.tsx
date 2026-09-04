@@ -25,18 +25,18 @@ const TIMELINE: readonly TimelineEntry[] = [
     role: "Independent study",
     name: "GED — Accelerated Completion",
     description:
-      "All four GED subjects in a single week, targeting 175+ for college credit — already scoring in the 170s on practice tests before the real run. Eligibility letter secured from Colorado School of Mines.",
+      "All four GED subjects in a single week, targeting 175+ for college credit. Already scoring in the 170s on practice tests before the real run. Eligibility letter secured from Colorado School of Mines.",
     expand:
-      "Not a delay — a deliberate shortcut. The traditional four-year high school path was available; this one moves faster. All four subjects are studied simultaneously in a single week, targeting 175+ — the threshold that earns college credit — and practice tests are already landing in the 170s before the real attempt. Studying at home on my own schedule rather than a classroom. The plan: bank roughly twelve college credits from the scores before ever enrolling, then enter a Colorado community college for philosophy, AI, and coding at 12+ credits a semester. The system rewards the credential, not the seat time — so the seat time is what gets cut.",
+      "Not a delay: a deliberate shortcut. The traditional four-year high school path was available; this one moves faster. All four subjects are studied simultaneously in a single week, targeting 175+ (the threshold that earns college credit), and practice tests are already landing in the 170s before the real attempt. Studying at home on my own schedule rather than a classroom. The plan: bank roughly twelve college credits from the scores before ever enrolling, then enter a Colorado community college for philosophy, AI, and coding at 12+ credits a semester. The system rewards the credential, not the seat time, so the seat time is what gets cut.",
   },
   {
     date: "2026 — Present",
     role: "Builder",
     name: "Sectra",
     description:
-      "Voice-first AI assistant built from scratch — wake word, speech, vision, computer control, running locally.",
+      "Voice-first AI assistant built from scratch: wake word, speech, vision, computer control, running locally.",
     expand:
-      "A voice-first assistant built to a hard bar: it has to be good enough to actually use, not just demo. That meant fixing root causes as they surfaced — hunting a speech-to-text hallucination bug down to the exact VAD/Whisper interaction, not swapping models and hoping. Runs end to end on local models via Ollama, so there's no per-request API cost. Live camera object detection, parametric 3D CAD validated against closed-form geometry, and computer control gated behind a confirmation step for anything consequential.",
+      "A voice-first assistant built to a hard bar: it has to be good enough to actually use, not just demo. That meant fixing root causes as they surfaced, hunting a speech-to-text hallucination bug down to the exact VAD/Whisper interaction rather than swapping models and hoping. Runs end to end on local models via Ollama, so there's no per-request API cost. Live camera object detection, parametric 3D CAD validated against closed-form geometry, and computer control gated behind a confirmation step for anything consequential.",
     href: "/work/sectra",
     cta: "Read the full case study",
   },
@@ -56,7 +56,7 @@ const TIMELINE: readonly TimelineEntry[] = [
     role: "Builder",
     name: "PowerClaude",
     description:
-      "Claude Code personalization framework — 17 specialist configurations, open-sourced under the MIT license.",
+      "Claude Code personalization framework: 17 specialist configurations, open-sourced under the MIT license.",
     expand:
       "A personalization framework for Claude Code: hooks, a markdown vault, and 17 specialist agent configurations. Open-sourced under MIT so the attribution and the license carry cleanly. This very site's workflow runs on a version of it.",
     href: "/work/powerclaude",
@@ -67,9 +67,9 @@ const TIMELINE: readonly TimelineEntry[] = [
     role: "Builder",
     name: "The Reaper",
     description:
-      "Multi-band wireless pentesting toolkit on the ESP32-S3 — seven radios in one handheld device.",
+      "Multi-band wireless pentesting toolkit on the ESP32-S3: seven radios in one handheld device.",
     expand:
-      "A heavily modified fork of the open-source ESP32-DIV — not a reskin. Seven radios (WiFi, BLE, 2.4GHz, Sub-GHz, IR, RFID/NFC, GPS) in one handheld, PIN-lock security gating on boot, a JSON-lines audit trail of every session, and a localhost admin dashboard. Three real upstream bugs fixed along the way, carrying the MIT license and attribution the original requires. Authorized security testing only.",
+      "A heavily modified fork of the open-source ESP32-DIV, not a reskin. Seven radios (WiFi, BLE, 2.4GHz, Sub-GHz, IR, RFID/NFC, GPS) in one handheld, PIN-lock security gating on boot, a JSON-lines audit trail of every session, and a localhost admin dashboard. Three real upstream bugs fixed along the way, carrying the MIT license and attribution the original requires. Authorized security testing only.",
     href: "/work/the-reaper",
     cta: "Read the full case study",
   },
@@ -100,9 +100,9 @@ const TIMELINE: readonly TimelineEntry[] = [
     role: "Software Engineer",
     name: "Confidential Defense-Technology Contractor",
     description:
-      "Drone-based aerial mapping and UAV mission-planning pipeline — spatial logic, obstacle avoidance, real-time data integration.",
+      "Drone-based aerial mapping and UAV mission-planning pipeline: spatial logic, obstacle avoidance, real-time data integration.",
     expand:
-      "Software engineering work on a drone-based aerial mapping and UAV mission-planning pipeline — spatial logic, obstacle avoidance, and real-time data integration. Under NDA, so the specifics stay here.",
+      "Software engineering work on a drone-based aerial mapping and UAV mission-planning pipeline: spatial logic, obstacle avoidance, and real-time data integration. Under NDA, so the specifics stay here.",
   },
   {
     date: "2020 — 2023",
@@ -111,7 +111,7 @@ const TIMELINE: readonly TimelineEntry[] = [
     description:
       "Appointed at fourteen. Financial planning, budgeting, P&L, and AP/AR for a multi-million dollar business.",
     expand:
-      "Appointed CFO at fourteen — not a symbolic title. The actual books, the actual payroll, financial planning, budgeting, P&L, and AP/AR for a multi-million dollar business over three years. $250,000 directed to fifteen nonprofits across the run. The finance discipline from this is what keeps the ventures funded now.",
+      "Appointed CFO at fourteen, not a symbolic title. The actual books, the actual payroll, financial planning, budgeting, P&L, and AP/AR for a multi-million dollar business over three years. $250,000 directed to fifteen nonprofits across the run. The finance discipline from this is what keeps the ventures funded now.",
     href: "/work/topher-straus-fine-art",
     cta: "Read the full case study",
   },

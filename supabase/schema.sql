@@ -30,3 +30,26 @@ create table if not exists honeypot_hits (
 );
 
 alter table honeypot_hits enable row level security;
+
+-- Visitor tracking pixel, written by src/app/api/track/route.ts. Same
+-- service_role-only RLS posture as the tables above: the anon/publishable
+-- key can't read or write this table, only the server-side route can.
+create table if not exists page_views (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  path text not null,
+  referrer text,
+  ip_hash text not null,
+  user_agent text,
+  country text,
+  region text,
+  city text
+);
+
+alter table page_views enable row level security;
+
+create index if not exists page_views_created_at_idx
+  on page_views (created_at);
+
+create index if not exists page_views_path_created_at_idx
+  on page_views (path, created_at);

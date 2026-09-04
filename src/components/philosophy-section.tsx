@@ -12,7 +12,7 @@ const LOG = [
   {
     year: "2026",
     tag: "FOUNDED",
-    body: "Sectra. Voice-first AI assistant, built from scratch — wake word, speech, vision, computer control. Runs locally, no per-request cost.",
+    body: "Sectra. Voice-first AI assistant, built from scratch: wake word, speech, vision, computer control. Runs locally, no per-request cost.",
   },
   {
     year: "2025",

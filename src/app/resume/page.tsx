@@ -5,7 +5,7 @@ import { ResumePresetPicker } from "@/components/resume-preset-picker";
 import { ResumePrintButton } from "@/components/resume-print-button";
 
 const FULL_TITLE = "Résumé | Oliver Straus";
-const DESCRIPTION = "Oliver Straus's résumé — appointed CFO at 14, builder since. Skills, education, and professional experience.";
+const DESCRIPTION = "Oliver Straus's résumé: appointed CFO at 14, builder since. Skills, education, and professional experience.";
 
 export const metadata: Metadata = {
   title: "Résumé",

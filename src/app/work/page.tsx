@@ -16,7 +16,7 @@ import { VENTURES } from "@/lib/ventures";
 // smooth-scroll UX is unchanged -- this just backstops the route.
 
 const FULL_TITLE = "Work | Oliver Straus";
-const DESCRIPTION = `Selected ventures Oliver Straus has built, run, or led solo — from CFO appointments to security tooling and AI agent systems.`;
+const DESCRIPTION = `Selected ventures Oliver Straus has built, run, or led solo, from CFO appointments to security tooling and AI agent systems.`;
 
 export const metadata: Metadata = {
   title: "Work",

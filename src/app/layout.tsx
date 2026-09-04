@@ -9,6 +9,7 @@ import { Nav } from "@/components/nav";
 import { ResumeModal } from "@/components/resume-modal";
 import { ScrollReset } from "@/components/scroll-reset";
 import { ScrollProgress } from "@/components/scroll-progress";
+import { VisitTracker } from "@/components/visit-tracker";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -174,6 +175,7 @@ export default function RootLayout({
         </a>
         <ScrollReset />
         <ScrollProgress />
+        <VisitTracker />
         <BackToTop />
         <BootSequence />
         <Cursor />

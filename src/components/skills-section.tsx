@@ -15,7 +15,7 @@ export function SkillsSection() {
               What it&apos;s built with.
             </h2>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              The tools behind seven ventures — code, models, and the finance
+              The tools behind seven ventures: code, models, and the finance
               background that keeps them funded.
             </p>
           </Reveal>
