@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getClientIpFromHeaders, hashIp, isIpBlocked } from "@/lib/security";
+import { getClientIpFromHeaders, hashIp } from "@/lib/security";
 import { LOCKOUT_MAX_FAILURES, logAdminAuthAttempt, recentFailedAttempts, timingSafeEqual } from "@/lib/admin-auth";
 import { createSessionToken, SESSION_COOKIE } from "@/lib/session";
 import { verifyTotp } from "@/lib/totp";
@@ -55,9 +55,13 @@ export async function loginAdmin(formData: FormData) {
   const ip = getClientIpFromHeaders(await headers());
   const ipHash = await hashIp(ip);
 
-  if (await isIpBlocked(ipHash)) {
-    loginRedirect(safeNext, "Access denied.");
-  }
+  // No isIpBlocked gate here, deliberately: correct password + TOTP code is
+  // already the real security boundary, and a source can only end up
+  // auto-blocked (see proxy.ts's logHoneypotHit) by hitting a fake trap path
+  // no real login flow ever touches. Rejecting a *correct* login here would
+  // mean a false-positive auto-block could permanently lock Oliver out --
+  // the failed-attempt lockout below still throttles anyone who doesn't
+  // actually know the credentials, blocked or not.
   if ((await recentFailedAttempts(ipHash)) >= LOCKOUT_MAX_FAILURES) {
     loginRedirect(safeNext, "Too many failed attempts. Try again in a few minutes.");
   }

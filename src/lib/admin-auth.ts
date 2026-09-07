@@ -45,6 +45,31 @@ export async function recentFailedAttempts(ipHash: string): Promise<number> {
   }
 }
 
+// Whether this hash has ever successfully logged into admin -- the only
+// thing that proves "this is Oliver" (correct password + TOTP code), since
+// his IP changes across networks and VPNs. Used to exempt him from the
+// honeypot auto-block in proxy.ts: without this, testing the honeypot
+// paths from a fresh IP/VPN would auto-block himself. He still needs to
+// log in from a given IP at least once before poking honeypot paths from
+// it -- and even without that, the ordering fixes in proxyAdmin/loginAdmin
+// mean a false-positive auto-block can never actually strand him.
+export async function isTrustedIp(ipHash: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/admin_auth_attempts?select=id&ip_hash=eq.${ipHash}&success=eq.true&limit=1`,
+      { headers: supabaseHeaders(key) },
+    );
+    if (!res.ok) return false;
+    return ((await res.json()) as unknown[]).length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function logAdminAuthAttempt(ipHash: string, ipAddress: string, success: boolean): Promise<void> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

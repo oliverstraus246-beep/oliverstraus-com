@@ -131,12 +131,36 @@ async function getSecurityData() {
   };
 }
 
+// Explanatory hover tooltip. Deliberately NOT the native `title` attribute:
+// title's popup timing/appearance is inconsistent across browsers and
+// sometimes doesn't fire at all, and the previous version of this used a
+// unicode "circled i" character (&#9432;) as the trigger icon, which
+// rendered as a broken/tofu glyph in at least one real browser since not
+// every font ships that codepoint. This draws the icon as plain SVG shapes
+// (zero font dependency, renders identically everywhere) and the popup as
+// real DOM content shown via CSS :hover (group-hover), not a native tooltip
+// -- guaranteed visible, styleable, no timing quirks.
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex cursor-help align-middle">
+      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-muted-foreground/70" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
+        <rect x="7.25" y="6.6" width="1.5" height="5.1" rx="0.75" fill="currentColor" />
+        <circle cx="8" cy="4.5" r="0.95" fill="currentColor" />
+      </svg>
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-60 -translate-x-1/2 rounded-md bg-foreground p-2.5 text-xs normal-case leading-snug tracking-normal text-background opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100">
+        {text}
+      </span>
+    </span>
+  );
+}
+
 function StatCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4" title={hint}>
-      <p className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         {label}
-        {hint && <span className="cursor-help text-muted-foreground/60">&#9432;</span>}
+        {hint && <InfoTooltip text={hint} />}
       </p>
       <p className="mt-1 text-3xl font-black tracking-tight text-foreground">{value}</p>
     </div>
@@ -182,6 +206,17 @@ function ProfileLink({ ipHash }: { ipHash: string }) {
   );
 }
 
+function SourceHeader() {
+  return (
+    <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">
+      <span className="inline-flex items-center gap-1.5">
+        Source (hashed)
+        <InfoTooltip text="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history." />
+      </span>
+    </th>
+  );
+}
+
 function SpikeTable({ spikes }: { spikes: Spike[] }) {
   return (
     <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
@@ -201,7 +236,7 @@ function SpikeTable({ spikes }: { spikes: Spike[] }) {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="text-muted-foreground">
-              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest" title="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history.">Source (hashed)</th>
+              <SourceHeader />
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Peak rate</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Total events</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Status</th>
@@ -235,11 +270,9 @@ function SpikeTable({ spikes }: { spikes: Spike[] }) {
 function ScannerIpTable({ rows, blockedSet }: { rows: [string, number][]; blockedSet: Set<string> }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <p
-        className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
-        title="Sources ranked by honeypot hits. Shown hashed here for at-a-glance scanning -- open a profile to see the real IP, ISP, and full activity history."
-      >
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         Most active scanner IPs (hashed)
+        <InfoTooltip text="Sources ranked by honeypot hits. Shown hashed here for at-a-glance scanning -- open a profile to see the real IP, ISP, and full activity history." />
       </p>
       <div className="mt-3 space-y-1.5">
         {rows.length === 0 && <p className="text-sm text-muted-foreground">No data yet.</p>}
@@ -261,14 +294,15 @@ function ScannerIpTable({ rows, blockedSet }: { rows: [string, number][]; blocke
 function BreakdownTable({ title, rows, hint }: { title: string; rows: [string, number][]; hint?: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground" title={hint}>
+      <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         {title}
+        {hint && <InfoTooltip text={hint} />}
       </p>
       <div className="mt-3 space-y-1.5">
         {rows.length === 0 && <p className="text-sm text-muted-foreground">No data yet.</p>}
         {rows.map(([key, count]) => (
           <div key={key} className="flex items-center justify-between gap-4 text-sm">
-            <span className="truncate font-mono text-foreground/80">{key}</span>
+            <span className="truncate text-foreground/80">{key}</span>
             <span className="shrink-0 font-mono text-foreground">{count}</span>
           </div>
         ))}
@@ -306,13 +340,16 @@ export default async function AdminSecurityPage() {
       <p className="mt-2 text-sm text-muted-foreground">
         Honeypot hits are requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and
         similar) that nothing real is ever mounted at -- a hit means a scanner or bot, never a real visitor.
+        Every hit auto-blocks its source on the spot (page views, contact submissions, and future admin
+        login attempts from it get silently dropped) unless that source has previously logged into admin
+        as you.
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
         <StatCard
           label="Honeypot hits (all-time)"
           value={data.totalHoneypotHits.toLocaleString()}
-          hint="Requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and similar) that nothing real is ever mounted at. A hit always means a scanner or bot -- never a real visitor."
+          hint="Requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and similar) that nothing real is ever mounted at. A hit always means a scanner or bot -- never a real visitor -- and auto-blocks the source immediately."
         />
         <StatCard
           label="Last 24 hours"
@@ -327,7 +364,7 @@ export default async function AdminSecurityPage() {
         <StatCard
           label="Blocked IPs"
           value={data.blockedIps.length.toLocaleString()}
-          hint="Sources on the manual blocklist. A blocked IP's page views, contact form submissions, and admin login attempts are silently dropped -- no error shown, no signal that they've been singled out."
+          hint="Sources on the blocklist -- either blocked manually or auto-blocked for hitting a honeypot path. A blocked IP's page views, contact form submissions, and admin login attempts are silently dropped -- no error shown, no signal that they've been singled out."
         />
         <StatCard
           label="Traffic anomalies"
@@ -349,11 +386,9 @@ export default async function AdminSecurityPage() {
 
       <div className="mt-6 rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <p
-            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
-            title="Sources on the manual blocklist -- their page views, contact submissions, and admin login attempts are silently dropped."
-          >
+          <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             Blocked IPs ({data.blockedIps.length})
+            <InfoTooltip text="Sources on the blocklist -- either blocked manually or auto-blocked for hitting a honeypot path. Their page views, contact submissions, and admin login attempts are silently dropped." />
           </p>
         </div>
         {data.blockedIps.length === 0 && (
@@ -379,11 +414,9 @@ export default async function AdminSecurityPage() {
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <p
-            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
-            title="Every request to a fake sensitive-looking path, newest first. These paths (/wp-admin, /.env, /.git/config, etc.) don't exist on this site -- nothing but a scanner or bot would ever request them."
-          >
+          <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             Recent honeypot hits
+            <InfoTooltip text="Every request to a fake sensitive-looking path, newest first. These paths (/wp-admin, /.env, /.git/config, etc.) don't exist on this site -- nothing but a scanner or bot would ever request them. Each one auto-blocks its source." />
           </p>
           <form action={purgeOldHoneypotHits}>
             <button
@@ -399,7 +432,7 @@ export default async function AdminSecurityPage() {
             <tr className="text-muted-foreground">
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Time</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Path probed</th>
-              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest" title="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history.">Source (hashed)</th>
+              <SourceHeader />
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">User agent</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
             </tr>
@@ -441,7 +474,7 @@ export default async function AdminSecurityPage() {
           <thead>
             <tr className="text-muted-foreground">
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Time</th>
-              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest" title="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history.">Source (hashed)</th>
+              <SourceHeader />
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Result</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
             </tr>
