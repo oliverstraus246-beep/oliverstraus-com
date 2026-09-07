@@ -9,6 +9,7 @@ import {
   referrerLabel,
   supabaseReadHeaders,
 } from "@/lib/admin-stats";
+import { getIpIntel } from "@/lib/ip-intel";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,7 @@ async function getVisitorProfile(ipHash: string) {
     honeypotHits.find((h) => h.ip_address)?.ip_address ??
     adminAttempts.find((a) => a.ip_address)?.ip_address ??
     null;
+  const ipIntel = await getIpIntel(ipAddress);
   const latest = views[0];
   const location = latest
     ? [latest.city, latest.region, latest.country].filter(Boolean).join(", ") || "Unknown"
@@ -160,6 +162,7 @@ async function getVisitorProfile(ipHash: string) {
   return {
     ipHash,
     ipAddress,
+    ipIntel,
     location,
     active,
     firstSeen,
@@ -316,7 +319,52 @@ export default async function VisitorProfilePage({ params }: PageProps) {
         )}
         {profile.contacts.length > 0 && <Badge tone="ok">Contacted you &mdash; {profile.contacts.length}</Badge>}
         <Badge tone="neutral">{profile.location}</Badge>
+        {profile.ipIntel?.isProxy && (
+          <Badge tone="warn" title="This IP is a known VPN, proxy, or Tor exit node -- their real location may not match what's shown above.">
+            VPN / Proxy
+          </Badge>
+        )}
+        {profile.ipIntel?.isHosting && (
+          <Badge tone="warn" title="This IP belongs to a datacenter/hosting provider, not a home or mobile ISP -- almost certainly a bot, scraper, or someone running a script, not a person browsing.">
+            Hosting / datacenter
+          </Badge>
+        )}
+        {profile.ipIntel?.isMobile && (
+          <Badge tone="neutral" title="This IP belongs to a mobile carrier's network.">
+            Mobile network
+          </Badge>
+        )}
       </div>
+
+      {profile.ipAddress && (
+        <div className="mt-6 rounded-lg border border-border bg-card p-4">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            IP intelligence
+          </p>
+          {profile.ipIntel ? (
+            <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">ISP</span>
+                <span className="truncate text-foreground/80">{profile.ipIntel.isp ?? "Unknown"}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Organization</span>
+                <span className="truncate text-foreground/80">{profile.ipIntel.org ?? "Unknown"}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">ASN</span>
+                <span className="truncate text-foreground/80">{profile.ipIntel.asn ?? "Unknown"}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Reverse DNS</span>
+                <span className="truncate text-foreground/80">{profile.ipIntel.reverseDns ?? "None"}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">No network intelligence available for this IP.</p>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 rounded-lg border border-border bg-card p-4">
         <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">

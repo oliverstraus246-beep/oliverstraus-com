@@ -144,3 +144,28 @@ create table if not exists visitor_notes (
 );
 
 alter table visitor_notes enable row level security;
+
+-- Cache for src/lib/ip-intel.ts's lookups against ip-api.com (free, no API
+-- key, 45 req/min from one server IP) -- ISP/org/ASN, whether the IP is a
+-- known VPN/proxy, hosting/datacenter, or mobile carrier, and reverse DNS.
+-- Keyed by raw IP (not ip_hash) since the lookup is inherently about the
+-- real address; entries are reused for 30 days (src/lib/ip-intel.ts's
+-- CACHE_TTL_MS) before a fresh lookup replaces them. Oliver explicitly
+-- opted into this: it's the one place on this site that sends visitor data
+-- (a raw IP) to a third party outside Supabase/Vercel.
+create table if not exists ip_intel (
+  ip_address text primary key,
+  country text,
+  region text,
+  city text,
+  isp text,
+  org text,
+  asn text,
+  is_proxy boolean not null default false,
+  is_hosting boolean not null default false,
+  is_mobile boolean not null default false,
+  reverse_dns text,
+  fetched_at timestamptz not null default now()
+);
+
+alter table ip_intel enable row level security;
