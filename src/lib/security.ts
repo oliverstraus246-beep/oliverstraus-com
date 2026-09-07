@@ -15,10 +15,18 @@ export async function hashIp(ip: string): Promise<string> {
     .join("");
 }
 
-export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
+// Split out from getClientIp so Server Actions (which get a Headers object
+// from next/headers's headers(), not a Request) can resolve the same way
+// proxy.ts and the route handlers do -- the login Server Action needs this
+// for lockout/blocklist checks, and there's no Request to hand it.
+export function getClientIpFromHeaders(headers: Headers): string {
+  const forwarded = headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0]!.trim();
-  return request.headers.get("x-real-ip") ?? "unknown";
+  return headers.get("x-real-ip") ?? "unknown";
+}
+
+export function getClientIp(request: Request): string {
+  return getClientIpFromHeaders(request.headers);
 }
 
 /**

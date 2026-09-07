@@ -1,11 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getClientIpFromHeaders, hashIp, isIpBlocked } from "@/lib/security";
+import { LOCKOUT_MAX_FAILURES, logAdminAuthAttempt, recentFailedAttempts, timingSafeEqual } from "@/lib/admin-auth";
+import { createSessionToken, SESSION_COOKIE } from "@/lib/session";
+import { verifyTotp } from "@/lib/totp";
 
 // Server Actions for the /admin/* write operations (block/unblock a
-// visitor, purge old rows). These POST to whatever /admin/* page invoked
-// them, so proxy.ts's existing Basic Auth gate covers them the same way it
-// covers the page load itself -- no separate auth surface to maintain.
+// visitor, purge old rows, login/logout). Everything except loginAdmin
+// itself POSTs to a page already behind the session-cookie gate in
+// proxy.ts, so no separate auth surface to maintain for those.
 function supabaseHeaders(key: string) {
   return {
     "Content-Type": "application/json",
@@ -20,6 +26,67 @@ function supabaseConfig() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Supabase env vars aren't configured.");
   return { url, key };
+}
+
+function loginRedirect(next: string, error: string): never {
+  const params = new URLSearchParams({ error });
+  if (next) params.set("next", next);
+  redirect(`/admin/login?${params.toString()}`);
+}
+
+// The one action proxy.ts doesn't gate (it can't -- this IS the gate).
+// Verifies username + password + TOTP code, checks the blocklist and the
+// same 5-failures/15-minute lockout the old Basic Auth flow used, and on
+// success issues the signed session cookie from lib/session.ts.
+export async function loginAdmin(formData: FormData) {
+  const username = String(formData.get("username") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const code = String(formData.get("code") ?? "").trim();
+  const next = String(formData.get("next") ?? "/admin");
+  const safeNext = next.startsWith("/admin") ? next : "/admin";
+
+  const expectedUser = process.env.ADMIN_STATS_USER;
+  const expectedPass = process.env.ADMIN_STATS_PASSWORD;
+  const totpSecret = process.env.ADMIN_TOTP_SECRET;
+  if (!expectedUser || !expectedPass) {
+    loginRedirect(safeNext, "Admin login isn't configured on this environment.");
+  }
+
+  const ip = getClientIpFromHeaders(await headers());
+  const ipHash = await hashIp(ip);
+
+  if (await isIpBlocked(ipHash)) {
+    loginRedirect(safeNext, "Access denied.");
+  }
+  if ((await recentFailedAttempts(ipHash)) >= LOCKOUT_MAX_FAILURES) {
+    loginRedirect(safeNext, "Too many failed attempts. Try again in a few minutes.");
+  }
+
+  const otpOk = totpSecret ? await verifyTotp(totpSecret, code) : true;
+  const ok = timingSafeEqual(username, expectedUser) && timingSafeEqual(password, expectedPass) && otpOk;
+  void logAdminAuthAttempt(ipHash, ok);
+
+  if (!ok) {
+    loginRedirect(safeNext, "Incorrect username, password, or code.");
+  }
+
+  const token = await createSessionToken();
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/admin",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  });
+
+  redirect(safeNext);
+}
+
+export async function logoutAdmin() {
+  const cookieStore = await cookies();
+  cookieStore.delete({ name: SESSION_COOKIE, path: "/admin" });
+  redirect("/admin/login");
 }
 
 export async function blockIp(formData: FormData) {

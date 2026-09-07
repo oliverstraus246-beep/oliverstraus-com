@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
-import { verifyTotp } from "@/lib/totp";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 // Fake sensitive-looking paths. A hit means a scanner or bot, not a real
 // visitor -- nothing real is ever mounted at any of these. "/admin" used to
 // be one of these (a decoy indistinguishable from the others), but a real
-// dashboard now lives there -- it goes through checkAdminAuth below instead.
+// dashboard now lives there -- it goes through proxyAdmin below instead.
 const HONEYPOT_PATHS = new Set([
   "/wp-admin",
   "/wp-login.php",
@@ -84,129 +84,6 @@ function buildCspHeader() {
     .trim();
 }
 
-// Byte-by-byte XOR accumulation instead of `===` -- a naive string compare
-// short-circuits on the first mismatched character, so its timing leaks how
-// many leading characters of a guess were correct. This always walks the
-// full length of the longer input and folds the length difference in too,
-// so a wrong-length guess doesn't return measurably faster than a
-// right-length wrong guess.
-function timingSafeEqual(a: string, b: string): boolean {
-  const aBytes = new TextEncoder().encode(a);
-  const bBytes = new TextEncoder().encode(b);
-  let diff = aBytes.length ^ bBytes.length;
-  for (let i = 0; i < Math.max(aBytes.length, bBytes.length); i++) {
-    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
-  }
-  return diff === 0;
-}
-
-const LOCKOUT_MAX_FAILURES = 5;
-const LOCKOUT_WINDOW_MINUTES = 15;
-
-function supabaseReadHeaders(key: string) {
-  return { apikey: key, Authorization: `Bearer ${key}` };
-}
-
-// Only requests that actually presented an Authorization header count as an
-// "attempt" for lockout purposes -- a browser's very first hit on an
-// unauthenticated tab has no header at all (that's what triggers the native
-// prompt), and penalizing that would lock Oliver out of his own dashboard
-// just for opening it in a fresh browser/session.
-async function recentFailedAttempts(ipHash: string): Promise<number> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return 0;
-
-  const since = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60_000).toISOString();
-  try {
-    const res = await fetch(
-      `${url}/rest/v1/admin_auth_attempts?select=id&ip_hash=eq.${ipHash}&success=eq.false&created_at=gte.${since}`,
-      { headers: supabaseReadHeaders(key) },
-    );
-    if (!res.ok) return 0;
-    return ((await res.json()) as unknown[]).length;
-  } catch {
-    return 0;
-  }
-}
-
-async function logAdminAuthAttempt(ipHash: string, success: boolean) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return;
-
-  try {
-    await fetch(`${url}/rest/v1/admin_auth_attempts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...supabaseReadHeaders(key), Prefer: "return=minimal" },
-      body: JSON.stringify({ ip_hash: ipHash, success }),
-    });
-  } catch {
-    // Logging must never break the auth decision itself.
-  }
-}
-
-// The stats dashboard (src/app/admin/*) has no user-facing login form --
-// HTTP Basic Auth via this one check is the whole access control. Simplest
-// thing that actually gates a single-owner admin section: no session table,
-// no cookie, the browser's own credential prompt handles it.
-//
-// When ADMIN_TOTP_SECRET is configured, the Basic Auth "password" field must
-// be the real password immediately followed by the current 6-digit
-// authenticator code (e.g. password "0liverS!!" + code "123456" ->
-// "0liverS!!123456"). There's no second form field to put a TOTP code in --
-// Basic Auth only carries one password string -- so this is the standard
-// way to bolt a second factor onto Basic Auth without inventing a session/
-// cookie system. Backward compatible: if the env var isn't set, auth is
-// password-only, same as before.
-async function checkAdminAuth(
-  request: NextRequest,
-): Promise<"authorized" | "unauthorized" | "locked" | "blocked"> {
-  const user = process.env.ADMIN_STATS_USER;
-  const pass = process.env.ADMIN_STATS_PASSWORD;
-  const totpSecret = process.env.ADMIN_TOTP_SECRET;
-  if (!user || !pass) return "unauthorized"; // not configured -- fail closed, not open
-
-  const header = request.headers.get("authorization");
-  if (!header?.startsWith("Basic ")) return "unauthorized"; // no attempt made yet -- don't log, don't rate-limit
-
-  const ipHash = await hashIp(getClientIp(request));
-  if (await isIpBlocked(ipHash)) return "blocked";
-  if ((await recentFailedAttempts(ipHash)) >= LOCKOUT_MAX_FAILURES) return "locked";
-
-  const decoded = atob(header.slice("Basic ".length));
-  const separatorIndex = decoded.indexOf(":");
-  const providedUser = separatorIndex === -1 ? decoded : decoded.slice(0, separatorIndex);
-  const providedPassAndOtp = separatorIndex === -1 ? "" : decoded.slice(separatorIndex + 1);
-
-  let providedPass = providedPassAndOtp;
-  let otpOk = true;
-  if (totpSecret) {
-    // Always slice off the last 6 characters as "the OTP" even if they
-    // aren't digits -- verifyTotp rejects non-digit input on its own, and
-    // this keeps the split (and therefore the password-portion length used
-    // below) constant-shape regardless of what was actually typed.
-    const otp = providedPassAndOtp.slice(-6);
-    providedPass = providedPassAndOtp.slice(0, -6);
-    otpOk = await verifyTotp(totpSecret, otp);
-  }
-
-  const ok = timingSafeEqual(providedUser, user) && timingSafeEqual(providedPass, pass) && otpOk;
-  void logAdminAuthAttempt(ipHash, ok);
-  return ok ? "authorized" : "unauthorized";
-}
-
-function unauthorized() {
-  return new NextResponse("Authentication required.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="admin", charset="UTF-8"' },
-  });
-}
-
-function locked() {
-  return new NextResponse("Too many failed attempts. Try again later.", { status: 429 });
-}
-
 function blocked() {
   return new NextResponse("Not Found", {
     status: 404,
@@ -214,17 +91,35 @@ function blocked() {
   });
 }
 
+// Gate is a signed session cookie, not HTTP Basic Auth -- see
+// src/app/admin/login for why (Basic Auth's browser-side credential cache
+// resends the same value on every request, which doesn't work once a TOTP
+// code is part of that value: the code goes stale in 30-90s and every
+// navigation after that failed and re-prompted). The credential + lockout
+// check itself now lives in the login Server Action (src/app/admin/actions.ts),
+// which only runs once per login instead of once per page view; this
+// middleware just checks whether a valid session already exists.
+async function proxyAdmin(request: NextRequest): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl;
+  if (!(pathname === "/admin" || pathname.startsWith("/admin/"))) return null;
+  if (pathname === "/admin/login") return null; // must stay reachable while logged out
+
+  const ipHash = await hashIp(getClientIp(request));
+  if (await isIpBlocked(ipHash)) return blocked();
+
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (await verifySessionToken(token)) return null; // valid session -- let it through
+
+  const loginUrl = new URL("/admin/login", request.url);
+  loginUrl.searchParams.set("next", pathname);
+  return NextResponse.redirect(loginUrl);
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Covers the real /admin landing page itself plus every real subpath
-  // (/admin/stats, /admin/contacts, ...).
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    const status = await checkAdminAuth(request);
-    if (status === "blocked") return blocked();
-    if (status === "locked") return locked();
-    if (status === "unauthorized") return unauthorized();
-  }
+  const adminResponse = await proxyAdmin(request);
+  if (adminResponse) return adminResponse;
 
   if (HONEYPOT_PATHS.has(pathname)) {
     // Fire-and-forget: a slow or failed log write must never delay or break

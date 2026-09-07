@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { logoutAdmin } from "@/app/admin/actions";
 import { AdminNavLinks } from "@/app/admin/admin-nav-links";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
-// Applies to every page under /admin -- proxy.ts is the actual gate (Basic
-// Auth + failed-attempt lockout); this is just the shared shell (nav +
-// container) plus a belt-and-suspenders noindex on top of robots.txt.
+// Applies to every page under /admin, including /admin/login -- proxy.ts is
+// the actual gate (signed session cookie, see src/lib/session.ts); this is
+// just the shared shell plus a belt-and-suspenders noindex on top of
+// robots.txt. Checks the same cookie itself (cheap: local HMAC verify, no
+// DB call) purely to decide whether to render the authenticated nav --
+// showing "Stats / Contacts / Security / Log out" on the login page itself
+// would be confusing since none of those are reachable yet.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const authenticated = await verifySessionToken(token);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* pt-20/24: the site's <header> is position:fixed, height 75px, z-50 --
@@ -25,7 +35,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             Admin
           </Link>
-          <AdminNavLinks />
+          {authenticated && (
+            <>
+              <AdminNavLinks />
+              <form action={logoutAdmin} className="ml-auto">
+                <button
+                  type="submit"
+                  className="font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+                >
+                  Log out
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </nav>
       <main className="mx-auto max-w-6xl px-6 py-16">{children}</main>
