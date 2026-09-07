@@ -3,7 +3,8 @@ import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { isTrustedIp } from "@/lib/admin-auth";
 
-// Shown at random on a honeypot hit instead of a plain 404 -- purely for the
+// Shown at random on a plain honeypot-path hit with no recognizable payload
+// attached (a bot just requesting /wp-admin, nothing else) -- purely for the
 // rare human who actually looks at the response body. Automated scanners
 // just check status code / look for expected file contents (an .env parser
 // wants "KEY=value" lines, a WordPress scanner wants specific markers) and
@@ -44,7 +45,195 @@ const HONEYPOT_PATHS = new Set([
   "/server-status",
 ]);
 
-async function logHoneypotHit(request: NextRequest, path: string, clientIp: string) {
+interface AttackSignature {
+  type: string;
+  pattern: RegExp;
+  taunts: string[];
+}
+
+// Recognized attack payload patterns, checked against pathname + query
+// string (never against admin-authenticated inputs or POST bodies -- see
+// the isAdminOrApi exclusion in proxy() below). Each is deliberately
+// specific to real attack syntax, not generic words, to keep false
+// positives on ordinary URLs at effectively zero. None of these techniques
+// actually work against this app (static site, no raw SQL, no template
+// engine reading user input, no Java/PHP runtime, no server-side URL
+// fetching) -- this is about recognizing and calling out the attempt, not
+// about anything here being exploitable.
+const ATTACK_SIGNATURES: AttackSignature[] = [
+  {
+    type: "log4shell",
+    pattern: /\$\{jndi:/i,
+    taunts: [
+      "It's 2026 and people still try Log4Shell. Bless.",
+      "${jndi:this-is-a-static-site-with-no-java-anywhere}",
+      "CVE-2021-44228, still getting attempted, still finding zero Java runtimes here.",
+    ],
+  },
+  {
+    type: "sqli",
+    pattern:
+      /(\bunion\b(\s|%20|\/\*.*?\*\/)+\bselect\b)|('\s*or\s*'?1'?\s*=\s*'?1)|(;\s*drop\s+table)|(\bxp_cmdshell\b)|(\bsleep\(\s*\d)|(\bbenchmark\(\s*\d)|(\bor\s+1\s*=\s*1\b)/i,
+    taunts: [
+      "Bobby Tables says hi.",
+      "There's no database query to inject -- just a REST call with your payload sitting there, inert.",
+      "DROP TABLE your expectations.",
+      "1=1? Sure, that's also true and equally useless here.",
+    ],
+  },
+  {
+    type: "xss",
+    pattern: /<script[\s>/]|javascript:\s*[a-z]|on(error|load)\s*=\s*['"]?[a-z]|<img[^>]+onerror|<svg[^>]+onload/i,
+    taunts: [
+      "Cute payload. No eval, no innerHTML, and a CSP that says no anyway.",
+      "You can't script your way out of a 404.",
+      "alert(1)? Groundbreaking.",
+      "This response ships with a CSP that laughs at you.",
+    ],
+  },
+  {
+    type: "path_traversal",
+    pattern: /(\.\.\/){2,}|(\.\.\\){2,}|\/etc\/passwd\b|\/windows\/win\.ini/i,
+    taunts: [
+      "There's no /etc/passwd here, just serverless functions.",
+      "../../still just a 404.",
+      "This isn't a filesystem. It never was.",
+    ],
+  },
+  {
+    type: "command_injection",
+    pattern: /;\s*(cat|ls|whoami|pwd|uname|nc|curl|wget)\s|\|\s*(nc|bash|sh)\s|\$\([a-z]+.{0,30}\)/i,
+    taunts: ["No shell to pop.", "That pipe goes nowhere.", "$(this) doesn't execute here."],
+  },
+  {
+    type: "ssrf",
+    pattern: /169\.254\.169\.254|metadata\.google|gopher:\/\/|dict:\/\/|file:\/\//i,
+    taunts: [
+      "No internal network to pivot to. This is a static site, not a corporate intranet.",
+      "169.254.169.254 has nothing for you here -- Vercel functions don't expose that metadata endpoint anyway.",
+      "SSRF needs a server willing to fetch your URL. This one isn't.",
+    ],
+  },
+  {
+    type: "nosql_injection",
+    pattern: /\$where\b|\$ne\b|\$gt\b|\$regex\b/i,
+    taunts: [
+      "No MongoDB to confuse here.",
+      "$where does that lead? Nowhere.",
+      "NoSQL injection needs a NoSQL database in the request path. This app's is Postgres, and it's not reachable from a URL.",
+    ],
+  },
+  {
+    type: "template_injection",
+    pattern: /\{\{.{0,15}(7\*7|config|self|request)/i,
+    taunts: [
+      "{{7*7}} = still 404, not 49.",
+      "No template engine here to inject into -- just static JSX rendered at build time.",
+      "SSTI needs a template. This is a compiled React tree.",
+    ],
+  },
+  {
+    type: "deserialization",
+    pattern: /rO0AB|aced0005|O:\d+:"|__PHP_Incomplete_Class/i,
+    taunts: [
+      "No Java or PHP deserialization happening on this Next.js app.",
+      "That gadget chain has nowhere to land.",
+      "Nice serialized payload. Wrong runtime entirely.",
+    ],
+  },
+  {
+    type: "crlf_injection",
+    pattern: /\r\n\s*(set-cookie|location|content-length)\s*:|\r\n\r\n/i,
+    taunts: ["Header injection needs headers this app reflects back. It doesn't.", "%0d%0a won't split anything here.", "CRLF? More like see-ya."],
+  },
+  {
+    type: "file_inclusion",
+    pattern: /php:\/\/(filter|input)|expect:\/\/|zip:\/\//i,
+    taunts: ["php://filter needs PHP. This is Node.", "No file includes here to hijack.", "Wrong stack for that one entirely."],
+  },
+  {
+    type: "prototype_pollution",
+    pattern: /__proto__|constructor(\s|%20|\.)*prototype/i,
+    taunts: ["__proto__ pollution needs a vulnerable merge function on the other end. Not finding one here.", "Nice attempt at a prototype that isn't listening."],
+  },
+  {
+    type: "graphql_probe",
+    pattern: /__schema\b|__typename.{0,10}query|introspectionquery/i,
+    taunts: ["There's no GraphQL API here to introspect.", "__schema? This site doesn't have one of those."],
+  },
+  {
+    type: "open_redirect",
+    pattern: /[?&](redirect|return|next|url|continue)=(https?:\/\/|\/\/[a-z0-9])/i,
+    taunts: ["Nice open-redirect attempt. This app validates its own next= params server-side.", "That URL isn't taking anyone anywhere but back here."],
+  },
+];
+
+// User-Agent fingerprints for common vuln scanners / recon tools. Checked
+// separately from the payload signatures above since this is about WHO is
+// asking, not WHAT they're asking for.
+const SCANNER_TOOL_SIGNATURE: AttackSignature = {
+  type: "scanner_tool",
+  pattern: /sqlmap|nikto|nmap|masscan|nuclei|gobuster|dirbuster|acunetix|w3af|zgrab|nessus|wpscan|feroxbuster|\bffuf\b|\bdirb\b|whatweb|metasploit|burp\s*collaborator/i,
+  taunts: [
+    "Automated tool detected. Automated boredom incoming.",
+    "Nice scanner. Still just a 404.",
+    "Running a tool doesn't make it a vulnerability.",
+    "sqlmap, nikto, whatever -- same 404 either way.",
+  ],
+};
+
+// request.nextUrl.search/.pathname are the RAW percent-encoded values as
+// received -- never auto-decoded by the URL API -- so a payload like
+// `${jndi:` arrives as `%24%7Bjndi%3A` and every pattern above would silently
+// never match without this. Decoded up to 3 times (not just once) to catch
+// double/triple-encoding, a standard WAF-evasion trick (%2524%257B decodes
+// to %24%7B decodes to ${). Caps at 3 and bails on malformed sequences
+// instead of throwing -- a decode failure just means "test the raw string,"
+// never a broken response.
+function decodeForScanning(value: string): string {
+  let decoded = value;
+  for (let i = 0; i < 3; i++) {
+    let next: string;
+    try {
+      next = decodeURIComponent(decoded);
+    } catch {
+      break;
+    }
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
+}
+
+function detectAttack(pathname: string, search: string, userAgent: string | null): AttackSignature | null {
+  // Query strings conventionally allow "+" as an alternate encoding for a
+  // space (the application/x-www-form-urlencoded convention every browser
+  // and curl use for GET params), which decodeURIComponent does NOT
+  // translate -- "1%27+OR+%271%27%3D%271" decodes to "1'+OR+'1'='1", with
+  // literal "+" gluing "OR" directly onto the surrounding quotes, so \s*
+  // in the patterns above never gets a whitespace character to match.
+  // Normalized only in the query portion, since a literal "+" in a
+  // pathname isn't a space encoding.
+  const target = decodeForScanning(pathname) + decodeForScanning(search).replace(/\+/g, " ");
+  for (const sig of ATTACK_SIGNATURES) {
+    if (sig.pattern.test(target)) return sig;
+  }
+  if (userAgent && SCANNER_TOOL_SIGNATURE.pattern.test(userAgent)) return SCANNER_TOOL_SIGNATURE;
+  return null;
+}
+
+function pickTaunt(sig: AttackSignature | null): string {
+  const pool = sig ? sig.taunts : HONEYPOT_TAUNTS;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
+async function logHoneypotHit(
+  request: NextRequest,
+  path: string,
+  clientIp: string,
+  attackType: string | null,
+  trusted: boolean,
+) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return; // not configured yet -- never let this crash the response
@@ -61,26 +250,30 @@ async function logHoneypotHit(request: NextRequest, path: string, clientIp: stri
         ip_hash,
         ip_address: clientIp === "unknown" ? null : clientIp,
         user_agent: request.headers.get("user-agent") ?? null,
+        attack_type: attackType,
       }),
     });
   } catch {
     // logging must never break the (fake) response
   }
 
-  // Nothing real is ever mounted at a honeypot path, so hitting one is a
-  // 100% reliable "this is a bot" signal -- auto-block on the spot, unless
-  // this hash has ever successfully logged into admin (that's Oliver
-  // testing, not a scanner). Combined with the session-first ordering in
-  // proxyAdmin and the credential-first ordering in loginAdmin, this can
-  // flag a false positive without ever actually locking him out.
+  // A honeypot-path hit or a recognized attack payload is a 100% reliable
+  // "this isn't legitimate traffic" signal -- auto-block on the spot,
+  // unless this hash has ever successfully logged into admin (that's
+  // Oliver, not an attacker; `trusted` is computed once by the caller).
+  // Combined with the session-first ordering in proxyAdmin and the
+  // credential-first ordering in loginAdmin, a false positive here can
+  // never actually lock him out.
+  if (trusted) return;
   try {
-    if (!(await isTrustedIp(ip_hash))) {
-      await fetch(`${url}/rest/v1/blocked_ips`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers, Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ ip_hash, reason: `Auto-blocked: honeypot hit at ${path}` }),
-      });
-    }
+    await fetch(`${url}/rest/v1/blocked_ips`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers, Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({
+        ip_hash,
+        reason: attackType ? `Auto-blocked: ${attackType} attempt at ${path}` : `Auto-blocked: honeypot hit at ${path}`,
+      }),
+    });
   } catch {
     // Auto-block failing must never break the (fake) response either.
   }
@@ -159,11 +352,11 @@ async function proxyAdmin(request: NextRequest): Promise<NextResponse | null> {
   if (pathname === "/admin/login") return null; // must stay reachable while logged out
 
   // Session check comes BEFORE the blocklist check, not after. Honeypot
-  // hits now auto-block their source (see logHoneypotHit) -- if Oliver ever
-  // trips one himself (new IP he's poking at for testing) while already
-  // holding a valid session, this ordering is what stops that from locking
-  // him out of his own dashboard. A valid session cookie is proof of
-  // identity strong enough to override a coarse IP-level block.
+  // hits/attack payloads now auto-block their source (see logHoneypotHit) --
+  // if Oliver ever trips one himself (new IP he's poking at for testing)
+  // while already holding a valid session, this ordering is what stops
+  // that from locking him out of his own dashboard. A valid session cookie
+  // is proof of identity strong enough to override a coarse IP-level block.
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (await verifySessionToken(token)) return null;
 
@@ -176,26 +369,45 @@ async function proxyAdmin(request: NextRequest): Promise<NextResponse | null> {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   const adminResponse = await proxyAdmin(request);
   if (adminResponse) return adminResponse;
 
   const contentSecurityPolicy = buildCspHeader();
 
-  if (HONEYPOT_PATHS.has(pathname)) {
+  const isHoneypotPath = HONEYPOT_PATHS.has(pathname);
+  // Attack-signature scanning only runs on public routes. /admin/* is
+  // Oliver's own authenticated territory (search boxes, note fields, block
+  // reasons -- inputs that could legitimately contain unusual characters),
+  // and /api/* already has its own Zod validation; neither needs this on
+  // top, and scanning them risks false positives against his own use.
+  const isAdminOrApi = pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/");
+  const attackSignature = isAdminOrApi ? null : detectAttack(pathname, search, request.headers.get("user-agent"));
+
+  if (isHoneypotPath || attackSignature) {
     const clientIp = getClientIp(request);
-    // Fire-and-forget: a slow or failed log write must never delay or break
-    // the response to whatever is probing this path.
-    void logHoneypotHit(request, pathname, clientIp);
-    const taunt = HONEYPOT_TAUNTS[Math.floor(Math.random() * HONEYPOT_TAUNTS.length)]!;
-    return new NextResponse(honeypotHtml(taunt, clientIp), {
-      status: 404,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Content-Security-Policy": contentSecurityPolicy,
-      },
-    });
+    const ipHash = await hashIp(clientIp);
+    const trusted = await isTrustedIp(ipHash);
+
+    // A honeypot-path hit never has a real page underneath -- always show
+    // the taunt regardless of trust (only the auto-block below is skipped
+    // for a trusted source). An attack signature on a REAL page is
+    // different: if it's Oliver testing his own site's actual behavior
+    // (trusted), let the real page render normally instead of losing it to
+    // a joke response -- that's exactly the kind of testing he's supposed
+    // to be able to do here.
+    if (isHoneypotPath || !trusted) {
+      void logHoneypotHit(request, pathname, clientIp, attackSignature?.type ?? null, trusted);
+      const taunt = pickTaunt(attackSignature);
+      return new NextResponse(honeypotHtml(taunt, clientIp), {
+        status: 404,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Content-Security-Policy": contentSecurityPolicy,
+        },
+      });
+    }
   }
 
   const response = NextResponse.next();

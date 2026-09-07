@@ -19,6 +19,33 @@ interface HoneypotRow {
   path: string;
   ip_hash: string;
   user_agent: string | null;
+  attack_type: string | null;
+}
+
+// Human-readable labels for src/proxy.ts's ATTACK_SIGNATURES `type` values.
+// A hit with no attack_type is a plain honeypot-path request with no
+// recognizable payload attached -- most bot traffic, just a bare GET.
+const ATTACK_TYPE_LABELS: Record<string, string> = {
+  log4shell: "Log4Shell",
+  sqli: "SQL injection",
+  xss: "XSS",
+  path_traversal: "Path traversal",
+  command_injection: "Command injection",
+  ssrf: "SSRF",
+  nosql_injection: "NoSQL injection",
+  template_injection: "Template injection (SSTI)",
+  deserialization: "Insecure deserialization",
+  crlf_injection: "CRLF injection",
+  file_inclusion: "File inclusion (LFI/RFI)",
+  prototype_pollution: "Prototype pollution",
+  graphql_probe: "GraphQL introspection probe",
+  open_redirect: "Open redirect attempt",
+  scanner_tool: "Known scanner tool",
+};
+
+function attackTypeLabel(type: string | null): string {
+  if (!type) return "Trap path (no payload)";
+  return ATTACK_TYPE_LABELS[type] ?? type;
 }
 
 interface AdminAttemptRow {
@@ -105,6 +132,9 @@ async function getSecurityData() {
   // truncate only at render time.
   const topScannedPaths = countBy(honeypotHits.map((h) => h.path), "(unknown)");
   const topScannerIps = countBy(honeypotHits.map((h) => h.ip_hash), "(unknown)");
+  const attackHits = honeypotHits.filter((h) => h.attack_type);
+  const topAttackTypes = countBy(attackHits.map((h) => attackTypeLabel(h.attack_type)), "(unknown)");
+  const attackAttemptsLast24h = attackHits.filter((h) => now - new Date(h.created_at).getTime() < DAY_MS).length;
 
   const spikeEvents: SpikeEvent[] = [
     ...pageViewEvents.map((e) => ({ ipHash: e.ip_hash, timestamp: e.created_at })),
@@ -119,6 +149,9 @@ async function getSecurityData() {
     honeypotLast24h,
     topScannedPaths,
     topScannerIps,
+    topAttackTypes,
+    attackAttemptsCount: attackHits.length,
+    attackAttemptsLast24h,
     recentHoneypotHits: honeypotHits.slice(0, 50),
     csvHref,
     failedAdminAttempts: failedAdminAttempts.length,
@@ -340,21 +373,28 @@ export default async function AdminSecurityPage() {
       <p className="mt-2 text-sm text-muted-foreground">
         Honeypot hits are requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and
         similar) that nothing real is ever mounted at -- a hit means a scanner or bot, never a real visitor.
-        Every hit auto-blocks its source on the spot (page views, contact submissions, and future admin
-        login attempts from it get silently dropped) unless that source has previously logged into admin
-        as you.
+        Every public request is also checked for recognizable attack payloads (SQL injection, XSS, path
+        traversal, and more) in its path and query string -- a match gets the same treatment. Either one
+        auto-blocks the source on the spot (page views, contact submissions, and future admin login attempts
+        from it get silently dropped) unless that source has previously logged into admin as you. A random
+        path with no payload and nothing matched just gets this site&apos;s normal 404 page -- untouched.
       </p>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard
           label="Honeypot hits (all-time)"
           value={data.totalHoneypotHits.toLocaleString()}
-          hint="Requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and similar) that nothing real is ever mounted at. A hit always means a scanner or bot -- never a real visitor -- and auto-blocks the source immediately."
+          hint="Requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and similar) that nothing real is ever mounted at, plus any request anywhere that matched a recognized attack payload. A hit always means a scanner, bot, or attacker -- never a real visitor -- and auto-blocks the source immediately."
         />
         <StatCard
           label="Last 24 hours"
           value={data.honeypotLast24h.toLocaleString()}
           hint="Honeypot hits in the last 24 hours."
+        />
+        <StatCard
+          label="Attack payloads caught"
+          value={data.attackAttemptsCount.toLocaleString()}
+          hint="Hits where the path or query string matched a recognized attack pattern (SQL injection, XSS, path traversal, SSRF, and more) rather than just a bare request to a decoy path. See 'Attack types' below for the breakdown."
         />
         <StatCard
           label="Failed admin logins (24h)"
@@ -364,7 +404,7 @@ export default async function AdminSecurityPage() {
         <StatCard
           label="Blocked IPs"
           value={data.blockedIps.length.toLocaleString()}
-          hint="Sources on the blocklist -- either blocked manually or auto-blocked for hitting a honeypot path. A blocked IP's page views, contact form submissions, and admin login attempts are silently dropped -- no error shown, no signal that they've been singled out."
+          hint="Sources on the blocklist -- either blocked manually or auto-blocked for hitting a honeypot path or a recognized attack payload. A blocked IP's page views, contact form submissions, and admin login attempts are silently dropped -- no error shown, no signal that they've been singled out."
         />
         <StatCard
           label="Traffic anomalies"
@@ -375,11 +415,16 @@ export default async function AdminSecurityPage() {
 
       <SpikeTable spikes={data.spikes} />
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <BreakdownTable
           title="Most scanned paths"
           rows={data.topScannedPaths}
           hint="Which fake sensitive-looking paths get probed most. High counts on /wp-admin or /xmlrpc.php just mean automated WordPress scanners -- routine internet background noise, not a targeted attack."
+        />
+        <BreakdownTable
+          title="Attack types"
+          rows={data.topAttackTypes}
+          hint="Recognized attack payloads by category. Every one of these gets called out with a themed response instead of a generic 404, and none of these techniques actually work against this app -- it's a static site with no raw SQL, no template engine reading user input, and no server-side URL fetching."
         />
         <ScannerIpTable rows={data.topScannerIps} blockedSet={data.blockedSet} />
       </div>
@@ -432,6 +477,7 @@ export default async function AdminSecurityPage() {
             <tr className="text-muted-foreground">
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Time</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Path probed</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Attack type</th>
               <SourceHeader />
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">User agent</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
@@ -440,7 +486,7 @@ export default async function AdminSecurityPage() {
           <tbody>
             {data.recentHoneypotHits.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
                   No honeypot hits yet.
                 </td>
               </tr>
@@ -451,6 +497,9 @@ export default async function AdminSecurityPage() {
                   {new Date(hit.created_at).toLocaleString()}
                 </td>
                 <td className="px-4 py-2 font-mono text-foreground/80">{hit.path}</td>
+                <td className={hit.attack_type ? "px-4 py-2 text-amber-400" : "px-4 py-2 text-muted-foreground"}>
+                  {attackTypeLabel(hit.attack_type)}
+                </td>
                 <td className="px-4 py-2 font-mono text-foreground/80">{hit.ip_hash.slice(0, 16)}&hellip;</td>
                 <td className="max-w-xs truncate px-4 py-2 text-foreground/80">{hit.user_agent || "—"}</td>
                 <td className="px-4 py-2">

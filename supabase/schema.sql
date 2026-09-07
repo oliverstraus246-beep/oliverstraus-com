@@ -27,7 +27,8 @@ create table if not exists honeypot_hits (
   path text not null,
   ip_hash text not null,
   ip_address text,
-  user_agent text
+  user_agent text,
+  attack_type text
 );
 
 alter table honeypot_hits enable row level security;
@@ -39,6 +40,15 @@ alter table honeypot_hits enable row level security;
 -- stuck at "IP unknown" even though proxy.ts had the real IP in hand the
 -- whole time.
 alter table honeypot_hits add column if not exists ip_address text;
+
+-- attack_type is null for a plain honeypot-path hit with no recognizable
+-- payload attached (most bot traffic -- a bare GET to /wp-admin). It's set
+-- to one of src/proxy.ts's ATTACK_SIGNATURES type strings (sqli, xss,
+-- path_traversal, etc.) when the pathname or query string on ANY public
+-- request matched a recognized attack pattern -- this table now covers
+-- both "hit a decoy path" and "sent a real attack payload anywhere,"
+-- distinguished by this column.
+alter table honeypot_hits add column if not exists attack_type text;
 
 -- Visitor tracking pixel, written by src/app/api/track/route.ts. Same
 -- service_role-only RLS posture as the tables above: the anon/publishable
