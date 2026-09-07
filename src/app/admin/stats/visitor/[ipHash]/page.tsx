@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { blockIp, unblockIp } from "@/app/admin/actions";
+import { blockIp, setVisitorNote, unblockIp } from "@/app/admin/actions";
 import {
   countBy,
   deviceType,
@@ -59,7 +59,7 @@ async function getVisitorProfile(ipHash: string) {
   if (!url || !key) return null;
 
   const headers = supabaseReadHeaders(key);
-  const [viewsRes, contactsRes, honeypotRes, attemptsRes, blockedRes] = await Promise.all([
+  const [viewsRes, contactsRes, honeypotRes, attemptsRes, blockedRes, noteRes] = await Promise.all([
     fetch(
       `${url}/rest/v1/page_views?ip_hash=eq.${ipHash}&select=id,path,referrer,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at,ip_address&order=created_at.desc&limit=5000`,
       { headers, cache: "no-store" },
@@ -80,6 +80,7 @@ async function getVisitorProfile(ipHash: string) {
       headers,
       cache: "no-store",
     }),
+    fetch(`${url}/rest/v1/visitor_notes?ip_hash=eq.${ipHash}&select=note`, { headers, cache: "no-store" }),
   ]);
 
   const views = viewsRes.ok ? ((await viewsRes.json()) as PageViewRow[]) : [];
@@ -87,6 +88,7 @@ async function getVisitorProfile(ipHash: string) {
   const honeypotHits = honeypotRes.ok ? ((await honeypotRes.json()) as HoneypotRow[]) : [];
   const adminAttempts = attemptsRes.ok ? ((await attemptsRes.json()) as AdminAttemptRow[]) : [];
   const blockedRows = blockedRes.ok ? ((await blockedRes.json()) as { reason: string | null; created_at: string }[]) : [];
+  const noteRows = noteRes.ok ? ((await noteRes.json()) as { note: string }[]) : [];
 
   if (views.length === 0 && contacts.length === 0 && honeypotHits.length === 0 && adminAttempts.length === 0) {
     return "not_found" as const;
@@ -134,6 +136,17 @@ async function getVisitorProfile(ipHash: string) {
     })),
   ].sort((a, b) => (a.time < b.time ? 1 : -1));
 
+  // Daily visit counts for the sparkline -- last 30 days, or fewer if the
+  // visitor's history is shorter than that.
+  const DAYS = 30;
+  const dailyCounts: number[] = new Array(DAYS).fill(0);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  for (const v of views) {
+    const daysAgo = Math.floor((todayStart.getTime() - new Date(v.created_at).setHours(0, 0, 0, 0)) / 86_400_000);
+    if (daysAgo >= 0 && daysAgo < DAYS) dailyCounts[DAYS - 1 - daysAgo]!++;
+  }
+
   return {
     ipHash,
     ipAddress,
@@ -155,7 +168,32 @@ async function getVisitorProfile(ipHash: string) {
     adminAttempts: { total: adminAttempts.length, successes: adminAttempts.filter((a) => a.success).length },
     blocked: blockedRows.length > 0 ? blockedRows[0]! : null,
     timeline,
+    note: noteRows[0]?.note ?? "",
+    dailyCounts,
   };
+}
+
+function Sparkline({ counts }: { counts: number[] }) {
+  const max = Math.max(1, ...counts);
+  const barWidth = 100 / counts.length;
+  return (
+    <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="h-10 w-full">
+      {counts.map((count, i) => {
+        const height = (count / max) * 28;
+        return (
+          <rect
+            key={i}
+            x={i * barWidth + barWidth * 0.15}
+            y={32 - height}
+            width={barWidth * 0.7}
+            height={Math.max(height, count > 0 ? 1.5 : 0)}
+            className={count > 0 ? "fill-accent-blue" : "fill-border"}
+            rx={0.5}
+          />
+        );
+      })}
+    </svg>
+  );
 }
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
@@ -242,6 +280,9 @@ export default async function VisitorProfilePage({ params }: PageProps) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         {profile.active && <Badge tone="ok">Active now</Badge>}
+        <Badge tone={profile.visitCount > 1 ? "ok" : "neutral"}>
+          {profile.visitCount > 1 ? "Returning visitor" : "First-time visitor"}
+        </Badge>
         {profile.blocked && <Badge tone="danger">Blocked{profile.blocked.reason ? `: ${profile.blocked.reason}` : ""}</Badge>}
         {profile.honeypotHitCount > 0 && (
           <Badge tone="warn">Scanner &mdash; {profile.honeypotHitCount} honeypot hit{profile.honeypotHitCount === 1 ? "" : "s"}</Badge>
@@ -254,6 +295,37 @@ export default async function VisitorProfilePage({ params }: PageProps) {
         )}
         {profile.contacts.length > 0 && <Badge tone="ok">Contacted you &mdash; {profile.contacts.length}</Badge>}
         <Badge tone="neutral">{profile.location}</Badge>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-border bg-card p-4">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          Activity, last 30 days
+        </p>
+        <div className="mt-2">
+          <Sparkline counts={profile.dailyCounts} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-lg border border-border bg-card p-4">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          Your note on this visitor
+        </p>
+        <form action={setVisitorNote} className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
+          <input type="hidden" name="ipHash" value={profile.ipHash} />
+          <textarea
+            name="note"
+            defaultValue={profile.note}
+            rows={2}
+            placeholder="E.g. 'my friend Jake', 'recruiter from X', 'possible client'..."
+            className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent-blue focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="font-mono text-xs uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+          >
+            Save
+          </button>
+        </form>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">

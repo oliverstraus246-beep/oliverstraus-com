@@ -39,6 +39,7 @@ export async function blockIp(formData: FormData) {
 
   revalidatePath("/admin/security");
   revalidatePath("/admin/stats");
+  revalidatePath(`/admin/stats/visitor/${ipHash}`);
 }
 
 export async function unblockIp(formData: FormData) {
@@ -52,6 +53,32 @@ export async function unblockIp(formData: FormData) {
   });
 
   revalidatePath("/admin/security");
+  revalidatePath("/admin/stats");
+  revalidatePath(`/admin/stats/visitor/${ipHash}`);
+}
+
+export async function setVisitorNote(formData: FormData) {
+  const ipHash = String(formData.get("ipHash") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+  if (!ipHash) return;
+
+  const { url, key } = supabaseConfig();
+  if (note) {
+    await fetch(`${url}/rest/v1/visitor_notes`, {
+      method: "POST",
+      headers: { ...supabaseHeaders(key), Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ ip_hash: ipHash, note, updated_at: new Date().toISOString() }),
+    });
+  } else {
+    // Empty note submitted -- treat it as "clear the note" rather than
+    // storing an empty string.
+    await fetch(`${url}/rest/v1/visitor_notes?ip_hash=eq.${ipHash}`, {
+      method: "DELETE",
+      headers: supabaseHeaders(key),
+    });
+  }
+
+  revalidatePath(`/admin/stats/visitor/${ipHash}`);
   revalidatePath("/admin/stats");
 }
 

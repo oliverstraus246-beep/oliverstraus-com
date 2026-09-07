@@ -49,9 +49,20 @@ interface Visitor {
   lastSeen: string;
   location: string;
   active: boolean;
+  note: string;
 }
 
-function groupByVisitor(rows: PageViewRow[]): Visitor[] {
+const SORTS = {
+  recent: { label: "Most recent", compare: (a: Visitor, b: Visitor) => (a.lastSeen < b.lastSeen ? 1 : -1) },
+  visits: { label: "Most visits", compare: (a: Visitor, b: Visitor) => b.visitCount - a.visitCount },
+  first: { label: "Newest visitor", compare: (a: Visitor, b: Visitor) => (a.firstSeen < b.firstSeen ? 1 : -1) },
+} as const;
+type SortKey = keyof typeof SORTS;
+function isSortKey(v: string): v is SortKey {
+  return v in SORTS;
+}
+
+function groupByVisitor(rows: PageViewRow[], notes: Map<string, string>): Visitor[] {
   const byHash = new Map<string, PageViewRow[]>();
   for (const row of rows) {
     const list = byHash.get(row.ip_hash) ?? [];
@@ -80,20 +91,21 @@ function groupByVisitor(rows: PageViewRow[]): Visitor[] {
       lastSeen: newest.created_at,
       location: [newest.city, newest.region, newest.country].filter(Boolean).join(", ") || "Unknown",
       active,
+      note: notes.get(ipHash) ?? "",
     };
   });
 
-  return visitors.sort((a, b) => (a.lastSeen < b.lastSeen ? 1 : -1));
+  return visitors;
 }
 
-async function getStats(pathFilter: string) {
+async function getStats(pathFilter: string, sort: SortKey) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
 
   const filterQuery = pathFilter ? `&path=ilike.*${encodeURIComponent(pathFilter)}*` : "";
 
-  const [countRes, rowsRes, blockedRes] = await Promise.all([
+  const [countRes, rowsRes, blockedRes, notesRes] = await Promise.all([
     fetch(`${url}/rest/v1/page_views?select=id${filterQuery}`, {
       method: "HEAD",
       headers: { ...supabaseReadHeaders(key), Prefer: "count=exact" },
@@ -104,11 +116,15 @@ async function getStats(pathFilter: string) {
       { headers: supabaseReadHeaders(key), cache: "no-store" },
     ),
     fetch(`${url}/rest/v1/blocked_ips?select=ip_hash`, { headers: supabaseReadHeaders(key), cache: "no-store" }),
+    fetch(`${url}/rest/v1/visitor_notes?select=ip_hash,note`, { headers: supabaseReadHeaders(key), cache: "no-store" }),
   ]);
 
   const totalViews = Number(countRes.headers.get("content-range")?.split("/")[1] ?? 0);
   const rows = (await rowsRes.json()) as PageViewRow[];
   const blockedSet = new Set(blockedRes.ok ? ((await blockedRes.json()) as { ip_hash: string }[]).map((b) => b.ip_hash) : []);
+  const notes = new Map(
+    notesRes.ok ? ((await notesRes.json()) as { ip_hash: string; note: string }[]).map((n) => [n.ip_hash, n.note]) : [],
+  );
 
   const now = Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -136,7 +152,7 @@ async function getStats(pathFilter: string) {
     })),
   );
 
-  const visitors = groupByVisitor(rows);
+  const visitors = groupByVisitor(rows, notes).sort(SORTS[sort].compare);
 
   return {
     totalViews,
@@ -233,9 +249,13 @@ function VisitorRow({ visitor, blocked }: { visitor: Visitor; blocked: boolean }
         <span className="h-2 w-2" />
       )}
       <span className="whitespace-nowrap font-mono text-foreground/80">{visitor.ipAddress ?? "Unknown IP"}</span>
-      <span className="truncate text-foreground/80">{visitor.location}</span>
+      <div className="min-w-0">
+        <span className="block truncate text-foreground/80">{visitor.location}</span>
+        {visitor.note && <span className="block truncate text-xs text-accent-blue/80">&ldquo;{visitor.note}&rdquo;</span>}
+      </div>
       <span className="font-mono text-foreground">
         {visitor.visitCount} visit{visitor.visitCount === 1 ? "" : "s"}
+        {visitor.visitCount > 1 && <span className="ml-1 text-emerald-400" title="Returning visitor">&bull;</span>}
       </span>
       <span className="whitespace-nowrap text-muted-foreground">{new Date(visitor.lastSeen).toLocaleString()}</span>
       <Link
@@ -250,12 +270,13 @@ function VisitorRow({ visitor, blocked }: { visitor: Visitor; blocked: boolean }
 }
 
 interface PageProps {
-  searchParams: Promise<{ path?: string }>;
+  searchParams: Promise<{ path?: string; sort?: string }>;
 }
 
 export default async function AdminStatsPage({ searchParams }: PageProps) {
-  const { path: pathFilter = "" } = await searchParams;
-  const stats = await getStats(pathFilter);
+  const { path: pathFilter = "", sort: sortParam = "recent" } = await searchParams;
+  const sort: SortKey = isSortKey(sortParam) ? sortParam : "recent";
+  const stats = await getStats(pathFilter, sort);
 
   if (!stats) {
     return (
@@ -332,10 +353,28 @@ export default async function AdminStatsPage({ searchParams }: PageProps) {
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
-        <p className="border-b border-border p-4 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Visitors ({stats.visitors.length}) &mdash; open a profile for full history, device, and contact
-          cross-reference
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+            Visitors ({stats.visitors.length}) &mdash; open a profile for full history, device, and contact
+            cross-reference
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Sort:</span>
+            {(Object.keys(SORTS) as SortKey[]).map((key) => (
+              <a
+                key={key}
+                href={`?${new URLSearchParams({ ...(pathFilter ? { path: pathFilter } : {}), sort: key }).toString()}`}
+                className={
+                  sort === key
+                    ? "font-mono text-[11px] uppercase tracking-widest text-accent-blue"
+                    : "font-mono text-[11px] uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+                }
+              >
+                {SORTS[key].label}
+              </a>
+            ))}
+          </div>
+        </div>
         {stats.visitors.length === 0 && (
           <p className="p-4 text-sm text-muted-foreground">No visitors yet.</p>
         )}

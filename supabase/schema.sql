@@ -117,3 +117,15 @@ create table if not exists blocked_ips (
 );
 
 alter table blocked_ips enable row level security;
+
+-- Free-text label Oliver can attach to a visitor from their profile page
+-- (/admin/stats/visitor/[ipHash]) -- "this is my friend Jake", "recruiter
+-- from X", whatever. Purely for his own organization; nothing here is
+-- ever shown to the visitor or affects their access (that's blocked_ips).
+create table if not exists visitor_notes (
+  ip_hash text primary key,
+  note text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table visitor_notes enable row level security;
