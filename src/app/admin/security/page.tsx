@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { blockIp, purgeOldHoneypotHits, unblockIp } from "@/app/admin/actions";
 import {
+  attackTypeLabel,
   countBy,
   csvDownloadHref,
   detectSpikes,
@@ -20,32 +21,6 @@ interface HoneypotRow {
   ip_hash: string;
   user_agent: string | null;
   attack_type: string | null;
-}
-
-// Human-readable labels for src/proxy.ts's ATTACK_SIGNATURES `type` values.
-// A hit with no attack_type is a plain honeypot-path request with no
-// recognizable payload attached -- most bot traffic, just a bare GET.
-const ATTACK_TYPE_LABELS: Record<string, string> = {
-  log4shell: "Log4Shell",
-  sqli: "SQL injection",
-  xss: "XSS",
-  path_traversal: "Path traversal",
-  command_injection: "Command injection",
-  ssrf: "SSRF",
-  nosql_injection: "NoSQL injection",
-  template_injection: "Template injection (SSTI)",
-  deserialization: "Insecure deserialization",
-  crlf_injection: "CRLF injection",
-  file_inclusion: "File inclusion (LFI/RFI)",
-  prototype_pollution: "Prototype pollution",
-  graphql_probe: "GraphQL introspection probe",
-  open_redirect: "Open redirect attempt",
-  scanner_tool: "Known scanner tool",
-};
-
-function attackTypeLabel(type: string | null): string {
-  if (!type) return "Trap path (no payload)";
-  return ATTACK_TYPE_LABELS[type] ?? type;
 }
 
 interface AdminAttemptRow {

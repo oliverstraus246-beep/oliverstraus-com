@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { isTrustedIp } from "@/lib/admin-auth";
+import { attackTypeLabel } from "@/lib/admin-stats";
 
 // Shown at random on a plain honeypot-path hit with no recognizable payload
 // attached (a bot just requesting /wp-admin, nothing else) -- purely for the
@@ -61,7 +62,7 @@ const HONEYPOT_PATHS = new Set([
 
 interface AttackSignature {
   type: string;
-  pattern: RegExp;
+  pattern?: RegExp;
   taunts: string[];
 }
 
@@ -176,11 +177,6 @@ const ATTACK_SIGNATURES: AttackSignature[] = [
     taunts: ["There's no GraphQL API here to introspect.", "__schema? This site doesn't have one of those."],
   },
   {
-    type: "open_redirect",
-    pattern: /[?&](redirect|return|next|url|continue)=(https?:\/\/|\/\/[a-z0-9])/i,
-    taunts: ["Nice open-redirect attempt. This app validates its own next= params server-side.", "That URL isn't taking anyone anywhere but back here."],
-  },
-  {
     type: "xxe",
     pattern: /<!ENTITY|<!DOCTYPE[^>]*SYSTEM/i,
     taunts: [
@@ -210,6 +206,60 @@ const ATTACK_SIGNATURES: AttackSignature[] = [
       "Spring4Shell needs Spring. This is React.",
     ],
   },
+  {
+    type: "ldap_injection",
+    pattern: /\*\)\(|\)\(uid=|\)\(cn=|\)\(objectclass=/i,
+    taunts: [
+      "No LDAP directory here to filter-inject.",
+      "*)(uid=* needs an actual directory service behind it. This is a REST call to Postgres.",
+      "Nice LDAP filter. Wrong protocol entirely.",
+    ],
+  },
+  {
+    type: "xpath_injection",
+    pattern: /count\(\/\*\)|'\s*or\s*''\s*=\s*''|\/\*\[position\(\)/i,
+    taunts: [
+      "No XML document here to XPath into.",
+      "count(/*) counts nothing -- there's no XML tree to walk.",
+      "XPath injection needs XPath. This app doesn't parse XML at all.",
+    ],
+  },
+  {
+    type: "ssi_injection",
+    pattern: /<!--#(exec|include|echo|config)\b/i,
+    taunts: [
+      "No SSI-enabled web server here to run that directive.",
+      "<!--#exec is a relic. This is a Next.js edge function.",
+      "Server-side includes haven't been a thing on this stack, ever.",
+    ],
+  },
+  {
+    type: "php_cgi_argument_injection",
+    // CVE-2024-4577 -- the PHP-CGI argument-injection RCE. Real payloads
+    // smuggle a soft hyphen (U+00AD, arrives as %AD) past PHP-CGI's
+    // argument parser to inject php.ini directives; after decoding, the
+    // directive names themselves are specific enough to match alone.
+    pattern: /allow_url_include\s*=|auto_prepend_file\s*=.{0,10}php:\/\/input/i,
+    taunts: [
+      "CVE-2024-4577 is a good one. Still needs PHP-CGI, which this app has never run.",
+      "allow_url_include=1 has nothing to turn on here -- no PHP interpreter exists in this stack.",
+      "Nice argument-injection payload. Node doesn't parse CGI arguments.",
+    ],
+  },
+  {
+    type: "jwt_none_alg",
+    pattern: /"alg"\s*:\s*"none"|eyJhbGciOiJub25lIn0/i,
+    taunts: [
+      "No JWT verification here to downgrade to \"none\".",
+      "alg: none needs a server that trusts the alg header. This one doesn't issue or verify JWTs at all.",
+      "Algorithm confusion needs an algorithm to confuse. There isn't one in the request path.",
+    ],
+  },
+  {
+    type: "open_redirect",
+    pattern: /[?&](redirect|return|next|url|continue)=(https?:\/\/|\/\/[a-z0-9])/i,
+    taunts: ["Nice open-redirect attempt. This app validates its own next= params server-side.", "That URL isn't taking anyone anywhere but back here."],
+  },
 ];
 
 // User-Agent fingerprints for common vuln scanners / recon tools. Checked
@@ -217,12 +267,18 @@ const ATTACK_SIGNATURES: AttackSignature[] = [
 // asking, not WHAT they're asking for.
 const SCANNER_TOOL_SIGNATURE: AttackSignature = {
   type: "scanner_tool",
-  pattern: /sqlmap|nikto|nmap|masscan|nuclei|gobuster|dirbuster|acunetix|w3af|zgrab|nessus|wpscan|feroxbuster|\bffuf\b|\bdirb\b|whatweb|metasploit|burp\s*collaborator/i,
+  // Deliberately offensive-tool names only -- never generic HTTP client
+  // strings like "curl" or "python-requests", which legitimate uptime
+  // monitors and health checks also use constantly. Every name here is a
+  // dedicated pentest/recon/exploitation tool with no everyday use.
+  pattern:
+    /sqlmap|nikto|nmap|masscan|nuclei|gobuster|dirbuster|acunetix|w3af|zgrab|nessus|wpscan|feroxbuster|\bffuf\b|\bdirb\b|whatweb|metasploit|burp\s*collaborator|owasp[\s-]?zap|\bzap\b|hydra|medusa|wfuzz|patator|commix|xsser|beef|rustscan|naabu|amass|arachni|skipfish|\bvega\b|netsparker|qualys|nexpose|shodan|censys|jaeles|\bkatana\b/i,
   taunts: [
     "Automated tool detected. Automated boredom incoming.",
     "Nice scanner. Still just a 404.",
     "Running a tool doesn't make it a vulnerability.",
     "sqlmap, nikto, whatever -- same 404 either way.",
+    "That's a real recon toolkit pointed at a portfolio site. Respect the effort, deny the request.",
   ],
 };
 
@@ -241,6 +297,23 @@ const SHELLSHOCK_SIGNATURE: AttackSignature = {
     "Nice function definition. Nowhere to execute it.",
   ],
 };
+
+// A real browser always sends a Host header matching the URL bar exactly --
+// there's essentially no way for ordinary traffic to send anything else, so
+// this has close to zero false-positive risk. A mismatched Host is either a
+// cache-poisoning attempt, a password-reset-poisoning probe, or a raw
+// script hitting the origin directly with a spoofed Host to bypass
+// domain-based routing/logic. No `pattern` needed -- checked directly
+// against the allowlist below instead of via the generic regex loop.
+const HOST_HEADER_SIGNATURE: AttackSignature = {
+  type: "host_header_injection",
+  taunts: [
+    "That Host header doesn't match anything this app is supposed to answer for.",
+    "Nice Host header spoofing attempt. This app doesn't route on it blindly.",
+    "Cache poisoning needs a cache that trusts your Host header. This one doesn't.",
+  ],
+};
+const EXPECTED_HOST_PATTERN = /^(www\.)?oliverstraus\.com$|\.vercel\.app$|^localhost(:\d+)?$/i;
 
 // request.nextUrl.search/.pathname are the RAW percent-encoded values as
 // received -- never auto-decoded by the URL API -- so a payload like
@@ -265,7 +338,13 @@ function decodeForScanning(value: string): string {
   return decoded;
 }
 
-function detectAttack(pathname: string, search: string, userAgent: string | null, referer: string | null): AttackSignature | null {
+function detectAttack(
+  pathname: string,
+  search: string,
+  userAgent: string | null,
+  referer: string | null,
+  host: string | null,
+): AttackSignature | null {
   // Query strings conventionally allow "+" as an alternate encoding for a
   // space (the application/x-www-form-urlencoded convention every browser
   // and curl use for GET params), which decodeURIComponent does NOT
@@ -280,19 +359,62 @@ function detectAttack(pathname: string, search: string, userAgent: string | null
   // attacker-controlled as the query string.
   const refererTarget = referer ? decodeForScanning(referer) : "";
   for (const sig of ATTACK_SIGNATURES) {
-    if (sig.pattern.test(target) || (refererTarget && sig.pattern.test(refererTarget))) return sig;
+    if (sig.pattern!.test(target) || (refererTarget && sig.pattern!.test(refererTarget))) return sig;
   }
   if (userAgent) {
-    if (SCANNER_TOOL_SIGNATURE.pattern.test(userAgent)) return SCANNER_TOOL_SIGNATURE;
-    if (SHELLSHOCK_SIGNATURE.pattern.test(userAgent)) return SHELLSHOCK_SIGNATURE;
+    if (SCANNER_TOOL_SIGNATURE.pattern!.test(userAgent)) return SCANNER_TOOL_SIGNATURE;
+    if (SHELLSHOCK_SIGNATURE.pattern!.test(userAgent)) return SHELLSHOCK_SIGNATURE;
   }
-  if (referer && SHELLSHOCK_SIGNATURE.pattern.test(referer)) return SHELLSHOCK_SIGNATURE;
+  if (referer && SHELLSHOCK_SIGNATURE.pattern!.test(referer)) return SHELLSHOCK_SIGNATURE;
+  if (host && !EXPECTED_HOST_PATTERN.test(host)) return HOST_HEADER_SIGNATURE;
   return null;
 }
 
 function pickTaunt(sig: AttackSignature | null): string {
   const pool = sig ? sig.taunts : HONEYPOT_TAUNTS;
   return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
+const DDOS_TAUNTS = [
+  "That's not a DDoS, that's just enthusiasm. Also, blocked.",
+  "Whatever this was building up to, Vercel's edge already absorbed it -- this is just the aftermath.",
+  "Flooding a static site behind a CDN is a lot of effort for a repeated 404.",
+  "Rate detected. Rate declined.",
+  "A dozen requests a second isn't a botnet, it's a script with no rate limiter. Either way: blocked.",
+];
+
+const FLOOD_WINDOW_SECONDS = 30;
+const FLOOD_THRESHOLD = 5;
+
+// A lightweight volumetric check -- NOT a substitute for real DDoS
+// protection (Vercel's own edge network handles true network-layer floods
+// before a request ever reaches this code; see the SpikeTable note on
+// /admin/security). This only asks "has this exact source hit a honeypot
+// or attack signature this many times in the last 30 seconds," reusing the
+// honeypot_hits table that's already being written to on this path -- no
+// new infrastructure, and no cost added to ordinary page views, since this
+// only ever runs after something has already matched isHoneypotPath or
+// attackSignature.
+async function checkFloodPattern(ipHash: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+
+  const since = new Date(Date.now() - FLOOD_WINDOW_SECONDS * 1000).toISOString();
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/honeypot_hits?select=id&ip_hash=eq.${ipHash}&created_at=gte.${since}`,
+      {
+        method: "HEAD",
+        headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" },
+      },
+    );
+    if (!res.ok) return false;
+    const count = Number(res.headers.get("content-range")?.split("/")[1] ?? 0);
+    return count >= FLOOD_THRESHOLD;
+  } catch {
+    return false;
+  }
 }
 
 async function logHoneypotHit(
@@ -385,6 +507,10 @@ function blocked() {
   });
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]!);
+}
+
 // "Do you want to see a magic trick?" -- a native <details>/<summary>
 // disclosure, no JavaScript at all, so it works regardless of CSP and can't
 // be mistaken for anything script-driven. The "trick" is just handing the
@@ -392,17 +518,87 @@ function blocked() {
 // they already necessarily know about themselves), same category as any
 // "what's my IP" site. Nothing about any OTHER visitor is ever in this
 // response.
-function honeypotHtml(taunt: string, clientIp: string): string {
+//
+// Styled as a terminal window (title-bar dots, monospace log lines, a
+// blinking cursor) purely via a <style> block -- no JavaScript, no
+// external assets, everything inline so this single response is fully
+// self-contained. `path` and `clientIp` are attacker-influenced and always
+// escaped before insertion; `taunt` and the category label are drawn from
+// this file's own fixed string arrays, never from request input.
+function honeypotHtml(taunt: string, clientIp: string, path: string, attackType: string | null): string {
   const shownIp = clientIp === "unknown" ? "suspiciously well-hidden. Nice." : clientIp;
-  const escapedIp = shownIp.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]!);
+  const escapedIp = escapeHtml(shownIp);
+  const escapedPath = escapeHtml(path);
+  const categoryTag = attackType
+    ? `<span class="tag">[${escapeHtml(attackTypeLabel(attackType).toUpperCase())}]</span>`
+    : "";
   return `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>404</title></head>
-<body style="background:#0a0a0a;color:#e5e5e5;font-family:ui-monospace,Menlo,Consolas,monospace;padding:3rem 1.5rem;max-width:34rem;margin:0 auto;line-height:1.5;">
-<p style="font-size:1.05rem;">${taunt}</p>
-<details style="margin-top:1.5rem;">
-<summary style="cursor:pointer;color:#7dd3fc;">Want to see a magic trick? Click here.</summary>
-<p style="margin-top:0.75rem;color:#a3a3a3;">Your IP is ${escapedIp}. Ta-da.</p>
-</details>
+<html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>404</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #131824 0%, #06070a 65%);
+  font-family: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  color: #e5e7eb; padding: 2rem;
+}
+.term {
+  width: 100%; max-width: 38rem; border: 1px solid #232837; border-radius: 12px;
+  background: #0b0d12; box-shadow: 0 24px 70px -24px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.02);
+  overflow: hidden;
+}
+.term-bar {
+  display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+  background: #10131c; border-bottom: 1px solid #1c2029;
+}
+.dot { width: 11px; height: 11px; border-radius: 50%; }
+.dot.r { background: #ff5f56; } .dot.y { background: #ffbd2e; } .dot.g { background: #27c93f; }
+.term-title { margin-left: 6px; font-size: 12px; color: #6b7280; letter-spacing: .02em; }
+.term-body { padding: 26px 24px 24px; }
+.line { margin: 0 0 8px; line-height: 1.65; font-size: 14px; word-break: break-word; }
+.prompt { color: #4ade80; }
+.status { color: #f87171; }
+.tag { color: #fbbf24; font-weight: 600; margin-left: 6px; }
+.taunt { margin-top: 14px; font-size: 15.5px; color: #f3f4f6; }
+.cursor {
+  display: inline-block; width: 8px; height: 1.1em; background: #7dd3fc;
+  margin-left: 3px; vertical-align: -2px; animation: blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+details { margin-top: 20px; }
+summary {
+  cursor: pointer; color: #7dd3fc; list-style: none; display: inline-flex; align-items: center;
+  gap: 6px; padding: 9px 16px; border: 1px solid #1c3a4d; border-radius: 999px;
+  background: rgba(125,211,252,.06); transition: background .15s ease, border-color .15s ease;
+  font-size: 13px;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "✨"; font-size: 12px; }
+summary:hover { background: rgba(125,211,252,.15); border-color: #7dd3fc; }
+.reveal {
+  margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: #0d1420;
+  border: 1px solid #1c2029; color: #9ca3af; font-size: 13.5px;
+}
+.reveal .ip { color: #f3f4f6; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="term">
+  <div class="term-bar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="term-title">guest@oliverstraus.com</span>
+  </div>
+  <div class="term-body">
+    <p class="line"><span class="prompt">$</span> GET ${escapedPath}</p>
+    <p class="line status">→ 404 Not Found${categoryTag}</p>
+    <p class="line taunt">${taunt}<span class="cursor"></span></p>
+    <details>
+      <summary>Want to see a magic trick? Click here.</summary>
+      <div class="reveal">Your IP is <span class="ip">${escapedIp}</span>. Ta-da.</div>
+    </details>
+  </div>
+</div>
 </body></html>`;
 }
 
@@ -453,7 +649,13 @@ export async function proxy(request: NextRequest) {
   const isAdminOrApi = pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/");
   const attackSignature = isAdminOrApi
     ? null
-    : detectAttack(pathname, search, request.headers.get("user-agent"), request.headers.get("referer"));
+    : detectAttack(
+        pathname,
+        search,
+        request.headers.get("user-agent"),
+        request.headers.get("referer"),
+        request.headers.get("host"),
+      );
 
   if (isHoneypotPath || attackSignature) {
     const clientIp = getClientIp(request);
@@ -468,9 +670,26 @@ export async function proxy(request: NextRequest) {
     // a joke response -- that's exactly the kind of testing he's supposed
     // to be able to do here.
     if (isHoneypotPath || !trusted) {
-      void logHoneypotHit(request, pathname, clientIp, attackSignature?.type ?? null, trusted);
-      const taunt = pickTaunt(attackSignature);
-      return new NextResponse(honeypotHtml(taunt, clientIp), {
+      // Only checked once we're already about to intercept -- a source
+      // repeatedly hammering a honeypot/attack signature in a short window
+      // gets the DDoS-flavored taunt instead of (or alongside) the
+      // specific category, since the volumetric behavior is the more
+      // urgent signal. The real underlying category is still what gets
+      // logged, so the security page's breakdown stays accurate.
+      const flooding = !trusted && (await checkFloodPattern(ipHash));
+      const loggedType = attackSignature?.type ?? (flooding ? "flood_pattern" : null);
+      // Awaited, not fire-and-forget, specifically because checkFloodPattern
+      // above depends on THIS request's write being visible to the very
+      // next request's count query -- a fire-and-forget insert here raced
+      // ahead of rapid consecutive hits landing in time to be counted,
+      // silently undercounting a real flood. This path already does
+      // several other awaited round-trips (hash, trust check, flood
+      // check); one more doesn't change the trade-off, and nothing here is
+      // UX-critical for a real visitor.
+      await logHoneypotHit(request, pathname, clientIp, loggedType, trusted);
+      const taunt = flooding ? DDOS_TAUNTS[Math.floor(Math.random() * DDOS_TAUNTS.length)]! : pickTaunt(attackSignature);
+      const displayPath = pathname + search;
+      return new NextResponse(honeypotHtml(taunt, clientIp, displayPath, loggedType), {
         status: 404,
         headers: {
           "Content-Type": "text/html; charset=utf-8",

@@ -108,6 +108,44 @@ export interface Spike {
   blocked: boolean;
 }
 
+// Human-readable labels for src/proxy.ts's ATTACK_SIGNATURES `type` values
+// (and the synthetic "flood_pattern" tag from its flood-detection check).
+// Shared between the admin security page and the honeypot response page
+// itself so both describe a given category the same way.
+export const ATTACK_TYPE_LABELS: Record<string, string> = {
+  log4shell: "Log4Shell",
+  sqli: "SQL injection",
+  xss: "XSS",
+  path_traversal: "Path traversal",
+  command_injection: "Command injection",
+  ssrf: "SSRF",
+  nosql_injection: "NoSQL injection",
+  template_injection: "Template injection (SSTI)",
+  deserialization: "Insecure deserialization",
+  crlf_injection: "CRLF injection",
+  file_inclusion: "File inclusion (LFI/RFI)",
+  prototype_pollution: "Prototype pollution",
+  graphql_probe: "GraphQL introspection probe",
+  open_redirect: "Open redirect attempt",
+  xxe: "XXE",
+  struts_ognl: "Struts2 OGNL injection",
+  spring4shell: "Spring4Shell",
+  ldap_injection: "LDAP injection",
+  xpath_injection: "XPath injection",
+  ssi_injection: "SSI injection",
+  php_cgi_argument_injection: "PHP-CGI argument injection",
+  jwt_none_alg: "JWT alg:none",
+  host_header_injection: "Host header injection",
+  scanner_tool: "Known scanner tool",
+  shellshock: "Shellshock",
+  flood_pattern: "Flood / DoS pattern",
+};
+
+export function attackTypeLabel(type: string | null): string {
+  if (!type) return "Trap path (no payload)";
+  return ATTACK_TYPE_LABELS[type] ?? type;
+}
+
 export function detectSpikes(events: SpikeEvent[], blockedSet: Set<string>): Spike[] {
   const byIp = new Map<string, string[]>();
   for (const e of events) {
