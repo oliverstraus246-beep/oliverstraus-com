@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getClientIp, hashIp, isIpBlocked } from "@/lib/security";
+import { verifyTotp } from "@/lib/totp";
 
 // Fake sensitive-looking paths. A hit means a scanner or bot, not a real
 // visitor -- nothing real is ever mounted at any of these. "/admin" used to
@@ -149,11 +150,21 @@ async function logAdminAuthAttempt(ipHash: string, success: boolean) {
 // HTTP Basic Auth via this one check is the whole access control. Simplest
 // thing that actually gates a single-owner admin section: no session table,
 // no cookie, the browser's own credential prompt handles it.
+//
+// When ADMIN_TOTP_SECRET is configured, the Basic Auth "password" field must
+// be the real password immediately followed by the current 6-digit
+// authenticator code (e.g. password "0liverS!!" + code "123456" ->
+// "0liverS!!123456"). There's no second form field to put a TOTP code in --
+// Basic Auth only carries one password string -- so this is the standard
+// way to bolt a second factor onto Basic Auth without inventing a session/
+// cookie system. Backward compatible: if the env var isn't set, auth is
+// password-only, same as before.
 async function checkAdminAuth(
   request: NextRequest,
 ): Promise<"authorized" | "unauthorized" | "locked" | "blocked"> {
   const user = process.env.ADMIN_STATS_USER;
   const pass = process.env.ADMIN_STATS_PASSWORD;
+  const totpSecret = process.env.ADMIN_TOTP_SECRET;
   if (!user || !pass) return "unauthorized"; // not configured -- fail closed, not open
 
   const header = request.headers.get("authorization");
@@ -166,9 +177,21 @@ async function checkAdminAuth(
   const decoded = atob(header.slice("Basic ".length));
   const separatorIndex = decoded.indexOf(":");
   const providedUser = separatorIndex === -1 ? decoded : decoded.slice(0, separatorIndex);
-  const providedPass = separatorIndex === -1 ? "" : decoded.slice(separatorIndex + 1);
+  const providedPassAndOtp = separatorIndex === -1 ? "" : decoded.slice(separatorIndex + 1);
 
-  const ok = timingSafeEqual(providedUser, user) && timingSafeEqual(providedPass, pass);
+  let providedPass = providedPassAndOtp;
+  let otpOk = true;
+  if (totpSecret) {
+    // Always slice off the last 6 characters as "the OTP" even if they
+    // aren't digits -- verifyTotp rejects non-digit input on its own, and
+    // this keeps the split (and therefore the password-portion length used
+    // below) constant-shape regardless of what was actually typed.
+    const otp = providedPassAndOtp.slice(-6);
+    providedPass = providedPassAndOtp.slice(0, -6);
+    otpOk = await verifyTotp(totpSecret, otp);
+  }
+
+  const ok = timingSafeEqual(providedUser, user) && timingSafeEqual(providedPass, pass) && otpOk;
   void logAdminAuthAttempt(ipHash, ok);
   return ok ? "authorized" : "unauthorized";
 }
@@ -217,6 +240,14 @@ export async function proxy(request: NextRequest) {
 
   const response = NextResponse.next();
   response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+  // Authenticated admin pages must never be cached (browser bfcache, shared
+  // machine, CDN, etc.) -- a page containing visitor IPs and contact
+  // messages sticking around in a disk cache after the tab closes is exactly
+  // the kind of thing worth ruling out explicitly rather than trusting
+  // defaults.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    response.headers.set("Cache-Control", "no-store, must-revalidate");
+  }
   return response;
 }
 

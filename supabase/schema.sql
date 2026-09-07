@@ -40,12 +40,21 @@ alter table honeypot_hits enable row level security;
 -- (on tab-hide/pagehide, once the visitor's actual time-on-page is known).
 -- It's how the second write finds the first row again -- there's no visitor
 -- session/auth to key off instead.
+-- ip_address (added after ip_hash existed -- see migration block below) is
+-- the raw client IP, deliberately kept alongside the hash now that
+-- /admin/stats/visitor/[ipHash] wants to show it. This is a real posture
+-- change: every other table here stores only a salted one-way hash so nothing
+-- resembling a real IP sits in the database. Vercel's own request logs
+-- already carry the raw IP regardless of what this app stores, but adding it
+-- here means a Supabase breach now exposes real visitor IPs directly instead
+-- of an unrecoverable hash. Accepted deliberately, not accidentally.
 create table if not exists page_views (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
   path text not null,
   referrer text,
   ip_hash text not null,
+  ip_address text,
   user_agent text,
   country text,
   region text,
@@ -76,7 +85,9 @@ alter table page_views add column if not exists viewport_width integer;
 alter table page_views add column if not exists viewport_height integer;
 alter table page_views add column if not exists language text;
 alter table page_views add column if not exists duration_ms integer;
+alter table page_views add column if not exists ip_address text;
 create index if not exists page_views_view_id_idx on page_views (view_id);
+create index if not exists page_views_ip_hash_created_at_idx on page_views (ip_hash, created_at);
 
 -- Failed/succeeded Basic Auth attempts against /admin/*, written by
 -- proxy.ts's checkAdminAuth. Powers both the lockout (5 failures in 15

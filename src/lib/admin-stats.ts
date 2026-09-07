@@ -32,3 +32,104 @@ export function toCsv(rows: Record<string, string | number | boolean | null>[]):
 export function csvDownloadHref(csv: string): string {
   return `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
 }
+
+// Deliberately not a real UA-parsing library -- a personal site's traffic is
+// overwhelmingly mainstream browsers/OSes, and a dependency buys more
+// precision than the admin dashboard needs. Order matters: Edge and Opera
+// both contain "Chrome" in their UA string, so they're checked first.
+export function parseBrowser(ua: string): string {
+  if (/edg\//i.test(ua)) return "Edge";
+  if (/opr\/|opera/i.test(ua)) return "Opera";
+  if (/chrome\//i.test(ua)) return "Chrome";
+  if (/firefox\//i.test(ua)) return "Firefox";
+  if (/safari\//i.test(ua)) return "Safari";
+  if (/bot|crawler|spider|bingpreview/i.test(ua)) return "Bot / crawler";
+  return "Other";
+}
+
+export function parseOS(ua: string): string {
+  if (/windows/i.test(ua)) return "Windows";
+  if (/iphone|ipad|ipod/i.test(ua)) return "iOS";
+  if (/android/i.test(ua)) return "Android";
+  if (/mac os x/i.test(ua)) return "macOS";
+  if (/linux/i.test(ua)) return "Linux";
+  return "Other";
+}
+
+export function deviceType(viewportWidth: number | null, userAgent: string | null): string {
+  if (viewportWidth) {
+    if (viewportWidth < 640) return "Mobile";
+    if (viewportWidth < 1024) return "Tablet";
+    return "Desktop";
+  }
+  if (userAgent && /mobi|android/i.test(userAgent)) return "Mobile";
+  return "Unknown";
+}
+
+// document.referrer arrives as a full URL ("https://www.google.com/search?q=...");
+// grouping by hostname instead of the raw string is what makes "top
+// referrers" actually useful rather than one row per unique query string.
+export function referrerLabel(referrer: string | null): string | null {
+  if (!referrer) return null;
+  try {
+    return new URL(referrer).hostname.replace(/^www\./, "");
+  } catch {
+    return referrer;
+  }
+}
+
+export function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${seconds}s`;
+}
+
+// How many events from one ip_hash inside any single 60-second window counts
+// as an anomaly worth surfacing. This is a burst-detection heuristic over
+// this app's OWN logged events (page views, honeypot probes, contact
+// submissions) -- it cannot see a true network-layer volumetric flood, which
+// Vercel's edge absorbs before a request ever reaches this code. What it
+// catches: a script hammering real pages/paths faster than any human would,
+// which is the shape an application-layer DoS attempt (or an aggressive
+// scanner) actually takes in this app's own logs.
+export const SPIKE_THRESHOLD_PER_MINUTE = 8;
+
+export interface SpikeEvent {
+  ipHash: string;
+  timestamp: string;
+}
+
+export interface Spike {
+  ipHash: string;
+  peakPerMinute: number;
+  totalEvents: number;
+  blocked: boolean;
+}
+
+export function detectSpikes(events: SpikeEvent[], blockedSet: Set<string>): Spike[] {
+  const byIp = new Map<string, string[]>();
+  for (const e of events) {
+    const list = byIp.get(e.ipHash) ?? [];
+    list.push(e.timestamp);
+    byIp.set(e.ipHash, list);
+  }
+
+  const spikes: Spike[] = [];
+  for (const [ipHash, timestamps] of byIp.entries()) {
+    const minuteBuckets = new Map<string, number>();
+    for (const t of timestamps) {
+      // Bucket key = the timestamp truncated to the minute -- a coarser but
+      // much cheaper stand-in for a true sliding 60s window.
+      const bucket = t.slice(0, 16); // "YYYY-MM-DDTHH:MM"
+      minuteBuckets.set(bucket, (minuteBuckets.get(bucket) ?? 0) + 1);
+    }
+    const peak = Math.max(...minuteBuckets.values());
+    if (peak >= SPIKE_THRESHOLD_PER_MINUTE) {
+      spikes.push({ ipHash, peakPerMinute: peak, totalEvents: timestamps.length, blocked: blockedSet.has(ipHash) });
+    }
+  }
+
+  return spikes.sort((a, b) => b.peakPerMinute - a.peakPerMinute);
+}

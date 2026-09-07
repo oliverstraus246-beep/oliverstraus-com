@@ -1,5 +1,16 @@
+import Link from "next/link";
 import { blockIp, unblockIp } from "@/app/admin/actions";
-import { countBy, csvDownloadHref, supabaseReadHeaders, toCsv } from "@/lib/admin-stats";
+import {
+  countBy,
+  csvDownloadHref,
+  deviceType,
+  formatDuration,
+  parseBrowser,
+  parseOS,
+  referrerLabel,
+  supabaseReadHeaders,
+  toCsv,
+} from "@/lib/admin-stats";
 
 // Never prerendered (auth-gated, needs a live DB read every time).
 export const dynamic = "force-dynamic";
@@ -8,6 +19,7 @@ interface PageViewRow {
   path: string;
   referrer: string | null;
   ip_hash: string;
+  ip_address: string | null;
   user_agent: string | null;
   country: string | null;
   region: string | null;
@@ -29,59 +41,14 @@ interface PageViewRow {
 const SAMPLE_SIZE = 5000;
 const ACTIVE_WINDOW_MINUTES = 5;
 
-// Deliberately not a real UA-parsing library -- a personal site's traffic
-// is overwhelmingly mainstream browsers/OSes, and a dependency buys more
-// precision than the stats dashboard needs. Order matters: Edge and Opera
-// both contain "Chrome" in their UA string, so they're checked first.
-function parseBrowser(ua: string): string {
-  if (/edg\//i.test(ua)) return "Edge";
-  if (/opr\/|opera/i.test(ua)) return "Opera";
-  if (/chrome\//i.test(ua)) return "Chrome";
-  if (/firefox\//i.test(ua)) return "Firefox";
-  if (/safari\//i.test(ua)) return "Safari";
-  if (/bot|crawler|spider|bingpreview/i.test(ua)) return "Bot / crawler";
-  return "Other";
-}
-
-function parseOS(ua: string): string {
-  if (/windows/i.test(ua)) return "Windows";
-  if (/iphone|ipad|ipod/i.test(ua)) return "iOS";
-  if (/android/i.test(ua)) return "Android";
-  if (/mac os x/i.test(ua)) return "macOS";
-  if (/linux/i.test(ua)) return "Linux";
-  return "Other";
-}
-
-function deviceType(row: PageViewRow): string {
-  if (row.viewport_width) {
-    if (row.viewport_width < 640) return "Mobile";
-    if (row.viewport_width < 1024) return "Tablet";
-    return "Desktop";
-  }
-  if (row.user_agent && /mobi|android/i.test(row.user_agent)) return "Mobile";
-  return "Unknown";
-}
-
-// document.referrer arrives as a full URL ("https://www.google.com/search?q=...");
-// grouping by hostname instead of the raw string is what makes "top
-// referrers" actually useful rather than one row per unique query string.
-function referrerLabel(referrer: string | null): string | null {
-  if (!referrer) return null;
-  try {
-    return new URL(referrer).hostname.replace(/^www\./, "");
-  } catch {
-    return referrer;
-  }
-}
-
 interface Visitor {
   ipHash: string;
+  ipAddress: string | null;
   visitCount: number;
   firstSeen: string;
   lastSeen: string;
   location: string;
   active: boolean;
-  rows: PageViewRow[];
 }
 
 function groupByVisitor(rows: PageViewRow[]): Visitor[] {
@@ -107,12 +74,12 @@ function groupByVisitor(rows: PageViewRow[]): Visitor[] {
     const active = newest.duration_ms == null && now - new Date(newest.created_at).getTime() < activeWindowMs;
     return {
       ipHash,
+      ipAddress: newest.ip_address,
       visitCount: sorted.length,
       firstSeen: oldest.created_at,
       lastSeen: newest.created_at,
       location: [newest.city, newest.region, newest.country].filter(Boolean).join(", ") || "Unknown",
       active,
-      rows: sorted,
     };
   });
 
@@ -133,7 +100,7 @@ async function getStats(pathFilter: string) {
       cache: "no-store",
     }),
     fetch(
-      `${url}/rest/v1/page_views?select=path,referrer,ip_hash,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at&order=created_at.desc&limit=${SAMPLE_SIZE}${filterQuery}`,
+      `${url}/rest/v1/page_views?select=path,referrer,ip_hash,ip_address,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at&order=created_at.desc&limit=${SAMPLE_SIZE}${filterQuery}`,
       { headers: supabaseReadHeaders(key), cache: "no-store" },
     ),
     fetch(`${url}/rest/v1/blocked_ips?select=ip_hash`, { headers: supabaseReadHeaders(key), cache: "no-store" }),
@@ -159,6 +126,7 @@ async function getStats(pathFilter: string) {
       created_at: r.created_at,
       path: r.path,
       referrer: r.referrer ?? "",
+      ip_address: r.ip_address ?? "",
       country: r.country ?? "",
       region: r.region ?? "",
       city: r.city ?? "",
@@ -183,20 +151,12 @@ async function getStats(pathFilter: string) {
     topCountries: countBy(rows.map((r) => r.country), "Unknown"),
     topBrowsers: countBy(rows.map((r) => (r.user_agent ? parseBrowser(r.user_agent) : null)), "Unknown"),
     topOS: countBy(rows.map((r) => (r.user_agent ? parseOS(r.user_agent) : null)), "Unknown"),
-    topDeviceTypes: countBy(rows.map((r) => deviceType(r)), "Unknown"),
+    topDeviceTypes: countBy(rows.map((r) => deviceType(r.viewport_width, r.user_agent)), "Unknown"),
     topLanguages: countBy(rows.map((r) => r.language), "Unknown"),
     visitors,
     activeNow: visitors.filter((v) => v.active),
     blockedSet,
   };
-}
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.round(ms / 1000);
-  if (totalSeconds < 60) return `${totalSeconds}s`;
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}m ${seconds}s`;
 }
 
 function StatCard({ label, value, live }: { label: string; value: string | number; live?: boolean }) {
@@ -236,7 +196,7 @@ function BreakdownTable({ title, rows }: { title: string; rows: [string, number]
 function BlockButton({ ipHash, blocked }: { ipHash: string; blocked: boolean }) {
   if (blocked) {
     return (
-      <form action={unblockIp} onClick={(e) => e.stopPropagation()}>
+      <form action={unblockIp}>
         <input type="hidden" name="ipHash" value={ipHash} />
         <button
           type="submit"
@@ -263,64 +223,29 @@ function BlockButton({ ipHash, blocked }: { ipHash: string; blocked: boolean }) 
 
 function VisitorRow({ visitor, blocked }: { visitor: Visitor; blocked: boolean }) {
   return (
-    <details className="border-t border-border/50 [&_summary::-webkit-details-marker]:hidden">
-      <summary className="grid cursor-pointer grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 px-4 py-2.5 text-sm transition-colors hover:bg-foreground/[0.03]">
-        {visitor.active ? (
-          <span className="relative flex h-2 w-2" title="Active in the last 5 minutes">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-          </span>
-        ) : (
-          <span className="h-2 w-2" />
-        )}
-        <span className="truncate font-mono text-foreground/80">{visitor.ipHash.slice(0, 12)}&hellip;</span>
-        <span className="text-foreground/80">{visitor.location}</span>
-        <span className="font-mono text-foreground">
-          {visitor.visitCount} visit{visitor.visitCount === 1 ? "" : "s"}
+    <div className="grid grid-cols-[auto_auto_1fr_auto_auto_auto_auto] items-center gap-4 border-t border-border/50 px-4 py-2.5 text-sm transition-colors hover:bg-foreground/[0.03] first:border-t-0">
+      {visitor.active ? (
+        <span className="relative flex h-2 w-2" title="Active in the last 5 minutes">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
         </span>
-        <span className="whitespace-nowrap text-muted-foreground">
-          {new Date(visitor.lastSeen).toLocaleString()}
-        </span>
-      </summary>
-      <div className="bg-foreground/[0.02] px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            First seen {new Date(visitor.firstSeen).toLocaleString()}
-          </p>
-          <BlockButton ipHash={visitor.ipHash} blocked={blocked} />
-        </div>
-        <table className="mt-2 w-full text-left text-sm">
-          <thead>
-            <tr className="text-muted-foreground">
-              <th className="py-1 pr-4 font-mono text-[11px] uppercase tracking-widest">Time</th>
-              <th className="py-1 pr-4 font-mono text-[11px] uppercase tracking-widest">Path</th>
-              <th className="py-1 pr-4 font-mono text-[11px] uppercase tracking-widest">Duration</th>
-              <th className="py-1 pr-4 font-mono text-[11px] uppercase tracking-widest">Referrer</th>
-              <th className="py-1 font-mono text-[11px] uppercase tracking-widest">Browser</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visitor.rows.map((row, i) => (
-              <tr key={`${row.created_at}-${i}`}>
-                <td className="whitespace-nowrap py-1 pr-4 text-foreground/80">
-                  {new Date(row.created_at).toLocaleString()}
-                </td>
-                <td className="py-1 pr-4 text-foreground/80">{row.path}</td>
-                <td className="py-1 pr-4 text-foreground/80">
-                  {row.duration_ms ? formatDuration(row.duration_ms) : "—"}
-                </td>
-                <td className="max-w-[16rem] truncate py-1 pr-4 text-foreground/80">
-                  {row.referrer || "Direct"}
-                </td>
-                <td className="py-1 text-foreground/80">
-                  {row.user_agent ? `${parseBrowser(row.user_agent)} / ${parseOS(row.user_agent)}` : "Unknown"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
+      ) : (
+        <span className="h-2 w-2" />
+      )}
+      <span className="whitespace-nowrap font-mono text-foreground/80">{visitor.ipAddress ?? "Unknown IP"}</span>
+      <span className="truncate text-foreground/80">{visitor.location}</span>
+      <span className="font-mono text-foreground">
+        {visitor.visitCount} visit{visitor.visitCount === 1 ? "" : "s"}
+      </span>
+      <span className="whitespace-nowrap text-muted-foreground">{new Date(visitor.lastSeen).toLocaleString()}</span>
+      <Link
+        href={`/admin/stats/visitor/${visitor.ipHash}`}
+        className="font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+      >
+        View profile &rarr;
+      </Link>
+      <BlockButton ipHash={visitor.ipHash} blocked={blocked} />
+    </div>
   );
 }
 
@@ -357,8 +282,9 @@ export default async function AdminStatsPage({ searchParams }: PageProps) {
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
         Breakdowns are computed over the {stats.sampleSize.toLocaleString()} most recent page views.
-        Total views is an exact count of everything ever logged. Every visitor is identified only by a
-        salted, one-way hash of their IP -- the raw address is never stored.
+        Total views is an exact count of everything ever logged. Real IP addresses are stored (not just
+        hashed) as of this update -- treat this data with the same care as the rest of your infrastructure
+        credentials.
       </p>
 
       <form method="get" className="mt-4 flex items-center gap-2">
@@ -407,7 +333,8 @@ export default async function AdminStatsPage({ searchParams }: PageProps) {
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
         <p className="border-b border-border p-4 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Visitors ({stats.visitors.length}) &mdash; click a row for their full visit history
+          Visitors ({stats.visitors.length}) &mdash; open a profile for full history, device, and contact
+          cross-reference
         </p>
         {stats.visitors.length === 0 && (
           <p className="p-4 text-sm text-muted-foreground">No visitors yet.</p>

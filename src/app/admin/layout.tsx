@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminNavLinks } from "@/app/admin/admin-nav-links";
 
 // Applies to every page under /admin -- proxy.ts is the actual gate (Basic
 // Auth + failed-attempt lockout); this is just the shared shell (nav +
@@ -7,12 +8,6 @@ import Link from "next/link";
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
-
-const ADMIN_LINKS = [
-  { href: "/admin/stats", label: "Stats" },
-  { href: "/admin/contacts", label: "Contacts" },
-  { href: "/admin/security", label: "Security" },
-] as const;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,15 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             Admin
           </Link>
-          {ADMIN_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm text-foreground/80 transition-colors hover:text-accent-blue"
-            >
-              {link.label}
-            </Link>
-          ))}
+          <AdminNavLinks />
         </div>
       </nav>
       <main className="mx-auto max-w-6xl px-6 py-16">{children}</main>

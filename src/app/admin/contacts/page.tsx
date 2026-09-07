@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { blockIp, unblockIp } from "@/app/admin/actions";
 import { csvDownloadHref, supabaseReadHeaders, toCsv } from "@/lib/admin-stats";
 
@@ -167,7 +168,15 @@ export default async function AdminContactsPage({ searchParams }: PageProps) {
                 </td>
                 <td className="max-w-md px-4 py-2 text-foreground/80">{c.reason}</td>
                 <td className="px-4 py-2">
-                  <BlockButton ipHash={c.ip_hash} blocked={blockedSet.has(c.ip_hash)} />
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/admin/stats/visitor/${c.ip_hash}`}
+                      className="font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+                    >
+                      Profile
+                    </Link>
+                    <BlockButton ipHash={c.ip_hash} blocked={blockedSet.has(c.ip_hash)} />
+                  </div>
                 </td>
               </tr>
             ))}

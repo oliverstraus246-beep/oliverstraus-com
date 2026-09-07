@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
   const view = ViewSchema.safeParse(body);
   if (!view.success) return new NextResponse(null, { status: 204 });
 
-  const ip_hash = await hashIp(getClientIp(request));
+  const clientIp = getClientIp(request);
+  const ip_hash = await hashIp(clientIp);
   // Blocked visitors get the same silent 204 a real beacon gets -- their
   // page view just never lands, no signal back that they've been singled
   // out. The duration beacon above already no-ops harmlessly against a
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
         path: view.data.path,
         referrer: view.data.referrer || null,
         ip_hash,
+        ip_address: clientIp === "unknown" ? null : clientIp,
         user_agent: request.headers.get("user-agent") ?? null,
         viewport_width: view.data.viewportWidth ?? null,
         viewport_height: view.data.viewportHeight ?? null,

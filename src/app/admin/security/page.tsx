@@ -1,5 +1,15 @@
+import Link from "next/link";
 import { blockIp, purgeOldHoneypotHits, unblockIp } from "@/app/admin/actions";
-import { countBy, csvDownloadHref, supabaseReadHeaders, toCsv } from "@/lib/admin-stats";
+import {
+  countBy,
+  csvDownloadHref,
+  detectSpikes,
+  SPIKE_THRESHOLD_PER_MINUTE,
+  supabaseReadHeaders,
+  toCsv,
+  type Spike,
+  type SpikeEvent,
+} from "@/lib/admin-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -29,34 +39,47 @@ async function getSecurityData() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
 
-  const [honeypotCountRes, honeypotRowsRes, attemptRowsRes, blockedRowsRes] = await Promise.all([
-    fetch(`${url}/rest/v1/honeypot_hits?select=id`, {
-      method: "HEAD",
-      headers: { ...supabaseReadHeaders(key), Prefer: "count=exact" },
-      cache: "no-store",
-    }),
-    fetch(`${url}/rest/v1/honeypot_hits?select=*&order=created_at.desc&limit=2000`, {
-      headers: supabaseReadHeaders(key),
-      cache: "no-store",
-    }),
-    // admin_auth_attempts / blocked_ips may not exist yet on a database
-    // that hasn't run the latest migration -- treated as "no data" rather
-    // than an error.
-    fetch(`${url}/rest/v1/admin_auth_attempts?select=*&order=created_at.desc&limit=500`, {
-      headers: supabaseReadHeaders(key),
-      cache: "no-store",
-    }),
-    fetch(`${url}/rest/v1/blocked_ips?select=*&order=created_at.desc`, {
-      headers: supabaseReadHeaders(key),
-      cache: "no-store",
-    }),
-  ]);
+  const headers = supabaseReadHeaders(key);
+  const [honeypotCountRes, honeypotRowsRes, attemptRowsRes, blockedRowsRes, pageViewEventsRes, contactEventsRes] =
+    await Promise.all([
+      fetch(`${url}/rest/v1/honeypot_hits?select=id`, {
+        method: "HEAD",
+        headers: { ...headers, Prefer: "count=exact" },
+        cache: "no-store",
+      }),
+      fetch(`${url}/rest/v1/honeypot_hits?select=*&order=created_at.desc&limit=2000`, {
+        headers,
+        cache: "no-store",
+      }),
+      // admin_auth_attempts / blocked_ips may not exist yet on a database
+      // that hasn't run the latest migration -- treated as "no data" rather
+      // than an error.
+      fetch(`${url}/rest/v1/admin_auth_attempts?select=*&order=created_at.desc&limit=500`, {
+        headers,
+        cache: "no-store",
+      }),
+      fetch(`${url}/rest/v1/blocked_ips?select=*&order=created_at.desc`, { headers, cache: "no-store" }),
+      fetch(`${url}/rest/v1/page_views?select=ip_hash,created_at&order=created_at.desc&limit=5000`, {
+        headers,
+        cache: "no-store",
+      }),
+      fetch(`${url}/rest/v1/contact_submissions?select=ip_hash,created_at&order=created_at.desc&limit=1000`, {
+        headers,
+        cache: "no-store",
+      }),
+    ]);
 
   const totalHoneypotHits = Number(honeypotCountRes.headers.get("content-range")?.split("/")[1] ?? 0);
   const honeypotHits = honeypotRowsRes.ok ? ((await honeypotRowsRes.json()) as HoneypotRow[]) : [];
   const adminAttempts = attemptRowsRes.ok ? ((await attemptRowsRes.json()) as AdminAttemptRow[]) : [];
   const blockedIps = blockedRowsRes.ok ? ((await blockedRowsRes.json()) as BlockedIpRow[]) : [];
   const blockedSet = new Set(blockedIps.map((b) => b.ip_hash));
+  const pageViewEvents = pageViewEventsRes.ok
+    ? ((await pageViewEventsRes.json()) as { ip_hash: string; created_at: string }[])
+    : [];
+  const contactEvents = contactEventsRes.ok
+    ? ((await contactEventsRes.json()) as { ip_hash: string; created_at: string }[])
+    : [];
 
   const now = Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -83,6 +106,13 @@ async function getSecurityData() {
   const topScannedPaths = countBy(honeypotHits.map((h) => h.path), "(unknown)");
   const topScannerIps = countBy(honeypotHits.map((h) => h.ip_hash), "(unknown)");
 
+  const spikeEvents: SpikeEvent[] = [
+    ...pageViewEvents.map((e) => ({ ipHash: e.ip_hash, timestamp: e.created_at })),
+    ...honeypotHits.map((e) => ({ ipHash: e.ip_hash, timestamp: e.created_at })),
+    ...contactEvents.map((e) => ({ ipHash: e.ip_hash, timestamp: e.created_at })),
+  ];
+  const spikes = detectSpikes(spikeEvents, blockedSet);
+
   return {
     totalHoneypotHits,
     sampleSize: honeypotHits.length,
@@ -97,6 +127,7 @@ async function getSecurityData() {
     successfulAdminAttemptsCount: successfulAdminAttempts.length,
     blockedIps,
     blockedSet,
+    spikes,
   };
 }
 
@@ -137,6 +168,67 @@ function BlockButton({ ipHash, blocked }: { ipHash: string; blocked: boolean }) 
   );
 }
 
+function ProfileLink({ ipHash }: { ipHash: string }) {
+  return (
+    <Link
+      href={`/admin/stats/visitor/${ipHash}`}
+      className="font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+    >
+      Profile
+    </Link>
+  );
+}
+
+function SpikeTable({ spikes }: { spikes: Spike[] }) {
+  return (
+    <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="border-b border-border p-4">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          Traffic anomalies ({spikes.length}) &mdash; {SPIKE_THRESHOLD_PER_MINUTE}+ requests in a single minute
+          from one source
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This detects abnormal bursts within what this app itself logs (page views, honeypot probes, contact
+          submissions) -- it can&apos;t see a true network-layer flood, which Vercel&apos;s own edge absorbs
+          before a request ever reaches this code.
+        </p>
+      </div>
+      {spikes.length === 0 && <p className="p-4 text-sm text-muted-foreground">No anomalies detected.</p>}
+      {spikes.length > 0 && (
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="text-muted-foreground">
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Source (hashed)</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Peak rate</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Total events</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Status</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {spikes.map((s) => (
+              <tr key={s.ipHash} className="border-t border-border/50">
+                <td className="px-4 py-2 font-mono text-foreground/80">{s.ipHash.slice(0, 16)}&hellip;</td>
+                <td className="px-4 py-2 text-foreground/80">{s.peakPerMinute}/min</td>
+                <td className="px-4 py-2 text-foreground/80">{s.totalEvents}</td>
+                <td className={s.blocked ? "px-4 py-2 text-emerald-400" : "px-4 py-2 text-red-400"}>
+                  {s.blocked ? "Blocked" : "Not blocked"}
+                </td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-3">
+                    <ProfileLink ipHash={s.ipHash} />
+                    <BlockButton ipHash={s.ipHash} blocked={s.blocked} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 function ScannerIpTable({ rows, blockedSet }: { rows: [string, number][]; blockedSet: Set<string> }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -150,6 +242,7 @@ function ScannerIpTable({ rows, blockedSet }: { rows: [string, number][]; blocke
             <span className="truncate font-mono text-foreground/80">{ipHash.slice(0, 16)}&hellip;</span>
             <div className="flex shrink-0 items-center gap-3">
               <span className="font-mono text-foreground">{count}</span>
+              <ProfileLink ipHash={ipHash} />
               <BlockButton ipHash={ipHash} blocked={blockedSet.has(ipHash)} />
             </div>
           </div>
@@ -207,12 +300,15 @@ export default async function AdminSecurityPage() {
         similar) that nothing real is ever mounted at -- a hit means a scanner or bot, never a real visitor.
       </p>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
         <StatCard label="Honeypot hits (all-time)" value={data.totalHoneypotHits.toLocaleString()} />
         <StatCard label="Last 24 hours" value={data.honeypotLast24h.toLocaleString()} />
         <StatCard label="Failed admin logins (24h)" value={data.failedLast24h.toLocaleString()} />
         <StatCard label="Blocked IPs" value={data.blockedIps.length.toLocaleString()} />
+        <StatCard label="Traffic anomalies" value={data.spikes.length.toLocaleString()} />
       </div>
+
+      <SpikeTable spikes={data.spikes} />
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <BreakdownTable title="Most scanned paths" rows={data.topScannedPaths} />
@@ -240,6 +336,7 @@ export default async function AdminSecurityPage() {
             <span className="whitespace-nowrap text-muted-foreground">
               {new Date(b.created_at).toLocaleDateString()}
             </span>
+            <ProfileLink ipHash={b.ip_hash} />
             <BlockButton ipHash={b.ip_hash} blocked={true} />
           </div>
         ))}
@@ -286,7 +383,10 @@ export default async function AdminSecurityPage() {
                 <td className="px-4 py-2 font-mono text-foreground/80">{hit.ip_hash.slice(0, 16)}&hellip;</td>
                 <td className="max-w-xs truncate px-4 py-2 text-foreground/80">{hit.user_agent || "—"}</td>
                 <td className="px-4 py-2">
-                  <BlockButton ipHash={hit.ip_hash} blocked={data.blockedSet.has(hit.ip_hash)} />
+                  <div className="flex items-center gap-3">
+                    <ProfileLink ipHash={hit.ip_hash} />
+                    <BlockButton ipHash={hit.ip_hash} blocked={data.blockedSet.has(hit.ip_hash)} />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -305,12 +405,13 @@ export default async function AdminSecurityPage() {
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Time</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Source (hashed)</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Result</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
             </tr>
           </thead>
           <tbody>
             {data.recentAdminAttempts.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
+                <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
                   No login attempts logged yet.
                 </td>
               </tr>
@@ -323,6 +424,9 @@ export default async function AdminSecurityPage() {
                 <td className="px-4 py-2 font-mono text-foreground/80">{attempt.ip_hash.slice(0, 16)}&hellip;</td>
                 <td className={attempt.success ? "px-4 py-2 text-emerald-400" : "px-4 py-2 text-red-400"}>
                   {attempt.success ? "Success" : "Failed"}
+                </td>
+                <td className="px-4 py-2">
+                  <ProfileLink ipHash={attempt.ip_hash} />
                 </td>
               </tr>
             ))}
