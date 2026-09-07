@@ -45,7 +45,7 @@ export async function recentFailedAttempts(ipHash: string): Promise<number> {
   }
 }
 
-export async function logAdminAuthAttempt(ipHash: string, success: boolean): Promise<void> {
+export async function logAdminAuthAttempt(ipHash: string, ipAddress: string, success: boolean): Promise<void> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return;
@@ -54,7 +54,11 @@ export async function logAdminAuthAttempt(ipHash: string, success: boolean): Pro
     await fetch(`${url}/rest/v1/admin_auth_attempts`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...supabaseHeaders(key), Prefer: "return=minimal" },
-      body: JSON.stringify({ ip_hash: ipHash, success }),
+      body: JSON.stringify({
+        ip_hash: ipHash,
+        ip_address: ipAddress === "unknown" ? null : ipAddress,
+        success,
+      }),
     });
   } catch {
     // Logging must never break the auth decision itself.

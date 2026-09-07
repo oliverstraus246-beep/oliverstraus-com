@@ -112,7 +112,17 @@ export default async function AdminContactsPage({ searchParams }: PageProps) {
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
         {contacts.length} submission{contacts.length === 1 ? "" : "s"} {q ? "matching" : "total"} (most recent
-        1,000 shown).
+        1,000 shown). Email links use <code>mailto:</code> and open your browser&apos;s default mail app --
+        one-time setup to make that Proton Mail:{" "}
+        <a
+          href="https://proton.me/support/set-default-email-handler"
+          target="_blank"
+          rel="noreferrer"
+          className="text-accent-blue hover:text-accent-blue-dim"
+        >
+          proton.me/support/set-default-email-handler
+        </a>
+        .
       </p>
 
       <form method="get" className="mt-4 flex items-center gap-2">
@@ -162,7 +172,11 @@ export default async function AdminContactsPage({ searchParams }: PageProps) {
                 </td>
                 <td className="px-4 py-2 text-foreground/80">{c.name}</td>
                 <td className="px-4 py-2 text-foreground/80">
-                  <a href={`mailto:${c.email}`} className="hover:text-accent-blue">
+                  <a
+                    href={`mailto:${c.email}`}
+                    title="Opens in your browser's default mail app"
+                    className="hover:text-accent-blue"
+                  >
                     {c.email}
                   </a>
                 </td>

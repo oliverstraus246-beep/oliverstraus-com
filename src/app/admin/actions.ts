@@ -64,7 +64,7 @@ export async function loginAdmin(formData: FormData) {
 
   const otpOk = totpSecret ? await verifyTotp(totpSecret, code) : true;
   const ok = timingSafeEqual(username, expectedUser) && timingSafeEqual(password, expectedPass) && otpOk;
-  void logAdminAuthAttempt(ipHash, ok);
+  void logAdminAuthAttempt(ipHash, ip, ok);
 
   if (!ok) {
     loginRedirect(safeNext, "Incorrect username, password, or code.");

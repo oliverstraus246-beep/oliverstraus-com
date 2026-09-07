@@ -26,10 +26,19 @@ create table if not exists honeypot_hits (
   created_at timestamptz not null default now(),
   path text not null,
   ip_hash text not null,
+  ip_address text,
   user_agent text
 );
 
 alter table honeypot_hits enable row level security;
+
+-- Migration for the already-live table: ip_address didn't exist at first --
+-- a scanner that only ever probed honeypot paths (never loaded any JS, so
+-- never generated a page_views row either) had no raw IP stored anywhere,
+-- which meant its /admin/stats/visitor/[ipHash] profile was permanently
+-- stuck at "IP unknown" even though proxy.ts had the real IP in hand the
+-- whole time.
+alter table honeypot_hits add column if not exists ip_address text;
 
 -- Visitor tracking pixel, written by src/app/api/track/route.ts. Same
 -- service_role-only RLS posture as the tables above: the anon/publishable
@@ -97,6 +106,7 @@ create table if not exists admin_auth_attempts (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
   ip_hash text not null,
+  ip_address text,
   success boolean not null
 );
 
@@ -104,6 +114,11 @@ alter table admin_auth_attempts enable row level security;
 
 create index if not exists admin_auth_attempts_ip_hash_created_at_idx
   on admin_auth_attempts (ip_hash, created_at);
+
+-- Same reasoning as honeypot_hits.ip_address above: someone who only ever
+-- tried (and failed or succeeded at) /admin/login, without ever loading a
+-- normal page first, had no raw IP recorded anywhere.
+alter table admin_auth_attempts add column if not exists ip_address text;
 
 -- Manual blocklist, managed from /admin/security (block/unblock buttons on
 -- scanner IPs, visitors, and honeypot hits). Checked by the contact form

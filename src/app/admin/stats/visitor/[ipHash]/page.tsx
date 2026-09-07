@@ -40,12 +40,14 @@ interface HoneypotRow {
   id: string;
   created_at: string;
   path: string;
+  ip_address: string | null;
 }
 
 interface AdminAttemptRow {
   id: string;
   created_at: string;
   success: boolean;
+  ip_address: string | null;
 }
 
 // A single ip_hash always corresponds to exactly one real IP (the hash is
@@ -68,12 +70,12 @@ async function getVisitorProfile(ipHash: string) {
       `${url}/rest/v1/contact_submissions?ip_hash=eq.${ipHash}&select=id,created_at,name,email,reason&order=created_at.desc`,
       { headers, cache: "no-store" },
     ),
-    fetch(`${url}/rest/v1/honeypot_hits?ip_hash=eq.${ipHash}&select=id,created_at,path&order=created_at.desc`, {
-      headers,
-      cache: "no-store",
-    }),
     fetch(
-      `${url}/rest/v1/admin_auth_attempts?ip_hash=eq.${ipHash}&select=id,created_at,success&order=created_at.desc`,
+      `${url}/rest/v1/honeypot_hits?ip_hash=eq.${ipHash}&select=id,created_at,path,ip_address&order=created_at.desc`,
+      { headers, cache: "no-store" },
+    ),
+    fetch(
+      `${url}/rest/v1/admin_auth_attempts?ip_hash=eq.${ipHash}&select=id,created_at,success,ip_address&order=created_at.desc`,
       { headers, cache: "no-store" },
     ),
     fetch(`${url}/rest/v1/blocked_ips?ip_hash=eq.${ipHash}&select=reason,created_at`, {
@@ -103,7 +105,15 @@ async function getVisitorProfile(ipHash: string) {
   const firstSeen = allTimestamps[0] ?? null;
   const lastSeen = allTimestamps[allTimestamps.length - 1] ?? null;
 
-  const ipAddress = views.find((v) => v.ip_address)?.ip_address ?? null;
+  // page_views is the primary source, but a scanner that only ever probed
+  // honeypot paths (or an attacker who only ever hit /admin/login) never
+  // generates a page view -- fall back to whichever table actually has a
+  // raw IP for this hash so their profile isn't stuck at "IP unknown".
+  const ipAddress =
+    views.find((v) => v.ip_address)?.ip_address ??
+    honeypotHits.find((h) => h.ip_address)?.ip_address ??
+    adminAttempts.find((a) => a.ip_address)?.ip_address ??
+    null;
   const latest = views[0];
   const location = latest
     ? [latest.city, latest.region, latest.country].filter(Boolean).join(", ") || "Unknown"
@@ -205,7 +215,15 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function Badge({ tone, children }: { tone: "danger" | "warn" | "ok" | "neutral"; children: React.ReactNode }) {
+function Badge({
+  tone,
+  title,
+  children,
+}: {
+  tone: "danger" | "warn" | "ok" | "neutral";
+  title?: string;
+  children: React.ReactNode;
+}) {
   const toneClass = {
     danger: "border-red-400/40 text-red-400",
     warn: "border-amber-400/40 text-amber-400",
@@ -213,7 +231,10 @@ function Badge({ tone, children }: { tone: "danger" | "warn" | "ok" | "neutral";
     neutral: "border-border text-muted-foreground",
   }[tone];
   return (
-    <span className={`rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-widest ${toneClass}`}>
+    <span
+      title={title}
+      className={`rounded-full border px-2.5 py-1 font-mono text-[11px] uppercase tracking-widest ${toneClass}`}
+    >
       {children}
     </span>
   );

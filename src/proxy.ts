@@ -31,7 +31,8 @@ async function logHoneypotHit(request: NextRequest, path: string) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return; // not configured yet -- never let this crash the response
 
-  const ip_hash = await hashIp(getClientIp(request));
+  const clientIp = getClientIp(request);
+  const ip_hash = await hashIp(clientIp);
 
   try {
     await fetch(`${url}/rest/v1/honeypot_hits`, {
@@ -45,6 +46,7 @@ async function logHoneypotHit(request: NextRequest, path: string) {
       body: JSON.stringify({
         path,
         ip_hash,
+        ip_address: clientIp === "unknown" ? null : clientIp,
         user_agent: request.headers.get("user-agent") ?? null,
       }),
     });

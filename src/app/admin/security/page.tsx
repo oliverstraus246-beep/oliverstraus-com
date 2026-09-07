@@ -131,10 +131,13 @@ async function getSecurityData() {
   };
 }
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
+function StatCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{label}</p>
+    <div className="rounded-lg border border-border bg-card p-4" title={hint}>
+      <p className="flex items-center gap-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        {label}
+        {hint && <span className="cursor-help text-muted-foreground/60">&#9432;</span>}
+      </p>
       <p className="mt-1 text-3xl font-black tracking-tight text-foreground">{value}</p>
     </div>
   );
@@ -198,7 +201,7 @@ function SpikeTable({ spikes }: { spikes: Spike[] }) {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="text-muted-foreground">
-              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Source (hashed)</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest" title="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history.">Source (hashed)</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Peak rate</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Total events</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Status</th>
@@ -232,7 +235,10 @@ function SpikeTable({ spikes }: { spikes: Spike[] }) {
 function ScannerIpTable({ rows, blockedSet }: { rows: [string, number][]; blockedSet: Set<string> }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+      <p
+        className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
+        title="Sources ranked by honeypot hits. Shown hashed here for at-a-glance scanning -- open a profile to see the real IP, ISP, and full activity history."
+      >
         Most active scanner IPs (hashed)
       </p>
       <div className="mt-3 space-y-1.5">
@@ -252,10 +258,12 @@ function ScannerIpTable({ rows, blockedSet }: { rows: [string, number][]; blocke
   );
 }
 
-function BreakdownTable({ title, rows }: { title: string; rows: [string, number][] }) {
+function BreakdownTable({ title, rows, hint }: { title: string; rows: [string, number][]; hint?: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{title}</p>
+      <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground" title={hint}>
+        {title}
+      </p>
       <div className="mt-3 space-y-1.5">
         {rows.length === 0 && <p className="text-sm text-muted-foreground">No data yet.</p>}
         {rows.map(([key, count]) => (
@@ -301,23 +309,50 @@ export default async function AdminSecurityPage() {
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
-        <StatCard label="Honeypot hits (all-time)" value={data.totalHoneypotHits.toLocaleString()} />
-        <StatCard label="Last 24 hours" value={data.honeypotLast24h.toLocaleString()} />
-        <StatCard label="Failed admin logins (24h)" value={data.failedLast24h.toLocaleString()} />
-        <StatCard label="Blocked IPs" value={data.blockedIps.length.toLocaleString()} />
-        <StatCard label="Traffic anomalies" value={data.spikes.length.toLocaleString()} />
+        <StatCard
+          label="Honeypot hits (all-time)"
+          value={data.totalHoneypotHits.toLocaleString()}
+          hint="Requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and similar) that nothing real is ever mounted at. A hit always means a scanner or bot -- never a real visitor."
+        />
+        <StatCard
+          label="Last 24 hours"
+          value={data.honeypotLast24h.toLocaleString()}
+          hint="Honeypot hits in the last 24 hours."
+        />
+        <StatCard
+          label="Failed admin logins (24h)"
+          value={data.failedLast24h.toLocaleString()}
+          hint="Wrong username, password, or authenticator code submitted at /admin/login in the last 24 hours. 5 failures within 15 minutes from the same source triggers a temporary lockout."
+        />
+        <StatCard
+          label="Blocked IPs"
+          value={data.blockedIps.length.toLocaleString()}
+          hint="Sources on the manual blocklist. A blocked IP's page views, contact form submissions, and admin login attempts are silently dropped -- no error shown, no signal that they've been singled out."
+        />
+        <StatCard
+          label="Traffic anomalies"
+          value={data.spikes.length.toLocaleString()}
+          hint={`Sources that hit ${SPIKE_THRESHOLD_PER_MINUTE}+ times in a single minute across page views, honeypot probes, or contact submissions -- faster than any human browsing, the shape a script or aggressive scanner takes.`}
+        />
       </div>
 
       <SpikeTable spikes={data.spikes} />
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <BreakdownTable title="Most scanned paths" rows={data.topScannedPaths} />
+        <BreakdownTable
+          title="Most scanned paths"
+          rows={data.topScannedPaths}
+          hint="Which fake sensitive-looking paths get probed most. High counts on /wp-admin or /xmlrpc.php just mean automated WordPress scanners -- routine internet background noise, not a targeted attack."
+        />
         <ScannerIpTable rows={data.topScannerIps} blockedSet={data.blockedSet} />
       </div>
 
       <div className="mt-6 rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <p
+            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
+            title="Sources on the manual blocklist -- their page views, contact submissions, and admin login attempts are silently dropped."
+          >
             Blocked IPs ({data.blockedIps.length})
           </p>
         </div>
@@ -344,7 +379,10 @@ export default async function AdminSecurityPage() {
 
       <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <p
+            className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground"
+            title="Every request to a fake sensitive-looking path, newest first. These paths (/wp-admin, /.env, /.git/config, etc.) don't exist on this site -- nothing but a scanner or bot would ever request them."
+          >
             Recent honeypot hits
           </p>
           <form action={purgeOldHoneypotHits}>
@@ -361,7 +399,7 @@ export default async function AdminSecurityPage() {
             <tr className="text-muted-foreground">
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Time</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Path probed</th>
-              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Source (hashed)</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest" title="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history.">Source (hashed)</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">User agent</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
             </tr>
@@ -403,7 +441,7 @@ export default async function AdminSecurityPage() {
           <thead>
             <tr className="text-muted-foreground">
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Time</th>
-              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Source (hashed)</th>
+              <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest" title="A salted one-way hash of the IP -- open a profile to see the real address, ISP, and full history.">Source (hashed)</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Result</th>
               <th className="px-4 py-2 font-mono text-[11px] uppercase tracking-widest">Action</th>
             </tr>
