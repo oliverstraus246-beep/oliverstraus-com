@@ -5,8 +5,8 @@ import { isTrustedIp } from "@/lib/admin-auth";
 import { attackTypeLabel } from "@/lib/admin-stats";
 
 // Shown at random on a plain honeypot-path hit with no recognizable payload
-// attached (a bot just requesting /wp-admin, nothing else) -- purely for the
-// rare human who actually looks at the response body. Automated scanners
+// attached (a bot just requesting /phpmyadmin, nothing else) -- purely for
+// the rare human who actually looks at the response body. Automated scanners
 // just check status code / look for expected file contents (an .env parser
 // wants "KEY=value" lines, a WordPress scanner wants specific markers) and
 // find neither here, so this changes nothing about how they behave. Status
@@ -26,11 +26,18 @@ const HONEYPOT_TAUNTS = [
 // visitor -- nothing real is ever mounted at any of these. "/admin" used to
 // be one of these (a decoy indistinguishable from the others), but a real
 // dashboard now lives there -- it goes through proxyAdmin below instead.
+//
+// Deliberately NOT here: /wp-admin, /xmlrpc.php, /.aws/credentials. Vercel's
+// own platform-level WAF (system anomaly scoring, not a rule either of us
+// configured -- confirmed via `vercel firewall rules list` showing zero
+// custom rules) already blocks all three with a generic 403 before a
+// request ever reaches this code. Listing them here would be misleading:
+// it'd imply this file's response renders for them, and in production it
+// never does. Oliver explicitly chose to leave Vercel's block in place
+// rather than add a firewall allow-rule to route them through here instead.
 const HONEYPOT_PATHS = new Set([
-  "/wp-admin",
   "/wp-login.php",
   "/wp-content/debug.log",
-  "/xmlrpc.php",
   "/.env",
   "/.env.local",
   "/.env.production",
@@ -42,7 +49,6 @@ const HONEYPOT_PATHS = new Set([
   "/phpmyadmin",
   "/config.php",
   "/wp-config.php.bak",
-  "/.aws/credentials",
   "/actuator/env",
   "/actuator/health",
   "/server-status",

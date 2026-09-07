@@ -347,20 +347,22 @@ export default async function AdminSecurityPage() {
         </a>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        Honeypot hits are requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and
-        similar) that nothing real is ever mounted at -- a hit means a scanner or bot, never a real visitor.
-        Every public request is also checked for recognizable attack payloads (SQL injection, XSS, path
-        traversal, and more) in its path and query string -- a match gets the same treatment. Either one
+        Honeypot hits are requests to fake sensitive-looking paths (/wp-config.php.bak, /.env, /.git/config,
+        and similar) that nothing real is ever mounted at -- a hit means a scanner or bot, never a real
+        visitor. Every public request is also checked for recognizable attack payloads (SQL injection, XSS,
+        path traversal, and more) in its path and query string -- a match gets the same treatment. Either one
         auto-blocks the source on the spot (page views, contact submissions, and future admin login attempts
         from it get silently dropped) unless that source has previously logged into admin as you. A random
         path with no payload and nothing matched just gets this site&apos;s normal 404 page -- untouched.
+        (/wp-admin, /xmlrpc.php, and /.aws/credentials are blocked by Vercel&apos;s own platform firewall
+        before they ever reach this app, so they show a generic Forbidden instead of this page.)
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard
           label="Honeypot hits (all-time)"
           value={data.totalHoneypotHits.toLocaleString()}
-          hint="Requests to fake sensitive-looking paths (/wp-admin, /.env, /.git/config, and similar) that nothing real is ever mounted at, plus any request anywhere that matched a recognized attack payload. A hit always means a scanner, bot, or attacker -- never a real visitor -- and auto-blocks the source immediately."
+          hint="Requests to fake sensitive-looking paths (/wp-config.php.bak, /.env, /.git/config, and similar) that nothing real is ever mounted at, plus any request anywhere that matched a recognized attack payload. A hit always means a scanner, bot, or attacker -- never a real visitor -- and auto-blocks the source immediately."
         />
         <StatCard
           label="Last 24 hours"
@@ -395,7 +397,7 @@ export default async function AdminSecurityPage() {
         <BreakdownTable
           title="Most scanned paths"
           rows={data.topScannedPaths}
-          hint="Which fake sensitive-looking paths get probed most. High counts on /wp-admin or /xmlrpc.php just mean automated WordPress scanners -- routine internet background noise, not a targeted attack."
+          hint="Which fake sensitive-looking paths get probed most. High counts on /wp-config.php.bak or /.env just mean automated WordPress/config scanners -- routine internet background noise, not a targeted attack."
         />
         <BreakdownTable
           title="Attack types"
@@ -437,7 +439,7 @@ export default async function AdminSecurityPage() {
         <div className="flex items-center justify-between border-b border-border p-4">
           <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             Recent honeypot hits
-            <InfoTooltip text="Every request to a fake sensitive-looking path, newest first. These paths (/wp-admin, /.env, /.git/config, etc.) don't exist on this site -- nothing but a scanner or bot would ever request them. Each one auto-blocks its source." />
+            <InfoTooltip text="Every request to a fake sensitive-looking path, newest first. These paths (/wp-config.php.bak, /.env, /.git/config, etc.) don't exist on this site -- nothing but a scanner or bot would ever request them. Each one auto-blocks its source." />
           </p>
           <form action={purgeOldHoneypotHits}>
             <button
