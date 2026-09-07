@@ -33,6 +33,7 @@ const HONEYPOT_PATHS = new Set([
   "/.env",
   "/.env.local",
   "/.env.production",
+  "/.env.backup",
   "/.git/config",
   "/.git/HEAD",
   "/administrator",
@@ -42,7 +43,20 @@ const HONEYPOT_PATHS = new Set([
   "/wp-config.php.bak",
   "/.aws/credentials",
   "/actuator/env",
+  "/actuator/health",
   "/server-status",
+  "/.DS_Store",
+  "/backup.zip",
+  "/backup.sql",
+  "/database.sql",
+  "/dump.sql",
+  "/.svn/entries",
+  "/_profiler",
+  "/telescope",
+  "/console/",
+  "/debug/pprof/",
+  "/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php",
+  "/solr/admin/",
 ]);
 
 interface AttackSignature {
@@ -166,6 +180,36 @@ const ATTACK_SIGNATURES: AttackSignature[] = [
     pattern: /[?&](redirect|return|next|url|continue)=(https?:\/\/|\/\/[a-z0-9])/i,
     taunts: ["Nice open-redirect attempt. This app validates its own next= params server-side.", "That URL isn't taking anyone anywhere but back here."],
   },
+  {
+    type: "xxe",
+    pattern: /<!ENTITY|<!DOCTYPE[^>]*SYSTEM/i,
+    taunts: [
+      "No XML parser here to feed an external entity to.",
+      "XXE needs something parsing XML. This app speaks JSON.",
+      "<!ENTITY still just text to a Next.js route.",
+    ],
+  },
+  {
+    type: "struts_ognl",
+    // The classic Struts2 OGNL RCE payload family (CVE-2017-5638 and
+    // friends) starts with this exact marker regardless of which specific
+    // gadget chain follows.
+    pattern: /#_memberaccess|ognl\.ognlcontext|multipart\/form-data'\)\.\(/i,
+    taunts: [
+      "No Struts2 here, no OGNL context to escape.",
+      "#_memberAccess has nothing to access on a Node runtime.",
+      "That's a great Struts2 RCE. Wrong framework by about three languages.",
+    ],
+  },
+  {
+    type: "spring4shell",
+    pattern: /class\.module\.classloader|classloader\.resources\.context/i,
+    taunts: [
+      "No Spring, no Tomcat, no classloader to reach through.",
+      "class.module.classLoader is a great pivot -- for a Java app. This isn't one.",
+      "Spring4Shell needs Spring. This is React.",
+    ],
+  },
 ];
 
 // User-Agent fingerprints for common vuln scanners / recon tools. Checked
@@ -179,6 +223,22 @@ const SCANNER_TOOL_SIGNATURE: AttackSignature = {
     "Nice scanner. Still just a 404.",
     "Running a tool doesn't make it a vulnerability.",
     "sqlmap, nikto, whatever -- same 404 either way.",
+  ],
+};
+
+// CVE-2014-6271, the original Shellshock marker. Historically exploited by
+// CGI scripts that fed the User-Agent (or Referer) header straight into a
+// bash environment variable -- there's no CGI or bash anywhere in this
+// app's request path, but the payload shape is unmistakable and iconic
+// enough to deserve its own callout rather than folding into a generic
+// bucket.
+const SHELLSHOCK_SIGNATURE: AttackSignature = {
+  type: "shellshock",
+  pattern: /\(\)\s*\{\s*:\s*;\s*\}\s*;/,
+  taunts: [
+    "() { :; }; -- Shellshock, still getting tried in 2026. There's no bash CGI script reading your headers here.",
+    "CVE-2014-6271 says hi. This isn't 2014, and there's no shell to shock.",
+    "Nice function definition. Nowhere to execute it.",
   ],
 };
 
@@ -205,7 +265,7 @@ function decodeForScanning(value: string): string {
   return decoded;
 }
 
-function detectAttack(pathname: string, search: string, userAgent: string | null): AttackSignature | null {
+function detectAttack(pathname: string, search: string, userAgent: string | null, referer: string | null): AttackSignature | null {
   // Query strings conventionally allow "+" as an alternate encoding for a
   // space (the application/x-www-form-urlencoded convention every browser
   // and curl use for GET params), which decodeURIComponent does NOT
@@ -215,10 +275,18 @@ function detectAttack(pathname: string, search: string, userAgent: string | null
   // Normalized only in the query portion, since a literal "+" in a
   // pathname isn't a space encoding.
   const target = decodeForScanning(pathname) + decodeForScanning(search).replace(/\+/g, " ");
+  // Referer is checked too -- header-injection / log-poisoning payloads
+  // often ride in Referer rather than the URL itself, and it's just as
+  // attacker-controlled as the query string.
+  const refererTarget = referer ? decodeForScanning(referer) : "";
   for (const sig of ATTACK_SIGNATURES) {
-    if (sig.pattern.test(target)) return sig;
+    if (sig.pattern.test(target) || (refererTarget && sig.pattern.test(refererTarget))) return sig;
   }
-  if (userAgent && SCANNER_TOOL_SIGNATURE.pattern.test(userAgent)) return SCANNER_TOOL_SIGNATURE;
+  if (userAgent) {
+    if (SCANNER_TOOL_SIGNATURE.pattern.test(userAgent)) return SCANNER_TOOL_SIGNATURE;
+    if (SHELLSHOCK_SIGNATURE.pattern.test(userAgent)) return SHELLSHOCK_SIGNATURE;
+  }
+  if (referer && SHELLSHOCK_SIGNATURE.pattern.test(referer)) return SHELLSHOCK_SIGNATURE;
   return null;
 }
 
@@ -383,7 +451,9 @@ export async function proxy(request: NextRequest) {
   // and /api/* already has its own Zod validation; neither needs this on
   // top, and scanning them risks false positives against his own use.
   const isAdminOrApi = pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/api/");
-  const attackSignature = isAdminOrApi ? null : detectAttack(pathname, search, request.headers.get("user-agent"));
+  const attackSignature = isAdminOrApi
+    ? null
+    : detectAttack(pathname, search, request.headers.get("user-agent"), request.headers.get("referer"));
 
   if (isHoneypotPath || attackSignature) {
     const clientIp = getClientIp(request);

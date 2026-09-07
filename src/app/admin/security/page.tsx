@@ -121,6 +121,7 @@ async function getSecurityData() {
       honeypotHits.map((h) => ({
         created_at: h.created_at,
         path: h.path,
+        attack_type: attackTypeLabel(h.attack_type),
         ip_hash: h.ip_hash,
         user_agent: h.user_agent ?? "",
       })),
