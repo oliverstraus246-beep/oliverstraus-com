@@ -40,6 +40,13 @@ interface PageViewRow {
 // REST fetch can hold.
 const SAMPLE_SIZE = 5000;
 const ACTIVE_WINDOW_MINUTES = 5;
+// The breakdown tables above already cap at top-10 each (countBy's default
+// limit), so they can never grow unbounded. The visitor list had no such
+// cap -- every unique ip_hash in the 5000-row sample rendered as its own
+// row, meaning the page's DOM size grew linearly with how many people had
+// ever visited, forever. This paginates the RENDERED list only; the
+// underlying query/breakdowns are untouched.
+const VISITORS_PER_PAGE = 25;
 
 interface Visitor {
   ipHash: string;
@@ -270,11 +277,11 @@ function VisitorRow({ visitor, blocked }: { visitor: Visitor; blocked: boolean }
 }
 
 interface PageProps {
-  searchParams: Promise<{ path?: string; sort?: string }>;
+  searchParams: Promise<{ path?: string; sort?: string; page?: string }>;
 }
 
 export default async function AdminStatsPage({ searchParams }: PageProps) {
-  const { path: pathFilter = "", sort: sortParam = "recent" } = await searchParams;
+  const { path: pathFilter = "", sort: sortParam = "recent", page: pageParam = "1" } = await searchParams;
   const sort: SortKey = isSortKey(sortParam) ? sortParam : "recent";
   const stats = await getStats(pathFilter, sort);
 
@@ -287,6 +294,19 @@ export default async function AdminStatsPage({ searchParams }: PageProps) {
         </p>
       </>
     );
+  }
+
+  const totalPages = Math.max(1, Math.ceil(stats.visitors.length / VISITORS_PER_PAGE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+  const pageVisitors = stats.visitors.slice((page - 1) * VISITORS_PER_PAGE, page * VISITORS_PER_PAGE);
+
+  function pageHref(targetPage: number) {
+    const params = new URLSearchParams({
+      ...(pathFilter ? { path: pathFilter } : {}),
+      sort,
+      page: String(targetPage),
+    });
+    return `?${params.toString()}`;
   }
 
   return (
@@ -378,9 +398,42 @@ export default async function AdminStatsPage({ searchParams }: PageProps) {
         {stats.visitors.length === 0 && (
           <p className="p-4 text-sm text-muted-foreground">No visitors yet.</p>
         )}
-        {stats.visitors.map((visitor) => (
+        {pageVisitors.map((visitor) => (
           <VisitorRow key={visitor.ipHash} visitor={visitor} blocked={stats.blockedSet.has(visitor.ipHash)} />
         ))}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-3 border-t border-border p-4">
+            <p className="text-xs text-muted-foreground">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-4">
+              {page > 1 ? (
+                <a
+                  href={pageHref(page - 1)}
+                  className="font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+                >
+                  &larr; Prev
+                </a>
+              ) : (
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/40">
+                  &larr; Prev
+                </span>
+              )}
+              {page < totalPages ? (
+                <a
+                  href={pageHref(page + 1)}
+                  className="font-mono text-[11px] uppercase tracking-widest text-accent-blue transition-colors hover:text-accent-blue-dim"
+                >
+                  Next &rarr;
+                </a>
+              ) : (
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/40">
+                  Next &rarr;
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
