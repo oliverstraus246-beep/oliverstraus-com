@@ -64,8 +64,11 @@ export function Footer() {
         </div>
 
         <div className="mt-16 flex flex-col items-start justify-between gap-4 border-t border-border pt-8 sm:flex-row sm:items-center">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Oliver Straus
+          <p className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>© {new Date().getFullYear()} Oliver Straus</span>
+            <Link href="/privacy" className="transition-colors hover:text-accent-blue">
+              Privacy
+            </Link>
           </p>
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             <span className="relative flex h-2 w-2">
