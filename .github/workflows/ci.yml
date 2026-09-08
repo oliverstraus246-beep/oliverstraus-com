@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Same env vars the app checks for at build/runtime -- absent in CI
+          # by design (this repo's secrets aren't shared with the runner).
+          # Every code path that reads these already treats "not configured"
+          # as a valid state (admin pages render a "Supabase env vars aren't
+          # configured" message instead of crashing; see e.g.
+          # src/app/admin/stats/page.tsx), so the build succeeds without
+          # them -- this job is verifying the build itself, not deploying.
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          SUPABASE_SERVICE_ROLE_KEY: ""
