@@ -423,6 +423,31 @@ async function checkFloodPattern(ipHash: string): Promise<boolean> {
   }
 }
 
+// Repeat-offender check -- lifetime count, no time window, unlike
+// checkFloodPattern above (which is about speed, not history). A source
+// that's racked up ESCALATION_THRESHOLD+ honeypot/attack hits over any span
+// of time gets the escalated "reported to the Cyber Crimes Division" reveal
+// chain in honeypotHtml instead of the plain IP reveal. Counted BEFORE this
+// hit is inserted, so >=5 prior hits means this is their 6th -- "over five."
+const ESCALATION_THRESHOLD = 5;
+
+async function getSuspiciousHitCount(ipHash: string): Promise<number> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return 0;
+
+  try {
+    const res = await fetch(`${url}/rest/v1/honeypot_hits?select=id&ip_hash=eq.${ipHash}`, {
+      method: "HEAD",
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" },
+    });
+    if (!res.ok) return 0;
+    return Number(res.headers.get("content-range")?.split("/")[1] ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
 async function logHoneypotHit(
   request: NextRequest,
   path: string,
@@ -528,16 +553,47 @@ function escapeHtml(value: string): string {
 // Styled as a terminal window (title-bar dots, monospace log lines, a
 // blinking cursor) purely via a <style> block -- no JavaScript, no
 // external assets, everything inline so this single response is fully
-// self-contained. `path` and `clientIp` are attacker-influenced and always
-// escaped before insertion; `taunt` and the category label are drawn from
-// this file's own fixed string arrays, never from request input.
-function honeypotHtml(taunt: string, clientIp: string, path: string, attackType: string | null): string {
+// self-contained. The reveal links are styled as more terminal output (a
+// "$" prompt, underline-on-hover, no button chrome/icon/pill shape) rather
+// than a UI widget bolted onto a terminal transcript.
+//
+// `path` and `clientIp` are attacker-influenced and always escaped before
+// insertion; `taunt` and the category label are drawn from this file's own
+// fixed string arrays, never from request input.
+//
+// `repeatOffender` escalates the reveal chain for a source that's crossed
+// ESCALATION_THRESHOLD lifetime hits: instead of a straight IP reveal, it
+// leads with a fake "reported to the Cyber Crimes Division" line and a
+// second nested reveal that punchlines it. Still just two more <details>
+// elements -- no new mechanism, no real report is ever filed anywhere.
+function honeypotHtml(
+  taunt: string,
+  clientIp: string,
+  path: string,
+  attackType: string | null,
+  repeatOffender: boolean,
+): string {
   const shownIp = clientIp === "unknown" ? "suspiciously well-hidden. Nice." : clientIp;
   const escapedIp = escapeHtml(shownIp);
   const escapedPath = escapeHtml(path);
   const categoryTag = attackType
     ? `<span class="tag">[${escapeHtml(attackTypeLabel(attackType).toUpperCase())}]</span>`
     : "";
+  const reveal = repeatOffender
+    ? `<details>
+      <summary><span class="prompt">$</span> curious what happens next? click here</summary>
+      <div class="reveal">
+        Your IP address (<span class="ip">${escapedIp}</span>) has been submitted to the Cyber Crimes Division.
+        <details>
+          <summary><span class="prompt">$</span> click here for more info</summary>
+          <div class="reveal">JK. None of your attacks were ever going to work here anyway.</div>
+        </details>
+      </div>
+    </details>`
+    : `<details>
+      <summary><span class="prompt">$</span> want to see a magic trick? click here</summary>
+      <div class="reveal">Your IP is <span class="ip">${escapedIp}</span>. Ta-da.</div>
+    </details>`;
   return `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><title>404</title>
 <style>
@@ -545,46 +601,41 @@ function honeypotHtml(taunt: string, clientIp: string, path: string, attackType:
 * { box-sizing: border-box; }
 body {
   margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at 50% 0%, #131824 0%, #06070a 65%);
+  background: #08090c;
   font-family: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
   color: #e5e7eb; padding: 2rem;
 }
 .term {
-  width: 100%; max-width: 38rem; border: 1px solid #232837; border-radius: 12px;
-  background: #0b0d12; box-shadow: 0 24px 70px -24px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.02);
-  overflow: hidden;
+  width: 100%; max-width: 38rem; border: 1px solid #232837; border-radius: 8px;
+  background: #0b0d12; overflow: hidden;
 }
 .term-bar {
-  display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
   background: #10131c; border-bottom: 1px solid #1c2029;
 }
-.dot { width: 11px; height: 11px; border-radius: 50%; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
 .dot.r { background: #ff5f56; } .dot.y { background: #ffbd2e; } .dot.g { background: #27c93f; }
 .term-title { margin-left: 6px; font-size: 12px; color: #6b7280; letter-spacing: .02em; }
-.term-body { padding: 26px 24px 24px; }
+.term-body { padding: 24px 22px; }
 .line { margin: 0 0 8px; line-height: 1.65; font-size: 14px; word-break: break-word; }
 .prompt { color: #4ade80; }
 .status { color: #f87171; }
 .tag { color: #fbbf24; font-weight: 600; margin-left: 6px; }
-.taunt { margin-top: 14px; font-size: 15.5px; color: #f3f4f6; }
+.taunt { margin-top: 14px; font-size: 15px; color: #f3f4f6; }
 .cursor {
   display: inline-block; width: 8px; height: 1.1em; background: #7dd3fc;
   margin-left: 3px; vertical-align: -2px; animation: blink 1s step-end infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
-details { margin-top: 20px; }
+details { margin-top: 18px; }
 summary {
-  cursor: pointer; color: #7dd3fc; list-style: none; display: inline-flex; align-items: center;
-  gap: 6px; padding: 9px 16px; border: 1px solid #1c3a4d; border-radius: 999px;
-  background: rgba(125,211,252,.06); transition: background .15s ease, border-color .15s ease;
-  font-size: 13px;
+  cursor: pointer; color: #7dd3fc; list-style: none; font-size: 13.5px;
 }
 summary::-webkit-details-marker { display: none; }
-summary::before { content: "✨"; font-size: 12px; }
-summary:hover { background: rgba(125,211,252,.15); border-color: #7dd3fc; }
+summary:hover { text-decoration: underline; }
 .reveal {
-  margin-top: 12px; padding: 12px 14px; border-radius: 8px; background: #0d1420;
-  border: 1px solid #1c2029; color: #9ca3af; font-size: 13.5px;
+  margin-top: 8px; padding-left: 14px; border-left: 2px solid #1c2029;
+  color: #9ca3af; font-size: 13.5px; line-height: 1.6;
 }
 .reveal .ip { color: #f3f4f6; font-weight: 600; }
 </style>
@@ -599,10 +650,7 @@ summary:hover { background: rgba(125,211,252,.15); border-color: #7dd3fc; }
     <p class="line"><span class="prompt">$</span> GET ${escapedPath}</p>
     <p class="line status">→ 404 Not Found${categoryTag}</p>
     <p class="line taunt">${taunt}<span class="cursor"></span></p>
-    <details>
-      <summary>Want to see a magic trick? Click here.</summary>
-      <div class="reveal">Your IP is <span class="ip">${escapedIp}</span>. Ta-da.</div>
-    </details>
+    ${reveal}
   </div>
 </div>
 </body></html>`;
@@ -683,6 +731,7 @@ export async function proxy(request: NextRequest) {
       // urgent signal. The real underlying category is still what gets
       // logged, so the security page's breakdown stays accurate.
       const flooding = !trusted && (await checkFloodPattern(ipHash));
+      const repeatOffender = !trusted && (await getSuspiciousHitCount(ipHash)) >= ESCALATION_THRESHOLD;
       const loggedType = attackSignature?.type ?? (flooding ? "flood_pattern" : null);
       // Awaited, not fire-and-forget, specifically because checkFloodPattern
       // above depends on THIS request's write being visible to the very
@@ -695,7 +744,7 @@ export async function proxy(request: NextRequest) {
       await logHoneypotHit(request, pathname, clientIp, loggedType, trusted);
       const taunt = flooding ? DDOS_TAUNTS[Math.floor(Math.random() * DDOS_TAUNTS.length)]! : pickTaunt(attackSignature);
       const displayPath = pathname + search;
-      return new NextResponse(honeypotHtml(taunt, clientIp, displayPath, loggedType), {
+      return new NextResponse(honeypotHtml(taunt, clientIp, displayPath, loggedType, repeatOffender), {
         status: 404,
         headers: {
           "Content-Type": "text/html; charset=utf-8",
