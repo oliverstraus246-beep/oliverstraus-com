@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextRequest, after } from "next/server";
 import { getClientIp, hashIp } from "@/lib/security";
 import { isPlatform, pickCurrentRelease, type DownloadReleaseRow } from "@/lib/downloads";
 
@@ -28,6 +28,11 @@ export async function GET(
     { headers: supabaseHeaders(key), cache: "no-store" },
   );
   const rows = releaseRes.ok ? ((await releaseRes.json()) as DownloadReleaseRow[]) : [];
+  if (!releaseRes.ok) {
+    console.error(
+      `[downloads] Supabase query failed: ${releaseRes.status} for project=${project} platform=${platform}`,
+    );
+  }
   const release = pickCurrentRelease(rows, project, platform);
 
   if (!release) {
@@ -35,20 +40,22 @@ export async function GET(
   }
 
   const ip_hash = await hashIp(getClientIp(request));
-  // Fire-and-forget: logging must never block or break the actual download,
-  // same rule proxy.ts's honeypot logger follows. Unlike that logger, there's
-  // no ordering-sensitive counter reading this table, so it isn't awaited.
-  void fetch(`${url}/rest/v1/download_events`, {
-    method: "POST",
-    headers: { ...supabaseHeaders(key), "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({
-      project,
-      platform,
-      version: release.version,
-      ip_hash,
-      user_agent: request.headers.get("user-agent") ?? null,
-    }),
-  }).catch(() => {});
+  // Schedule logging to run after the response is sent. On Vercel's serverless
+  // runtime, this ensures the event write completes even after the redirect
+  // response has been sent. Logging failure never blocks or breaks the download.
+  after(async () => {
+    await fetch(`${url}/rest/v1/download_events`, {
+      method: "POST",
+      headers: { ...supabaseHeaders(key), "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({
+        project,
+        platform,
+        version: release.version,
+        ip_hash,
+        user_agent: request.headers.get("user-agent") ?? null,
+      }),
+    }).catch(() => {});
+  });
 
   return NextResponse.redirect(release.blob_url, { status: 302 });
 }
