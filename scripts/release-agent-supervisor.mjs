@@ -28,6 +28,17 @@ const PROJECT = "agent-supervisor";
 // LICENSE file exists for this project -- none is included or invented.
 const INCLUDE = ["src", "pyproject.toml", "README.md"];
 
+const DESCRIPTION =
+  "Watches Claude Code session transcripts for ungrounded claims and drift/injection.";
+
+// No install.sh here -- this is a Python package (pyproject.toml + src),
+// installed the Python way, not copied into place like the other two.
+const POSTINST_MESSAGE = `echo ""
+echo "AI Agent Supervisor files are installed to /opt/agent-supervisor/"
+echo "Finish setup by running, as yourself (not root):"
+echo "  pip install --user /opt/agent-supervisor"
+echo ""`;
+
 async function readVersion() {
   const contents = await readFile(path.join(SOURCE_DIR, "pyproject.toml"), "utf8");
   const match = contents.match(/^version\s*=\s*"([^"]+)"/m);
@@ -37,7 +48,14 @@ async function readVersion() {
 
 async function main() {
   const version = await readVersion();
-  await releaseProject({ project: PROJECT, sourceDir: SOURCE_DIR, version, include: INCLUDE });
+  await releaseProject({
+    project: PROJECT,
+    sourceDir: SOURCE_DIR,
+    version,
+    include: INCLUDE,
+    description: DESCRIPTION,
+    postinstMessage: POSTINST_MESSAGE,
+  });
 }
 
 await main();
