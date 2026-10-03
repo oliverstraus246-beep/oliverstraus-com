@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PLATFORMS, type Platform } from "@/lib/downloads";
+import { VENTURES } from "@/lib/ventures";
 
 const OPEN_EVENT = "open-download";
 
@@ -96,6 +97,9 @@ export function DownloadModal() {
 
   if (!project) return null;
 
+  const venture = VENTURES.find((v) => v.downloads?.project === project);
+  const license = venture?.downloads?.license;
+
   return (
     <div
       className="animate-modal-backdrop-in fixed inset-0 z-[95] flex items-start justify-center bg-background/80 px-6 pt-[15vh] backdrop-blur-sm"
@@ -105,7 +109,7 @@ export function DownloadModal() {
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Download PowerClaude"
+        aria-label={`Download ${venture?.name ?? project}`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="animate-modal-panel-in w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl focus:outline-none"
@@ -136,16 +140,22 @@ export function DownloadModal() {
           ))}
         </div>
         <p className="border-t border-border px-5 py-4 text-xs leading-relaxed text-muted-foreground">
-          By downloading, you agree to the{" "}
-          <a
-            href="https://gitlab.com/oliverstraus/powerclaude/-/blob/main/LICENSE"
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent-blue hover:text-accent-blue-dim"
-          >
-            MIT License
-          </a>{" "}
-          and our{" "}
+          By downloading, you agree to{" "}
+          {license && (
+            <>
+              the{" "}
+              <a
+                href={license.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent-blue hover:text-accent-blue-dim"
+              >
+                {license.name}
+              </a>{" "}
+              and{" "}
+            </>
+          )}
+          our{" "}
           <a href="/terms" className="text-accent-blue hover:text-accent-blue-dim">
             Terms
           </a>
