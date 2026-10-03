@@ -56,23 +56,6 @@ export default async function AdminLoginPage({ searchParams }: PageProps) {
           />
         </div>
 
-        <div>
-          <label htmlFor="code" className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Authenticator code
-          </label>
-          <input
-            id="code"
-            name="code"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            autoComplete="one-time-code"
-            placeholder="123456"
-            className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent-blue focus:outline-none"
-          />
-        </div>
-
         <button
           type="submit"
           className="mt-2 h-11 rounded-full border border-border font-mono text-xs uppercase tracking-widest transition-colors duration-150 hover:border-accent-blue hover:text-accent-blue"
@@ -82,7 +65,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps) {
       </form>
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Sessions last 7 days. Changing the password or authenticator secret signs out every device.
+        Sessions last 7 days. Changing the password signs out every device.
       </p>
     </div>
   );
