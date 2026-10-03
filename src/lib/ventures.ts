@@ -137,6 +137,9 @@ export const VENTURES: readonly Venture[] = [
     timeframe: "2026 — Present",
     stack: ["Python", "Claude API", "uv"],
     repoUrl: "https://gitlab.com/oliverstraus/agent-supervisor",
+    downloads: {
+      project: "agent-supervisor",
+    },
     metrics: [
       { value: "272MB", label: "Largest session file parsed" },
       { value: "9294", label: "Turns parsed in verification" },
