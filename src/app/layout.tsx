@@ -7,6 +7,7 @@ import { Cursor } from "@/components/cursor";
 import { Footer } from "@/components/footer";
 import { Nav } from "@/components/nav";
 import { ResumeModal } from "@/components/resume-modal";
+import { DownloadModal } from "@/components/download-modal";
 import { ScrollReset } from "@/components/scroll-reset";
 import { ScrollProgress } from "@/components/scroll-progress";
 import { VisitTracker } from "@/components/visit-tracker";
@@ -199,6 +200,7 @@ export default function RootLayout({
         </div>
         <Footer />
         <ResumeModal />
+        <DownloadModal />
       </body>
     </html>
   );

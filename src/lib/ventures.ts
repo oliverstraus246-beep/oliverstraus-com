@@ -30,6 +30,18 @@ export interface Venture {
   timeframe?: string | null;
   stack?: readonly string[];
   repoUrl?: string;
+  // Set only when this venture has a real, published download (see
+  // src/components/download-modal.tsx and src/app/api/download). Absent by
+  // default -- a venture never gets a Download button just by existing.
+  // "project" is the key scripts/release-*.mjs publishes releases under in
+  // Supabase's download_releases table, not necessarily == slug.
+  downloads?: {
+    project: string;
+    // Optional -- not every downloadable project has a license file yet
+    // (e.g. agent-supervisor doesn't). When absent, the download modal's
+    // footer just says "agree to our Terms", no license clause.
+    license?: { name: string; url: string };
+  };
   // Optional hero image for the /work/[slug] detail page. Provide a file
   // already dropped into public/ (e.g. "/assets/ventures/sectra.png") plus a
   // real alt string and it renders as a bordered figure above the body.
@@ -125,6 +137,9 @@ export const VENTURES: readonly Venture[] = [
     timeframe: "2026 — Present",
     stack: ["Python", "Claude API", "uv"],
     repoUrl: "https://gitlab.com/oliverstraus/agent-supervisor",
+    downloads: {
+      project: "agent-supervisor",
+    },
     metrics: [
       { value: "272MB", label: "Largest session file parsed" },
       { value: "9294", label: "Turns parsed in verification" },
@@ -185,6 +200,10 @@ export const VENTURES: readonly Venture[] = [
     timeframe: null,
     stack: ["Node.js", "Bash", "Markdown"],
     repoUrl: "https://gitlab.com/oliverstraus/powerclaude",
+    downloads: {
+      project: "powerclaude",
+      license: { name: "MIT License", url: "https://gitlab.com/oliverstraus/powerclaude/-/blob/main/LICENSE" },
+    },
     metrics: [
       { value: "17", label: "Specialist configurations" },
       { value: "5", label: "Automation hooks" },
@@ -215,6 +234,9 @@ export const VENTURES: readonly Venture[] = [
     },
     timeframe: "2026",
     stack: ["JavaScript", "Node.js", "MV3"],
+    downloads: {
+      project: "brave-pentest-toolkit",
+    },
     metrics: [
       { value: "31", label: "Tools in the catalog" },
       { value: "2", label: "Real bugs caught by testing" },

@@ -23,12 +23,13 @@ async function getOverview() {
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-  const [totalViews, contacts, blockedIps, honeypot24h, activeRes, blockedRes, recentViewsRes, recentHoneypotRes] =
+  const [totalViews, contacts, blockedIps, honeypot24h, downloads, activeRes, blockedRes, recentViewsRes, recentHoneypotRes] =
     await Promise.all([
       headCount("page_views"),
       headCount("contact_submissions"),
       headCount("blocked_ips"),
       headCount("honeypot_hits", `&created_at=gte.${dayAgo}`),
+      headCount("download_events"),
       fetch(`${url}/rest/v1/page_views?select=ip_hash&duration_ms=is.null&created_at=gte.${fiveMinAgo}`, {
         headers: supabaseReadHeaders(key),
         cache: "no-store",
@@ -65,6 +66,7 @@ async function getOverview() {
     contacts: exactCount(contacts),
     blockedIps: exactCount(blockedIps),
     honeypot24h: exactCount(honeypot24h),
+    downloads: exactCount(downloads),
     activeNow,
     anomalies,
   };
@@ -122,6 +124,7 @@ export default async function AdminHomePage() {
           <OverviewStat label="Contact submissions" value={overview.contacts.toLocaleString()} />
           <OverviewStat label="Honeypot hits (24h)" value={overview.honeypot24h.toLocaleString()} />
           <OverviewStat label="Blocked IPs" value={overview.blockedIps.toLocaleString()} />
+          <OverviewStat label="Downloads" value={overview.downloads.toLocaleString()} />
           <OverviewStat label="Traffic anomalies" value={overview.anomalies.toLocaleString()} />
         </div>
       )}
@@ -141,6 +144,11 @@ export default async function AdminHomePage() {
           href="/admin/security"
           title="Security"
           description="Bot/scanner activity, admin login history, and the IP blocklist."
+        />
+        <ToolCard
+          href="/admin/downloads"
+          title="Downloads"
+          description="Per-platform download counts, recent events, and what's currently published."
         />
       </div>
     </>

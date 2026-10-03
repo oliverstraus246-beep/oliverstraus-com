@@ -69,6 +69,9 @@ export function Footer() {
             <Link href="/privacy" className="transition-colors hover:text-accent-blue">
               Privacy
             </Link>
+            <Link href="/terms" className="transition-colors hover:text-accent-blue">
+              Terms
+            </Link>
           </p>
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             <span className="relative flex h-2 w-2">
