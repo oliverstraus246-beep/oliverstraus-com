@@ -1,16 +1,46 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PLATFORMS, type Platform } from "@/lib/downloads";
+import { LINUX_PLATFORMS, type LinuxPlatform, type Platform } from "@/lib/downloads";
 import { VENTURES } from "@/lib/ventures";
 
 const OPEN_EVENT = "open-download";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   mac: "macOS",
-  linux: "Linux",
+  linux: "Other Linux (.tar.gz)",
   windows: "Windows",
+  arch: "Arch Linux",
+  debian: "Debian / Ubuntu",
 };
+
+// Top-level groups shown on the first screen. "linux" here is the GROUP
+// (clicking it opens the arch/debian/linux sub-step below), distinct from
+// the "linux" Platform value (the generic-tarball fallback, one of the
+// three choices inside that sub-step).
+type OsGroup = "mac" | "linux" | "windows";
+const OS_GROUPS: { group: OsGroup; label: string; platform?: Platform }[] = [
+  { group: "mac", label: "macOS", platform: "mac" },
+  { group: "linux", label: "Linux" },
+  { group: "windows", label: "Windows", platform: "windows" },
+];
+
+// Best-effort client-side OS detection, used only to highlight a likely
+// match -- never to skip the explicit pick. navigator.userAgentData is the
+// modern, more honest source where Chromium exposes it; userAgent is the
+// fallback for Firefox/Safari. Returns null (no highlight) rather than
+// guessing when neither gives a clear signal -- matches the original
+// "explicit pick over UA-sniffing" reasoning, this is a convenience hint
+// layered on top of it, not a replacement.
+function detectOsGroup(): OsGroup | null {
+  if (typeof navigator === "undefined") return null;
+  const uaData = (navigator as unknown as { userAgentData?: { platform?: string } }).userAgentData;
+  const source = (uaData?.platform ?? navigator.userAgent ?? "").toLowerCase();
+  if (source.includes("mac")) return "mac";
+  if (source.includes("win")) return "windows";
+  if (source.includes("linux") || source.includes("x11")) return "linux";
+  return null;
+}
 
 /** Any trigger point calls this instead of linking to a download URL directly. */
 export function openDownload(project: string) {
@@ -25,6 +55,11 @@ export function openDownload(project: string) {
  */
 export function DownloadModal() {
   const [project, setProject] = useState<string | null>(null);
+  // "top" is the macOS/Linux/Windows screen; "linux" is the
+  // arch/debian/linux sub-step. Reset to "top" every time the modal opens
+  // so a prior visit's sub-step choice never lingers into the next open.
+  const [view, setView] = useState<"top" | "linux">("top");
+  const [detected, setDetected] = useState<OsGroup | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -32,6 +67,8 @@ export function DownloadModal() {
     function onOpen(e: Event) {
       const detail = (e as CustomEvent<{ project: string }>).detail;
       setProject(detail.project);
+      setView("top");
+      setDetected(detectOsGroup());
     }
     window.addEventListener(OPEN_EVENT, onOpen);
     return () => window.removeEventListener(OPEN_EVENT, onOpen);
@@ -40,7 +77,15 @@ export function DownloadModal() {
   useEffect(() => {
     if (!project) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setProject(null);
+      if (e.key !== "Escape") return;
+      // First Escape backs out of the Linux sub-step (mirrors the Back
+      // button); only a second Escape (or one from the top step) closes
+      // the whole modal.
+      setView((v) => {
+        if (v === "linux") return "top";
+        setProject(null);
+        return v;
+      });
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -115,9 +160,21 @@ export function DownloadModal() {
         className="animate-modal-panel-in w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl focus:outline-none"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            Choose your OS
-          </p>
+          <div className="flex items-center gap-2">
+            {view === "linux" && (
+              <button
+                type="button"
+                onClick={() => setView("top")}
+                aria-label="Back"
+                className="font-mono text-xs text-muted-foreground transition-colors hover:text-accent-blue"
+              >
+                &larr;
+              </button>
+            )}
+            <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              {view === "top" ? "Choose your OS" : "Choose a Linux format"}
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => setProject(null)}
@@ -128,16 +185,47 @@ export function DownloadModal() {
           </button>
         </div>
         <div className="flex flex-col gap-3 p-5">
-          {PLATFORMS.map((platform) => (
-            <a
-              key={platform}
-              href={`/api/download/${project}?platform=${platform}`}
-              className="flex items-center justify-between rounded-full border border-border px-4 py-2.5 font-mono text-xs uppercase tracking-widest text-foreground/80 transition-colors hover:border-accent-blue hover:text-accent-blue active:scale-[0.98]"
-            >
-              {PLATFORM_LABELS[platform]}
-              <span aria-hidden="true">&rarr;</span>
-            </a>
-          ))}
+          {view === "top"
+            ? OS_GROUPS.map(({ group, label, platform }) => {
+                const isDetected = detected === group;
+                const content = (
+                  <>
+                    <span className="flex items-center gap-2">
+                      {label}
+                      {isDetected && (
+                        <span className="rounded-full border border-accent-blue/40 px-1.5 py-0.5 text-[10px] text-accent-blue">
+                          Detected
+                        </span>
+                      )}
+                    </span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </>
+                );
+                const className = `flex items-center justify-between rounded-full border px-4 py-2.5 font-mono text-xs uppercase tracking-widest transition-colors active:scale-[0.98] ${
+                  isDetected
+                    ? "border-accent-blue/60 text-foreground"
+                    : "border-border text-foreground/80 hover:border-accent-blue hover:text-accent-blue"
+                }`;
+                return platform ? (
+                  <a key={group} href={`/api/download/${project}?platform=${platform}`} className={className}>
+                    {content}
+                  </a>
+                ) : (
+                  <button key={group} type="button" onClick={() => setView("linux")} className={className}>
+                    {content}
+                  </button>
+                );
+              })
+            : LINUX_PLATFORMS.map((platform: LinuxPlatform) => (
+                <a
+                  key={platform}
+                  href={`/api/download/${project}?platform=${platform}`}
+                  className="flex items-center justify-between rounded-full border border-border px-4 py-2.5 font-mono text-xs uppercase tracking-widest text-foreground/80 transition-colors hover:border-accent-blue hover:text-accent-blue active:scale-[0.98]"
+                >
+                  {PLATFORM_LABELS[platform]}
+                  <span aria-hidden="true">&rarr;</span>
+                </a>
+              ))}
         </div>
         <p className="border-t border-border px-5 py-4 text-xs leading-relaxed text-muted-foreground">
           By downloading, you agree to{" "}

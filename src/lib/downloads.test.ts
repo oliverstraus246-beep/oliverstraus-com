@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest"
-import { isPlatform, pickCurrentRelease, PLATFORMS, type DownloadReleaseRow } from "./downloads"
+import { isPlatform, pickCurrentRelease, PLATFORMS, LINUX_PLATFORMS, type DownloadReleaseRow } from "./downloads"
 
 describe("isPlatform", () => {
-  it("accepts mac, linux, windows", () => {
+  it("accepts every declared platform", () => {
     for (const p of PLATFORMS) expect(isPlatform(p)).toBe(true)
   })
 
@@ -10,6 +10,13 @@ describe("isPlatform", () => {
     expect(isPlatform("solaris")).toBe(false)
     expect(isPlatform(null)).toBe(false)
     expect(isPlatform("")).toBe(false)
+  })
+})
+
+describe("LINUX_PLATFORMS", () => {
+  it("is exactly arch, debian, linux -- each a real declared platform", () => {
+    expect([...LINUX_PLATFORMS].sort()).toEqual(["arch", "debian", "linux"])
+    for (const p of LINUX_PLATFORMS) expect(PLATFORMS).toContain(p)
   })
 })
 
