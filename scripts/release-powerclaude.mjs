@@ -43,6 +43,16 @@ const INCLUDE = [
   "TROUBLESHOOTING.md",
 ];
 
+const DESCRIPTION = "Claude Code personalization framework -- hooks, vault, skills.";
+
+// Run as root during apt install, so $HOME is wrong for a per-user installer
+// like install.sh -- print the finishing step instead of attempting it.
+const POSTINST_MESSAGE = `echo ""
+echo "PowerClaude files are installed to /opt/powerclaude/"
+echo "Finish setup by running, as yourself (not root):"
+echo "  bash /opt/powerclaude/install.sh"
+echo ""`;
+
 async function readVersion() {
   try {
     return (await readFile(path.join(SOURCE_DIR, "VERSION"), "utf8")).trim();
@@ -53,7 +63,14 @@ async function readVersion() {
 
 async function main() {
   const version = await readVersion();
-  await releaseProject({ project: PROJECT, sourceDir: SOURCE_DIR, version, include: INCLUDE });
+  await releaseProject({
+    project: PROJECT,
+    sourceDir: SOURCE_DIR,
+    version,
+    include: INCLUDE,
+    description: DESCRIPTION,
+    postinstMessage: POSTINST_MESSAGE,
+  });
 }
 
 await main();

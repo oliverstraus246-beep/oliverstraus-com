@@ -10,13 +10,18 @@
 // Requires BLOB_READ_WRITE_TOKEN, NEXT_PUBLIC_SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY in the environment when actually publishing.
 
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdtemp, cp, readFile, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, cp, readdir, readFile, stat, writeFile, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
+import { zstdCompressSync } from "node:zlib";
 import { put } from "@vercel/blob";
 import { TarArchive, ZipArchive } from "archiver";
+
+const execFileAsync = promisify(execFile);
 
 // Never worth shipping regardless of which project's INCLUDE list pulled in
 // the containing directory -- compiled bytecode caches (Python's
@@ -64,6 +69,110 @@ async function sha256(filePath) {
   const hash = createHash("sha256");
   for await (const chunk of createReadStream(filePath)) hash.update(chunk);
   return hash.digest("hex");
+}
+
+async function dirSizeBytes(dir) {
+  let total = 0;
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    total += entry.isDirectory() ? await dirSizeBytes(entryPath) : (await stat(entryPath)).size;
+  }
+  return total;
+}
+
+// Both Linux package formats ship the payload at /opt/<project>/ rather than
+// scattering files across /usr -- these are personal single-maintainer tools
+// with their own internal layout (install.sh expects to find its siblings
+// next to it), not packages meant to integrate with a distro's FHS. Returns
+// a fresh root containing opt/<project>/<...INCLUDE...>, built from the
+// already-staged flat directory `stagingDir` (see packageProject).
+async function buildPkgRoot(stagingDir, project) {
+  const pkgRoot = await mkdtemp(path.join(tmpdir(), `${project}-pkgroot-`));
+  // mkdtemp defaults to 0700 -- that mode would otherwise be recorded as the
+  // package's own "./" root entry (both formats archive the whole pkgRoot).
+  await chmod(pkgRoot, 0o755);
+  const payloadDir = path.join(pkgRoot, "opt", project);
+  await mkdir(payloadDir, { recursive: true });
+  await cp(stagingDir, payloadDir, { recursive: true });
+  return { pkgRoot, payloadDir };
+}
+
+// Real .deb, built with dpkg-deb rather than hand-rolled ar/tar -- it's
+// installed on this machine and gets the archive member order, compression,
+// and control-file validation right for free. postinstMessage is plain
+// `echo` lines (no logic): these tools each need a per-user step (run
+// install.sh, pip install, register a native messaging host) that a
+// postinst running as root during `apt install` cannot safely perform
+// itself -- it would write into /root instead of the real user's home. So
+// postinst only prints what to run next, the same finishing step the
+// tar.gz download already requires users to do by hand.
+async function buildDebPackage({ project, version, description, stagingDir, postinstMessage, outPath }) {
+  const { pkgRoot, payloadDir } = await buildPkgRoot(stagingDir, project);
+  const debianDir = path.join(pkgRoot, "DEBIAN");
+  await mkdir(debianDir, { recursive: true });
+
+  const installedSizeKb = Math.ceil((await dirSizeBytes(payloadDir)) / 1024);
+  const control = `Package: ${project}
+Version: ${version}
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Oliver Straus <oliverstraus246@gmail.com>
+Installed-Size: ${installedSizeKb}
+Description: ${description}
+`;
+  await writeFile(path.join(debianDir, "control"), control);
+
+  const postinstPath = path.join(debianDir, "postinst");
+  await writeFile(postinstPath, `#!/bin/sh\nset -e\n${postinstMessage}\nexit 0\n`);
+  await chmod(postinstPath, 0o755);
+
+  await execFileAsync("dpkg-deb", ["--build", "--root-owner-group", pkgRoot, outPath]);
+  return outPath;
+}
+
+// Real Arch package format (what `pacman -U` expects): a zstd-compressed
+// tar with .PKGINFO at the archive root alongside the opt/<project>/
+// payload. Doesn't use makepkg/pacstrap -- the format itself is just
+// tar+zstd+metadata, no Arch-specific toolchain is required to produce one.
+// .INSTALL (pacman's postinst equivalent) carries the same
+// run-this-yourself message as the .deb's postinst, via post_install().
+async function buildArchPackage({ project, version, description, stagingDir, postinstMessage, outPath }) {
+  const { pkgRoot, payloadDir } = await buildPkgRoot(stagingDir, project);
+
+  const sizeBytes = await dirSizeBytes(payloadDir);
+  const pkginfo = `pkgname = ${project}
+pkgbase = ${project}
+pkgver = ${version}-1
+pkgdesc = ${description}
+url = https://oliverstraus.com
+builddate = ${Math.floor(Date.now() / 1000)}
+packager = Oliver Straus <oliverstraus246@gmail.com>
+size = ${sizeBytes}
+arch = any
+license = custom
+`;
+  await writeFile(path.join(pkgRoot, ".PKGINFO"), pkginfo);
+
+  const install = `post_install() {\n${postinstMessage}\n}\n\npost_upgrade() {\n  post_install "$1"\n}\n`;
+  await writeFile(path.join(pkgRoot, ".INSTALL"), install);
+
+  const tarPath = path.join(tmpdir(), `${project}-${version}-arch.tar`);
+  await execFileAsync("tar", [
+    "--numeric-owner",
+    "--owner=0",
+    "--group=0",
+    "-cf",
+    tarPath,
+    "-C",
+    pkgRoot,
+    ".PKGINFO",
+    ".INSTALL",
+    "opt",
+  ]);
+  const compressed = zstdCompressSync(await readFile(tarPath));
+  await writeFile(outPath, compressed);
+  return outPath;
 }
 
 function supabaseHeaders() {
@@ -134,60 +243,58 @@ export async function packageProject({ project, sourceDir, version, include }) {
 }
 
 // Packages, uploads to Vercel Blob, and publishes Supabase rows for a single
-// project release across mac/linux (tar.gz) and windows (zip).
-export async function releaseProject({ project, sourceDir, version, include }) {
+// project release across mac/linux (tar.gz), windows (zip), debian (.deb),
+// and arch (.pkg.tar.zst). description/postinstMessage are required -- every
+// project ships real Debian/Arch packages now, not just the generic tarball.
+export async function releaseProject({
+  project,
+  sourceDir,
+  version,
+  include,
+  description,
+  postinstMessage,
+}) {
   console.log(`Releasing ${project} v${version}...`);
 
-  const { tarPath, zipPath } = await packageProject({ project, sourceDir, version, include });
+  const { staging, tarPath, zipPath } = await packageProject({ project, sourceDir, version, include });
 
-  const tarStat = await stat(tarPath);
-  const zipStat = await stat(zipPath);
-  const tarSha = await sha256(tarPath);
-  const zipSha = await sha256(zipPath);
+  const debPath = path.join(tmpdir(), `${project}_${version}_all.deb`);
+  const archPath = path.join(tmpdir(), `${project}-${version}-1-any.pkg.tar.zst`);
+  await buildDebPackage({ project, version, description, stagingDir: staging, postinstMessage, outPath: debPath });
+  await buildArchPackage({ project, version, description, stagingDir: staging, postinstMessage, outPath: archPath });
+
+  const artifacts = {
+    mac: { path: tarPath, name: `${project}-v${version}.tar.gz` },
+    linux: { path: tarPath, name: `${project}-v${version}.tar.gz` },
+    windows: { path: zipPath, name: `${project}-v${version}.zip` },
+    debian: { path: debPath, name: `${project}_${version}_all.deb` },
+    arch: { path: archPath, name: `${project}-${version}-1-any.pkg.tar.zst` },
+  };
 
   console.log("Uploading to Vercel Blob...");
-  const tarBlob = await put(
-    `${project}/v${version}/${project}-v${version}.tar.gz`,
-    await readFile(tarPath),
-    { access: "public" },
-  );
-  const zipBlob = await put(
-    `${project}/v${version}/${project}-v${version}.zip`,
-    await readFile(zipPath),
-    { access: "public" },
-  );
+  const uploaded = {};
+  // mac and linux are the same tar.gz -- upload it once, reuse the blob URL.
+  for (const [platform, { path: filePath, name }] of Object.entries(artifacts)) {
+    if (platform === "linux" && uploaded.mac) {
+      uploaded.linux = uploaded.mac;
+      continue;
+    }
+    const fileStat = await stat(filePath);
+    const fileSha = await sha256(filePath);
+    const blob = await put(`${project}/v${version}/${name}`, await readFile(filePath), { access: "public" });
+    uploaded[platform] = { blob, sha: fileSha, size: fileStat.size };
+  }
 
   console.log("Publishing to Supabase...");
 
-  // Phase 1: insert every new release row (mac, linux, windows) as
-  // is_current:false first. If any insert fails, we abort here -- before
-  // touching any existing is_current state -- so a partial failure never
-  // leaves a platform without a current release.
-  const pending = [];
-  for (const platform of ["mac", "linux"]) {
-    pending.push({
-      platform,
-      row: {
-        project,
-        platform,
-        version,
-        blob_url: tarBlob.url,
-        sha256: tarSha,
-        size_bytes: tarStat.size,
-      },
-    });
-  }
-  pending.push({
-    platform: "windows",
-    row: {
-      project,
-      platform: "windows",
-      version,
-      blob_url: zipBlob.url,
-      sha256: zipSha,
-      size_bytes: zipStat.size,
-    },
-  });
+  // Phase 1: insert every new release row as is_current:false first. If any
+  // insert fails, we abort here -- before touching any existing is_current
+  // state -- so a partial failure never leaves a platform without a current
+  // release.
+  const pending = Object.entries(uploaded).map(([platform, { blob, sha, size }]) => ({
+    platform,
+    row: { project, platform, version, blob_url: blob.url, sha256: sha, size_bytes: size },
+  }));
 
   const inserted = [];
   for (const { platform, row } of pending) {
@@ -201,7 +308,8 @@ export async function releaseProject({ project, sourceDir, version, include }) {
     await promoteRelease(project, platform, id);
   }
 
-  console.log(`Done. v${version} is now live for mac, linux, and windows.`);
-  console.log(`  tar.gz: ${tarBlob.url} (${tarSha.slice(0, 12)}...)`);
-  console.log(`  zip:    ${zipBlob.url} (${zipSha.slice(0, 12)}...)`);
+  console.log(`Done. v${version} is now live for mac, linux, windows, debian, and arch.`);
+  for (const [platform, { blob, sha }] of Object.entries(uploaded)) {
+    console.log(`  ${platform}: ${blob.url} (${sha.slice(0, 12)}...)`);
+  }
 }
