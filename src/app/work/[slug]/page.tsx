@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { VENTURES, getVenture } from "@/lib/ventures";
 import { MetricRow } from "@/components/metric-row";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { DownloadTrigger } from "@/components/download-trigger";
 
 export function generateStaticParams() {
   return VENTURES.map((v) => ({ slug: v.slug }));
@@ -225,6 +226,10 @@ export default async function VenturePage({
                 ))}
               </div>
             </div>
+          )}
+
+          {venture.downloads && (
+            <DownloadTrigger project={venture.downloads.project} />
           )}
 
           {venture.repoUrl && (
