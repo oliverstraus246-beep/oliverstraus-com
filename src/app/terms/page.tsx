@@ -54,10 +54,11 @@ export default function TermsPage() {
 
       <LegalSection title="Downloading a project">
         <p>
-          Projects offered for download here (PowerClaude, so far) ship under their own
-          open-source license — PowerClaude&apos;s is MIT, included in the download and in
-          its repository. That license, not this page, governs what you can do with the
-          code.
+          Some projects offered for download here ship under their own open-source
+          license — check the download screen, which links straight to it when one
+          applies. That license, not this page, governs what you can do with the code.
+          Where no license is specified, you&apos;re free to use the software for your own
+          personal use; no additional rights are granted beyond that.
         </p>
         <p>
           The software is provided as-is, with no warranty of any kind, express or implied.

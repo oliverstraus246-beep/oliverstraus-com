@@ -133,8 +133,8 @@ export default function PrivacyPage() {
 
       <LegalSection title="If you download a project">
         <p>
-          Downloading a project (PowerClaude, so far) from this site logs the platform you
-          picked (Mac/Linux/Windows), the version served, your IP hash, and your User-Agent
+          Downloading a project from this site logs the platform you picked
+          (Mac/Linux/Windows), the version served, your IP hash, and your User-Agent
           — the same salted-hash-only approach as everything else on this site except page
           views. It exists to see which platforms people actually use and to catch abuse of
           the download endpoint. Never sold, never shared.

@@ -66,28 +66,55 @@ async function sha256(filePath) {
   return hash.digest("hex");
 }
 
-async function upsertRelease(row) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+function supabaseHeaders() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const headers = {
+  return {
     "Content-Type": "application/json",
     apikey: key,
     Authorization: `Bearer ${key}`,
   };
+}
 
-  // Retire any previous current release for this project+platform first --
-  // "is_current" must mean exactly one row at a time.
-  await fetch(
-    `${url}/rest/v1/download_releases?project=eq.${row.project}&platform=eq.${row.platform}&is_current=eq.true`,
-    { method: "PATCH", headers, body: JSON.stringify({ is_current: false }) },
-  );
-
+// Phase 1: insert the new release row with is_current:false. Nothing about
+// the existing "current" state is touched yet -- if this throws, no
+// project+platform has lost its current release.
+async function insertPendingRelease(row) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const res = await fetch(`${url}/rest/v1/download_releases`, {
     method: "POST",
-    headers: { ...headers, Prefer: "return=minimal" },
-    body: JSON.stringify(row),
+    headers: { ...supabaseHeaders(), Prefer: "return=representation" },
+    body: JSON.stringify({ ...row, is_current: false }),
   });
-  if (!res.ok) throw new Error(`Failed to publish ${row.project}/${row.platform}: ${res.status}`);
+  if (!res.ok) throw new Error(`Failed to insert ${row.project}/${row.platform}: ${res.status}`);
+  const [inserted] = await res.json();
+  return inserted;
+}
+
+// Phase 2: only called once every insert above has succeeded. Retires the
+// old current row(s) for this project+platform, then promotes the
+// newly-inserted row to is_current:true. Both responses are checked --
+// "is_current" must mean exactly one row at a time.
+async function promoteRelease(project, platform, newReleaseId) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const headers = supabaseHeaders();
+
+  const retireRes = await fetch(
+    `${url}/rest/v1/download_releases?project=eq.${project}&platform=eq.${platform}&is_current=eq.true`,
+    { method: "PATCH", headers, body: JSON.stringify({ is_current: false }) },
+  );
+  if (!retireRes.ok) {
+    throw new Error(
+      `Failed to retire previous current release for ${project}/${platform}: ${retireRes.status}`,
+    );
+  }
+
+  const promoteRes = await fetch(
+    `${url}/rest/v1/download_releases?id=eq.${newReleaseId}`,
+    { method: "PATCH", headers, body: JSON.stringify({ is_current: true }) },
+  );
+  if (!promoteRes.ok) {
+    throw new Error(`Failed to promote ${project}/${platform} v${newReleaseId}: ${promoteRes.status}`);
+  }
 }
 
 // Packages `sourceDir` (only the paths in `include`) into a tar.gz and a zip
@@ -131,26 +158,48 @@ export async function releaseProject({ project, sourceDir, version, include }) {
   );
 
   console.log("Publishing to Supabase...");
+
+  // Phase 1: insert every new release row (mac, linux, windows) as
+  // is_current:false first. If any insert fails, we abort here -- before
+  // touching any existing is_current state -- so a partial failure never
+  // leaves a platform without a current release.
+  const pending = [];
   for (const platform of ["mac", "linux"]) {
-    await upsertRelease({
-      project,
+    pending.push({
       platform,
-      version,
-      blob_url: tarBlob.url,
-      sha256: tarSha,
-      size_bytes: tarStat.size,
-      is_current: true,
+      row: {
+        project,
+        platform,
+        version,
+        blob_url: tarBlob.url,
+        sha256: tarSha,
+        size_bytes: tarStat.size,
+      },
     });
   }
-  await upsertRelease({
-    project,
+  pending.push({
     platform: "windows",
-    version,
-    blob_url: zipBlob.url,
-    sha256: zipSha,
-    size_bytes: zipStat.size,
-    is_current: true,
+    row: {
+      project,
+      platform: "windows",
+      version,
+      blob_url: zipBlob.url,
+      sha256: zipSha,
+      size_bytes: zipStat.size,
+    },
   });
+
+  const inserted = [];
+  for (const { platform, row } of pending) {
+    const newRelease = await insertPendingRelease(row);
+    inserted.push({ platform, id: newRelease.id });
+  }
+
+  // Phase 2: all inserts succeeded -- now promote each new row to current,
+  // retiring whatever was previously current for that project+platform.
+  for (const { platform, id } of inserted) {
+    await promoteRelease(project, platform, id);
+  }
 
   console.log(`Done. v${version} is now live for mac, linux, and windows.`);
   console.log(`  tar.gz: ${tarBlob.url} (${tarSha.slice(0, 12)}...)`);
