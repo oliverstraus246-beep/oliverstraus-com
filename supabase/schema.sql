@@ -179,3 +179,47 @@ create table if not exists ip_intel (
 );
 
 alter table ip_intel enable row level security;
+
+-- Release artifacts for the project-download feature (src/app/api/download,
+-- src/components/download-modal.tsx). Same RLS posture as every other table
+-- here: zero policies, service_role-key-only access. One row per
+-- (project, platform); is_current marks which row the download route
+-- currently serves. scripts/release-powerclaude.mjs is the only writer.
+create table if not exists download_releases (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  project text not null,
+  platform text not null,
+  version text not null,
+  blob_url text not null,
+  sha256 text not null,
+  size_bytes bigint not null,
+  is_current boolean not null default false
+);
+
+alter table download_releases enable row level security;
+
+create index if not exists download_releases_current_idx
+  on download_releases (project, platform, is_current);
+
+-- One row per click-through on the download route. Written by
+-- src/app/api/download/[project]/route.ts. ip_hash only (never a raw IP) --
+-- matches every table on this site except page_views, which is a
+-- deliberate, separate exception documented on /privacy.
+create table if not exists download_events (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  project text not null,
+  platform text not null,
+  version text not null,
+  ip_hash text not null,
+  user_agent text
+);
+
+alter table download_events enable row level security;
+
+create index if not exists download_events_created_at_idx
+  on download_events (created_at);
+
+create index if not exists download_events_project_platform_idx
+  on download_events (project, platform);
