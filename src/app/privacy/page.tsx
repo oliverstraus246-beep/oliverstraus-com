@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalSection } from "@/components/legal-section";
 
 const DESCRIPTION =
   "What this site actually collects, why, and who (if anyone) it's shared with -- no boilerplate, matches the real database schema.";
@@ -23,15 +24,6 @@ export const metadata: Metadata = {
   },
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-10">
-      <h2 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{title}</h2>
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-foreground/80">{children}</div>
-    </section>
-  );
-}
-
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 pb-24 pt-28 sm:px-6 sm:pt-32">
@@ -49,7 +41,7 @@ export default function PrivacyPage() {
         page is wrong and should be fixed, not the other way around.
       </p>
 
-      <Section title="The short version">
+      <LegalSection title="The short version">
         <p>
           This site runs its own self-hosted analytics and security logging instead of Google
           Analytics or any third-party tracker -- no ad networks, no marketing pixels, no cookie
@@ -57,9 +49,9 @@ export default function PrivacyPage() {
           below lives in a Supabase database Oliver controls directly. It exists to answer &quot;who&apos;s
           visiting my site&quot; and &quot;is anyone attacking it,&quot; not to build a profile to sell anything.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="What's collected when you browse">
+      <LegalSection title="What's collected when you browse">
         <p>Every page view records: the path, referring page, browser/OS (from your User-Agent),
         screen width, browser language, how long you stayed, and your IP address -- both a raw
         copy and a salted one-way hash. Country/region/city are derived from your IP by Vercel&apos;s
@@ -71,23 +63,23 @@ export default function PrivacyPage() {
           breached, this is the one place real visitor IPs would be exposed -- accepted knowingly,
           not accidentally.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="If you use the contact form">
+      <LegalSection title="If you use the contact form">
         <p>Name, email, and whatever you write get stored, along with your IP hash and User-Agent,
         so Oliver can reply to you and so spam/abuse can be traced back to a source.</p>
-      </Section>
+      </LegalSection>
 
-      <Section title="If you're a bot, scanner, or attacker">
+      <LegalSection title="If you're a bot, scanner, or attacker">
         <p>
           This site runs decoy paths and pattern-matches for common attack payloads (SQL
           injection, XSS, and similar). Tripping one logs the path, IP, User-Agent, and which
           attack category matched, and blocks the source from the rest of the site. If that
           applies to you, you already know, and you&apos;ve read the joke response.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="The one thing sent to a third party">
+      <LegalSection title="The one thing sent to a third party">
         <p>
           For a visitor flagged as suspicious, this site looks up their IP&apos;s ISP, organization,
           and whether it&apos;s a known VPN/proxy or hosting provider, via{" "}
@@ -104,25 +96,25 @@ export default function PrivacyPage() {
           Supabase (the database) and Vercel (the host) -- and it only happens for flagged,
           suspicious traffic, not ordinary visitors.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="Cookies">
+      <LegalSection title="Cookies">
         <p>
           Regular visitors get none. The only cookie this site sets is a signed session cookie for
           Oliver&apos;s own admin login, scoped to <code>/admin</code>, and it&apos;s never set unless someone
           successfully authenticates with a password and an authenticator code.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="What this data is used for">
+      <LegalSection title="What this data is used for">
         <p>
           Understanding real traffic to this site, replying to contact form messages, and
           detecting/blocking abuse. It is never sold, never shared with advertisers, and never
           used for anything beyond running this site.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="Retention and control">
+      <LegalSection title="Retention and control">
         <p>
           Honeypot/attack logs older than 90 days can be purged from the admin dashboard. Page
           views and contact submissions are kept indefinitely for now (this is a personal
@@ -137,7 +129,17 @@ export default function PrivacyPage() {
           </a>{" "}
           and it will be deleted.
         </p>
-      </Section>
+      </LegalSection>
+
+      <LegalSection title="If you download a project">
+        <p>
+          Downloading a project (PowerClaude, so far) from this site logs the platform you
+          picked (Mac/Linux/Windows), the version served, your IP hash, and your User-Agent
+          — the same salted-hash-only approach as everything else on this site except page
+          views. It exists to see which platforms people actually use and to catch abuse of
+          the download endpoint. Never sold, never shared.
+        </p>
+      </LegalSection>
     </main>
   );
 }
