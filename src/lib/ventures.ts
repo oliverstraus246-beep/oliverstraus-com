@@ -234,6 +234,9 @@ export const VENTURES: readonly Venture[] = [
     },
     timeframe: "2026",
     stack: ["JavaScript", "Node.js", "MV3"],
+    downloads: {
+      project: "brave-pentest-toolkit",
+    },
     metrics: [
       { value: "31", label: "Tools in the catalog" },
       { value: "2", label: "Real bugs caught by testing" },
