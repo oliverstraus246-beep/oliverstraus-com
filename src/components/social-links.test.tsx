@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { SocialLinks } from "./social-links";
 
 describe("SocialLinks", () => {
-  it("renders all four platforms as real external links", () => {
+  it("renders all three platforms as real external links", () => {
     render(<SocialLinks />);
     const linkedin = screen.getByRole("link", { name: "LinkedIn" });
     expect(linkedin).toHaveAttribute(
@@ -15,13 +15,10 @@ describe("SocialLinks", () => {
       "href",
       "https://gitlab.com/oliverstraus",
     );
-    expect(screen.getByRole("link", { name: "X" })).toHaveAttribute(
-      "href",
-      "https://x.com/OLIVER_STRAUS1",
-    );
     expect(screen.getByRole("link", { name: "Instagram" })).toHaveAttribute(
       "href",
       "https://instagram.com/oliver__straus",
     );
+    expect(screen.queryByRole("link", { name: "X" })).not.toBeInTheDocument();
   });
 });

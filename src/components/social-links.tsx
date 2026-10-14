@@ -4,7 +4,6 @@ export const PLATFORMS = [
     href: "https://linkedin.com/in/oliver-straus-06804240b",
   },
   { label: "GitLab", href: "https://gitlab.com/oliverstraus" },
-  { label: "X", href: "https://x.com/OLIVER_STRAUS1" },
   { label: "Instagram", href: "https://instagram.com/oliver__straus" },
 ] as const;
 
