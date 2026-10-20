@@ -1,8 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { postBeacon } from "@/lib/beacon";
 import { ResumeContent } from "@/components/resume-content";
 import { ResumePresetPicker } from "@/components/resume-preset-picker";
+import { computeScrollPct } from "@/lib/scroll-depth";
+import { useResumePreset } from "@/lib/use-resume-preset";
+import { getOrCreateVisitorId } from "@/lib/visitor-id";
+
+function getTimezone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
 
 const OPEN_EVENT = "open-resume";
 
@@ -21,10 +33,19 @@ export function openResume() {
 export function ResumeModal() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { preset } = useResumePreset();
   // The element that had focus when the modal opened -- the trigger button
   // (nav, footer, hero CTA, command palette). Focus returns here on close so
   // keyboard users aren't dropped back to the top of the page.
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // viewId + start time for the in-flight "view" beacon below, so the
+  // close/unmount side can attach a duration to the same row.
+  const activeView = useRef<{ viewId: string; startedAt: number } | null>(null);
+  // The overlay (not the panel) is the scrollable element -- see its
+  // overflow-y-auto below -- so scroll depth is tracked against it, not
+  // window, which never scrolls while the modal covers the page.
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const maxScrollPct = useRef(0);
 
   useEffect(() => {
     function onOpen() {
@@ -33,6 +54,64 @@ export function ResumeModal() {
     window.addEventListener(OPEN_EVENT, onOpen);
     return () => window.removeEventListener(OPEN_EVENT, onOpen);
   }, []);
+
+  // The modal is the primary way people read the résumé (nav, footer, hero
+  // CTA, command palette all open it in place) -- the standalone /resume
+  // route that VisitTracker covers is really just the no-JS/share-link
+  // fallback. Without this, opening the modal was invisible to analytics:
+  // no route change, so no page_views row, so "who's looked at my résumé"
+  // had no answer for the common case. Beacons the same shape VisitTracker
+  // sends for a real navigation, into the same page_views table, so it
+  // shows up in /admin/stats and the visitor profile exactly like any other
+  // page view.
+  useEffect(() => {
+    if (!open) return;
+    const viewId = crypto.randomUUID();
+    activeView.current = { viewId, startedAt: performance.now() };
+    maxScrollPct.current = 0;
+    postBeacon("/api/track", {
+      type: "view",
+      viewId,
+      path: "/resume",
+      referrer: document.referrer,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      language: navigator.language,
+      visitorId: getOrCreateVisitorId() ?? undefined,
+      timezone: getTimezone(),
+    });
+    return () => {
+      const view = activeView.current;
+      if (!view) return;
+      postBeacon("/api/track", {
+        type: "duration",
+        viewId: view.viewId,
+        durationMs: Math.round(performance.now() - view.startedAt),
+        maxScrollPct: maxScrollPct.current,
+      });
+      activeView.current = null;
+    };
+  }, [open]);
+
+  // Tracks how far the visitor scrolled through the résumé itself, same
+  // rAF-throttled running-max approach as VisitTracker's window scroll.
+  useEffect(() => {
+    if (!open) return;
+    const el = overlayRef.current;
+    if (!el) return;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const pct = computeScrollPct(el.scrollTop, el.scrollHeight, el.clientHeight);
+        if (pct > maxScrollPct.current) maxScrollPct.current = pct;
+        ticking = false;
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [open]);
 
   // While the modal is open, flag <body> so the print stylesheet knows
   // the résumé is being printed from here (not the standalone /resume
@@ -138,6 +217,7 @@ export function ResumeModal() {
 
   return (
     <div
+      ref={overlayRef}
       className="resume-modal-overlay fixed inset-0 z-[95] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8 backdrop-blur-sm sm:px-6"
       onClick={() => setOpen(false)}
     >
@@ -169,7 +249,10 @@ export function ResumeModal() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => {
+                  postBeacon("/api/resume/download", { preset });
+                  window.print();
+                }}
                 className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors duration-150 hover:border-neutral-900 hover:text-neutral-900 active:scale-95"
               >
                 Download PDF

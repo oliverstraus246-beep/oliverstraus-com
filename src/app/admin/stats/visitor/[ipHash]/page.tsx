@@ -1,14 +1,35 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blockIp, setVisitorNote, unblockIp } from "@/app/admin/actions";
 import {
+  campaignLabel,
+  classifyChannel,
+  computeEngagementScore,
+  computeHighIntent,
+  computeLifecycleStage,
   countBy,
   deviceType,
   formatDuration,
+  groupIntoSessions,
+  HIGH_INTENT_PATHS,
+  type LifecycleStage,
   parseBrowser,
   parseOS,
   referrerLabel,
   supabaseReadHeaders,
 } from "@/lib/admin-stats";
+
+// Same stage->tone mapping Badge already supports (danger/warn/ok/neutral) --
+// a coarser palette than admin/stats/page.tsx's own LIFECYCLE_TONES, which
+// has room for five distinct colors; this page reuses the existing Badge
+// component instead of introducing a second badge style.
+const LIFECYCLE_BADGE_TONE: Record<LifecycleStage, "danger" | "warn" | "ok" | "neutral"> = {
+  New: "neutral",
+  Returning: "neutral",
+  Engaged: "ok",
+  Lead: "warn",
+  Customer: "ok",
+};
 import { getIpIntel } from "@/lib/ip-intel";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +48,13 @@ interface PageViewRow {
   duration_ms: number | null;
   created_at: string;
   ip_address: string | null;
+  ip_hash: string;
+  visitor_id: string | null;
+  timezone: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  max_scroll_pct: number | null;
 }
 
 interface ContactRow {
@@ -51,39 +79,94 @@ interface AdminAttemptRow {
   ip_address: string | null;
 }
 
+interface DownloadRow {
+  id: string;
+  created_at: string;
+  project: string;
+  platform: string;
+  version: string;
+}
+
+// Resolves the full set of ip_hashes this profile should be built from.
+// ip_hash alone splits one real person into several "visitors" the moment
+// their IP changes; src/lib/visitor-id.ts's persistent browser identifier is
+// the bridge back across that split. One hop each direction (seed hash ->
+// its visitor_ids -> every ip_hash ever paired with those visitor_ids) is a
+// deliberate scope boundary, not a full transitive closure -- in practice a
+// single browser's visitor_id is stable, so one hop already catches every
+// IP it's ever been seen from; chasing further hops risks snowballing
+// unrelated visitors into one profile if a visitor_id were ever reused.
+async function resolveIdentityCluster(
+  ipHash: string,
+  url: string,
+  headers: Record<string, string>,
+): Promise<string[]> {
+  const seedRes = await fetch(
+    `${url}/rest/v1/page_views?ip_hash=eq.${ipHash}&select=visitor_id&visitor_id=not.is.null&limit=50`,
+    { headers, cache: "no-store" },
+  );
+  if (!seedRes.ok) return [ipHash];
+  const seedIds = [...new Set(((await seedRes.json()) as { visitor_id: string }[]).map((r) => r.visitor_id))];
+  if (seedIds.length === 0) return [ipHash];
+
+  const linkedRes = await fetch(
+    `${url}/rest/v1/page_views?visitor_id=in.(${seedIds.join(",")})&select=ip_hash&limit=2000`,
+    { headers, cache: "no-store" },
+  );
+  if (!linkedRes.ok) return [ipHash];
+  const linkedHashes = ((await linkedRes.json()) as { ip_hash: string }[]).map((r) => r.ip_hash);
+  return [...new Set([ipHash, ...linkedHashes])];
+}
+
+function clusterFilter(cluster: string[]): string {
+  return cluster.length === 1 ? `ip_hash=eq.${cluster[0]}` : `ip_hash=in.(${cluster.join(",")})`;
+}
+
 // A single ip_hash always corresponds to exactly one real IP (the hash is
-// deterministic over the IP + salt), so unlike everything else on this page
-// there's nothing to "group" -- one profile is the complete picture of every
-// interaction this IP has ever had with the site, across all four tables
-// that key on ip_hash.
+// deterministic over the IP + salt), but one real PERSON can correspond to
+// several ip_hashes over time (see resolveIdentityCluster above) -- this
+// profile is the complete picture of every interaction across the whole
+// identity cluster, not just the one hash in the URL. Blocking and the
+// free-text note stay scoped to that one hash deliberately: blocking is a
+// network-layer decision about one IP, not about a person, and a note
+// written against one hash shouldn't silently apply itself to others.
 async function getVisitorProfile(ipHash: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
 
   const headers = supabaseReadHeaders(key);
-  const [viewsRes, contactsRes, honeypotRes, attemptsRes, blockedRes, noteRes] = await Promise.all([
+  const cluster = await resolveIdentityCluster(ipHash, url, headers);
+  const clusterQuery = clusterFilter(cluster);
+
+  const [viewsRes, contactsRes, honeypotRes, attemptsRes, blockedRes, noteRes, downloadsRes] = await Promise.all([
     fetch(
-      `${url}/rest/v1/page_views?ip_hash=eq.${ipHash}&select=id,path,referrer,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at,ip_address&order=created_at.desc&limit=5000`,
+      `${url}/rest/v1/page_views?${clusterQuery}&select=id,path,referrer,user_agent,country,region,city,viewport_width,viewport_height,language,duration_ms,created_at,ip_address,ip_hash,visitor_id,timezone,utm_source,utm_medium,utm_campaign,max_scroll_pct&order=created_at.desc&limit=5000`,
       { headers, cache: "no-store" },
     ),
     fetch(
-      `${url}/rest/v1/contact_submissions?ip_hash=eq.${ipHash}&select=id,created_at,name,email,reason&order=created_at.desc`,
+      `${url}/rest/v1/contact_submissions?${clusterQuery}&select=id,created_at,name,email,reason&order=created_at.desc`,
       { headers, cache: "no-store" },
     ),
     fetch(
-      `${url}/rest/v1/honeypot_hits?ip_hash=eq.${ipHash}&select=id,created_at,path,ip_address&order=created_at.desc`,
+      `${url}/rest/v1/honeypot_hits?${clusterQuery}&select=id,created_at,path,ip_address&order=created_at.desc`,
       { headers, cache: "no-store" },
     ),
     fetch(
-      `${url}/rest/v1/admin_auth_attempts?ip_hash=eq.${ipHash}&select=id,created_at,success,ip_address&order=created_at.desc`,
+      `${url}/rest/v1/admin_auth_attempts?${clusterQuery}&select=id,created_at,success,ip_address&order=created_at.desc`,
       { headers, cache: "no-store" },
     ),
+    // Deliberately scoped to the single URL hash, not the cluster -- see the
+    // comment above getVisitorProfile.
     fetch(`${url}/rest/v1/blocked_ips?ip_hash=eq.${ipHash}&select=reason,created_at`, {
       headers,
       cache: "no-store",
     }),
     fetch(`${url}/rest/v1/visitor_notes?ip_hash=eq.${ipHash}&select=note`, { headers, cache: "no-store" }),
+    fetch(
+      `${url}/rest/v1/download_events?${clusterQuery}&select=id,created_at,project,platform,version&order=created_at.desc`,
+      { headers, cache: "no-store" },
+    ),
   ]);
 
   const views = viewsRes.ok ? ((await viewsRes.json()) as PageViewRow[]) : [];
@@ -92,8 +175,15 @@ async function getVisitorProfile(ipHash: string) {
   const adminAttempts = attemptsRes.ok ? ((await attemptsRes.json()) as AdminAttemptRow[]) : [];
   const blockedRows = blockedRes.ok ? ((await blockedRes.json()) as { reason: string | null; created_at: string }[]) : [];
   const noteRows = noteRes.ok ? ((await noteRes.json()) as { note: string }[]) : [];
+  const downloads = downloadsRes.ok ? ((await downloadsRes.json()) as DownloadRow[]) : [];
 
-  if (views.length === 0 && contacts.length === 0 && honeypotHits.length === 0 && adminAttempts.length === 0) {
+  if (
+    views.length === 0 &&
+    contacts.length === 0 &&
+    honeypotHits.length === 0 &&
+    adminAttempts.length === 0 &&
+    downloads.length === 0
+  ) {
     return "not_found" as const;
   }
 
@@ -102,6 +192,7 @@ async function getVisitorProfile(ipHash: string) {
     ...contacts.map((c) => c.created_at),
     ...honeypotHits.map((h) => h.created_at),
     ...adminAttempts.map((a) => a.created_at),
+    ...downloads.map((d) => d.created_at),
   ].sort();
   const firstSeen = allTimestamps[0] ?? null;
   const lastSeen = allTimestamps[allTimestamps.length - 1] ?? null;
@@ -134,17 +225,26 @@ async function getVisitorProfile(ipHash: string) {
   // mentally interleave by timestamp themselves.
   type TimelineEntry = { time: string; kind: string; detail: string };
   const timeline: TimelineEntry[] = [
-    ...views.map((v) => ({
-      time: v.created_at,
-      kind: "Page view",
-      detail: `${v.path}${v.duration_ms ? ` (${formatDuration(v.duration_ms)})` : ""}${v.referrer ? ` via ${referrerLabel(v.referrer)}` : ""}`,
-    })),
+    ...views.map((v) => {
+      const campaignTags = [v.utm_source, v.utm_medium, v.utm_campaign].filter(Boolean);
+      const campaign = campaignTags.length > 0 ? campaignTags.join("/") : null;
+      return {
+        time: v.created_at,
+        kind: "Page view",
+        detail: `${v.path}${v.duration_ms ? ` (${formatDuration(v.duration_ms)}${v.max_scroll_pct != null ? `, ${v.max_scroll_pct}% scrolled` : ""})` : ""}${v.referrer ? ` via ${referrerLabel(v.referrer)}` : ""}${campaign ? ` [${campaign}]` : ""}`,
+      };
+    }),
     ...contacts.map((c) => ({ time: c.created_at, kind: "Contact form", detail: `"${c.reason}" (${c.email})` })),
     ...honeypotHits.map((h) => ({ time: h.created_at, kind: "Honeypot hit", detail: `Probed ${h.path}` })),
     ...adminAttempts.map((a) => ({
       time: a.created_at,
       kind: "Admin login attempt",
       detail: a.success ? "Succeeded" : "Failed",
+    })),
+    ...downloads.map((d) => ({
+      time: d.created_at,
+      kind: "Download",
+      detail: d.project === "resume" ? `Résumé PDF (${d.version})` : `${d.project} — ${d.platform} v${d.version}`,
     })),
   ].sort((a, b) => (a.time < b.time ? 1 : -1));
 
@@ -159,12 +259,68 @@ async function getVisitorProfile(ipHash: string) {
     if (daysAgo >= 0 && daysAgo < DAYS) dailyCounts[DAYS - 1 - daysAgo]!++;
   }
 
+  // Other ip_hashes the identity cluster pulled in -- surfaced so Oliver can
+  // see the merge happened (and pivot to a linked hash's own blocklist/note
+  // state) instead of it silently changing what "visit count" means.
+  const linkedIdentities = [...new Set(views.map((v) => v.ip_hash))]
+    .filter((h) => h !== ipHash)
+    .map((h) => ({
+      ipHash: h,
+      ipAddress: views.find((v) => v.ip_hash === h && v.ip_address)?.ip_address ?? null,
+    }));
+
+  const session = groupIntoSessions(views.map((v) => v.created_at));
+  const viewedKeyPage = views.some((v) => HIGH_INTENT_PATHS.has(v.path));
+  const maxDurationMs = Math.max(0, ...views.map((v) => v.duration_ms ?? 0));
+  const maxScrollPct = Math.max(0, ...views.map((v) => v.max_scroll_pct ?? 0));
+  const contacted = contacts.length > 0;
+  const downloaded = downloads.length > 0;
+  const highIntent = computeHighIntent({
+    viewedKeyPage,
+    maxDurationMs,
+    maxScrollPct,
+    contacted,
+    downloaded,
+  });
+  // Most recent browser-reported timezone -- shown next to the ip-api.com
+  // intel below so Oliver can eyeball a mismatch himself (e.g. a US IP next
+  // to a non-US timezone), rather than this auto-flagging a VPN/proxy guess.
+  const timezone = views.find((v) => v.timezone)?.timezone ?? null;
+  // views arrives newest-first; the oldest entry is this identity's first
+  // ever recorded touch, the correct one for "how did they originally find
+  // me" attribution.
+  const oldestView = views[views.length - 1] ?? null;
+  const channel = classifyChannel(
+    oldestView ? referrerLabel(oldestView.referrer) : null,
+    oldestView?.utm_source ?? null,
+    oldestView?.utm_medium ?? null,
+  );
+  const engagementScore = computeEngagementScore({
+    sessionCount: session.sessionCount,
+    maxDurationMs,
+    maxScrollPct,
+    bounceRate: session.bounceRate,
+    contacted,
+    downloaded,
+  });
+  const lifecycleStage = computeLifecycleStage({ visitCount: views.length, highIntent, contacted, downloaded });
+
   return {
     ipHash,
     ipAddress,
     ipIntel,
+    timezone,
+    channel,
+    engagementScore,
+    lifecycleStage,
     location,
     active,
+    linkedIdentities,
+    sessionCount: session.sessionCount,
+    pagesPerSession: session.pagesPerSession,
+    bounceRate: session.bounceRate,
+    maxScrollPct,
+    highIntent,
     firstSeen,
     lastSeen,
     visitCount: views.length,
@@ -176,6 +332,10 @@ async function getVisitorProfile(ipHash: string) {
     operatingSystems: countBy(views.map((v) => (v.user_agent ? parseOS(v.user_agent) : null)), "Unknown"),
     deviceTypes: countBy(views.map((v) => deviceType(v.viewport_width, v.user_agent)), "Unknown"),
     languages: countBy(views.map((v) => v.language), "Unknown"),
+    campaigns: countBy(
+      views.map((v) => campaignLabel(v.utm_source, v.utm_medium)).filter((c): c is string => c != null),
+      "(unknown)",
+    ),
     contacts,
     honeypotHitCount: honeypotHits.length,
     adminAttempts: { total: adminAttempts.length, successes: adminAttempts.filter((a) => a.success).length },
@@ -183,6 +343,12 @@ async function getVisitorProfile(ipHash: string) {
     timeline,
     note: noteRows[0]?.note ?? "",
     dailyCounts,
+    downloadCount: downloads.length,
+    downloadedResume: downloads.some((d) => d.project === "resume"),
+    downloads: countBy(
+      downloads.map((d) => (d.project === "resume" ? `Résumé (${d.version})` : `${d.project} (${d.platform})`)),
+      "(unknown)",
+    ),
   };
 }
 
@@ -280,11 +446,36 @@ export default async function VisitorProfilePage({ params }: PageProps) {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <Link
+        href="/admin/stats"
+        className="inline-flex items-center font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-accent-blue"
+      >
+        &larr; Back to visitors
+      </Link>
+
+      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Visitor profile</p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">{profile.ipAddress ?? "IP unknown"}</h1>
           <p className="mt-1 font-mono text-xs text-muted-foreground">{profile.ipHash}</p>
+          {profile.linkedIdentities.length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Also seen from{" "}
+              {profile.linkedIdentities.map((id, i) => (
+                <span key={id.ipHash}>
+                  {i > 0 && ", "}
+                  <Link
+                    href={`/admin/stats/visitor/${id.ipHash}`}
+                    className="text-accent-blue hover:text-accent-blue-dim"
+                  >
+                    {id.ipAddress ?? id.ipHash.slice(0, 12)}
+                  </Link>
+                </span>
+              ))}{" "}
+              &mdash; same browser, linked by its persistent visitor id. Blocking and the note below apply only to{" "}
+              {profile.ipAddress ?? "this IP"}.
+            </p>
+          )}
         </div>
         <form action={profile.blocked ? unblockIp : blockIp}>
           <input type="hidden" name="ipHash" value={profile.ipHash} />
@@ -304,9 +495,28 @@ export default async function VisitorProfilePage({ params }: PageProps) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         {profile.active && <Badge tone="ok">Active now</Badge>}
-        <Badge tone={profile.visitCount > 1 ? "ok" : "neutral"}>
-          {profile.visitCount > 1 ? "Returning visitor" : "First-time visitor"}
+        {profile.highIntent && (
+          <Badge
+            tone="ok"
+            title="Viewed the résumé or work page with real time on it, contacted you, or downloaded something"
+          >
+            High intent
+          </Badge>
+        )}
+        <Badge
+          tone={LIFECYCLE_BADGE_TONE[profile.lifecycleStage]}
+          title="Lifecycle stage: New -> Returning -> Engaged -> Lead (contacted you) / Customer (downloaded something)"
+        >
+          {profile.lifecycleStage}
         </Badge>
+        <Badge tone="neutral" title="First-touch attribution -- how this identity's earliest recorded visit arrived">
+          via {profile.channel}
+        </Badge>
+        {profile.linkedIdentities.length > 0 && (
+          <Badge tone="neutral" title="Same persistent browser identity, seen from other IPs too">
+            Linked across {profile.linkedIdentities.length + 1} IPs
+          </Badge>
+        )}
         {profile.blocked && <Badge tone="danger">Blocked{profile.blocked.reason ? `: ${profile.blocked.reason}` : ""}</Badge>}
         {profile.honeypotHitCount > 0 && (
           <Badge tone="warn">Scanner &mdash; {profile.honeypotHitCount} honeypot hit{profile.honeypotHitCount === 1 ? "" : "s"}</Badge>
@@ -318,6 +528,12 @@ export default async function VisitorProfilePage({ params }: PageProps) {
           </Badge>
         )}
         {profile.contacts.length > 0 && <Badge tone="ok">Contacted you &mdash; {profile.contacts.length}</Badge>}
+        {profile.downloadedResume && <Badge tone="ok">Downloaded résumé</Badge>}
+        {profile.downloadCount > 0 && (
+          <Badge tone="neutral">
+            {profile.downloadCount} download{profile.downloadCount === 1 ? "" : "s"}
+          </Badge>
+        )}
         <Badge tone="neutral">{profile.location}</Badge>
         {profile.ipIntel?.isProxy && (
           <Badge tone="warn" title="This IP is a known VPN, proxy, or Tor exit node -- their real location may not match what's shown above.">
@@ -336,31 +552,43 @@ export default async function VisitorProfilePage({ params }: PageProps) {
         )}
       </div>
 
-      {profile.ipAddress && (
+      {(profile.ipAddress || profile.timezone) && (
         <div className="mt-6 rounded-lg border border-border bg-card p-4">
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             IP intelligence
           </p>
-          {profile.ipIntel ? (
-            <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">ISP</span>
-                <span className="truncate text-foreground/80">{profile.ipIntel.isp ?? "Unknown"}</span>
+          <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            {profile.ipIntel && (
+              <>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">ISP</span>
+                  <span className="truncate text-foreground/80">{profile.ipIntel.isp ?? "Unknown"}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Organization</span>
+                  <span className="truncate text-foreground/80">{profile.ipIntel.org ?? "Unknown"}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">ASN</span>
+                  <span className="truncate text-foreground/80">{profile.ipIntel.asn ?? "Unknown"}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Reverse DNS</span>
+                  <span className="truncate text-foreground/80">{profile.ipIntel.reverseDns ?? "None"}</span>
+                </div>
+              </>
+            )}
+            {profile.timezone && (
+              <div
+                className="flex justify-between gap-4"
+                title="Reported by the visitor's browser -- compare against the country above: a mismatch (e.g. a US IP, a non-US timezone) is the shape a VPN/proxy produces, not auto-flagged here"
+              >
+                <span className="text-muted-foreground">Browser timezone</span>
+                <span className="truncate text-foreground/80">{profile.timezone}</span>
               </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Organization</span>
-                <span className="truncate text-foreground/80">{profile.ipIntel.org ?? "Unknown"}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">ASN</span>
-                <span className="truncate text-foreground/80">{profile.ipIntel.asn ?? "Unknown"}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Reverse DNS</span>
-                <span className="truncate text-foreground/80">{profile.ipIntel.reverseDns ?? "None"}</span>
-              </div>
-            </div>
-          ) : (
+            )}
+          </div>
+          {!profile.ipIntel && !profile.timezone && (
             <p className="mt-2 text-sm text-muted-foreground">No network intelligence available for this IP.</p>
           )}
         </div>
@@ -399,11 +627,17 @@ export default async function VisitorProfilePage({ params }: PageProps) {
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Page views" value={profile.visitCount.toLocaleString()} />
+        <StatCard label="Sessions" value={profile.sessionCount.toLocaleString()} />
+        <StatCard label="Pages/session" value={profile.pagesPerSession || "—"} />
+        <StatCard label="Bounce rate" value={profile.visitCount > 0 ? `${profile.bounceRate}%` : "—"} />
+        <StatCard label="Deepest scroll" value={profile.visitCount > 0 ? `${profile.maxScrollPct}%` : "—"} />
+        <StatCard label="Engagement score" value={profile.engagementScore} />
         <StatCard label="Total time on site" value={profile.totalTimeMs ? formatDuration(profile.totalTimeMs) : "—"} />
         <StatCard label="Avg. time/page" value={profile.avgDurationMs ? formatDuration(profile.avgDurationMs) : "—"} />
         <StatCard label="First seen" value={profile.firstSeen ? new Date(profile.firstSeen).toLocaleDateString() : "—"} />
         <StatCard label="Last seen" value={profile.lastSeen ? new Date(profile.lastSeen).toLocaleString() : "—"} />
         <StatCard label="Honeypot hits" value={profile.honeypotHitCount} />
+        <StatCard label="Downloads" value={profile.downloadCount} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -413,6 +647,8 @@ export default async function VisitorProfilePage({ params }: PageProps) {
         <BreakdownTable title="Operating systems" rows={profile.operatingSystems} />
         <BreakdownTable title="Device types" rows={profile.deviceTypes} />
         <BreakdownTable title="Languages" rows={profile.languages} />
+        <BreakdownTable title="Campaigns (UTM)" rows={profile.campaigns} />
+        <BreakdownTable title="Downloads" rows={profile.downloads} />
       </div>
 
       {profile.contacts.length > 0 && (

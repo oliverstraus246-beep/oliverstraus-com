@@ -132,8 +132,13 @@ export default async function AdminHomePage() {
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ToolCard
           href="/admin/stats"
-          title="Stats"
-          description="Traffic, engagement time, browsers/OS/devices, and per-visitor drill-down."
+          title="Visitors"
+          description="Traffic, sessions, high-intent and returning visitors, the résumé funnel, and per-visitor drill-down."
+        />
+        <ToolCard
+          href="/admin/downloads"
+          title="Downloads"
+          description="Per-platform download counts, recent events, and what's currently published."
         />
         <ToolCard
           href="/admin/contacts"
@@ -144,11 +149,6 @@ export default async function AdminHomePage() {
           href="/admin/security"
           title="Security"
           description="Bot/scanner activity, admin login history, and the IP blocklist."
-        />
-        <ToolCard
-          href="/admin/downloads"
-          title="Downloads"
-          description="Per-platform download counts, recent events, and what's currently published."
         />
       </div>
     </>

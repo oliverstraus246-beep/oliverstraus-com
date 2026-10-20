@@ -21,6 +21,17 @@ const ViewSchema = z.object({
   viewportWidth: z.number().int().positive().max(20000).optional(),
   viewportHeight: z.number().int().positive().max(20000).optional(),
   language: z.string().trim().max(35).optional(),
+  // Persistent first-party identifier from src/lib/visitor-id.ts (localStorage,
+  // not a cookie). Optional: absent for older clients, private browsing, or
+  // blocked storage -- those page views just can't be cross-IP-correlated.
+  visitorId: z.string().uuid().optional(),
+  // Browser-reported IANA timezone -- a free cross-check against the
+  // IP-derived country/region below.
+  timezone: z.string().trim().max(60).optional(),
+  // ?utm_source/utm_medium/utm_campaign off the landing page's own URL.
+  utmSource: z.string().trim().max(100).optional(),
+  utmMedium: z.string().trim().max(100).optional(),
+  utmCampaign: z.string().trim().max(100).optional(),
 });
 
 const DurationSchema = z.object({
@@ -33,6 +44,9 @@ const DurationSchema = z.object({
     .int()
     .nonnegative()
     .max(24 * 60 * 60 * 1000),
+  // How far down the page/modal the visitor scrolled, 0-100 -- see
+  // src/lib/scroll-depth.ts. Optional: older clients just don't send it.
+  maxScrollPct: z.number().int().min(0).max(100).optional(),
 });
 
 function supabaseHeaders(key: string) {
@@ -64,7 +78,10 @@ export async function POST(request: NextRequest) {
       await fetch(`${url}/rest/v1/page_views?view_id=eq.${duration.data.viewId}`, {
         method: "PATCH",
         headers: supabaseHeaders(key),
-        body: JSON.stringify({ duration_ms: duration.data.durationMs }),
+        body: JSON.stringify({
+          duration_ms: duration.data.durationMs,
+          ...(duration.data.maxScrollPct != null ? { max_scroll_pct: duration.data.maxScrollPct } : {}),
+        }),
       });
     } catch {
       // A logging failure must never break the (invisible) beacon response.
@@ -97,6 +114,11 @@ export async function POST(request: NextRequest) {
         viewport_width: view.data.viewportWidth ?? null,
         viewport_height: view.data.viewportHeight ?? null,
         language: view.data.language ?? null,
+        visitor_id: view.data.visitorId ?? null,
+        timezone: view.data.timezone ?? null,
+        utm_source: view.data.utmSource ?? null,
+        utm_medium: view.data.utmMedium ?? null,
+        utm_campaign: view.data.utmCampaign ?? null,
         // Populated by Vercel's edge network on every request that reaches
         // this function, on both Edge and Node runtimes -- absent entirely
         // in local dev, which is expected (no edge network in front of

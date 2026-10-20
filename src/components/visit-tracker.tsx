@@ -2,6 +2,33 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { postBeacon } from "@/lib/beacon";
+import { computeScrollPct } from "@/lib/scroll-depth";
+import { getOrCreateVisitorId } from "@/lib/visitor-id";
+
+// IANA timezone, e.g. "America/Denver" -- Intl is universal in evergreen
+// browsers, but this runs on every page load so a throw here (an ancient
+// browser, a locked-down environment) must never break the beacon.
+function getTimezone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return undefined;
+  }
+}
+
+// ?utm_source/utm_medium/utm_campaign off the CURRENT url -- general-purpose
+// "which shared link sent this visitor" attribution, distinct from the
+// résumé-only /r/resume redirect (src/app/r/resume/route.ts), which tags one
+// specific document rather than any page.
+function getUtmParams(): { utmSource?: string; utmMedium?: string; utmCampaign?: string } {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    utmSource: params.get("utm_source")?.trim().slice(0, 100) || undefined,
+    utmMedium: params.get("utm_medium")?.trim().slice(0, 100) || undefined,
+    utmCampaign: params.get("utm_campaign")?.trim().slice(0, 100) || undefined,
+  };
+}
 
 // Self-hosted page-view beacon -- fires once on mount and again on every
 // client-side route change (usePathname changes on push/replace navigation,
@@ -10,27 +37,8 @@ import { usePathname } from "next/navigation";
 // long they actually stayed). No third-party analytics script; posts to
 // this site's own /api/track route, which is same-origin and covered by
 // the existing `connect-src 'self'` CSP with no header changes needed.
-//
-// sendBeacon is preferred: it's fire-and-forget, survives the page
-// unloading immediately after (a route change or tab close right after
-// firing), and doesn't block navigation. Falls back to fetch(keepalive)
-// for the rare browser without sendBeacon.
 function post(payload: object) {
-  const body = JSON.stringify(payload);
-
-  if (typeof navigator.sendBeacon === "function") {
-    const blob = new Blob([body], { type: "application/json" });
-    if (navigator.sendBeacon("/api/track", blob)) return;
-  }
-
-  void fetch("/api/track", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    keepalive: true,
-  }).catch(() => {
-    // A dropped page view must never surface to the visitor.
-  });
+  postBeacon("/api/track", payload);
 }
 
 interface ActiveView {
@@ -44,6 +52,10 @@ export function VisitTracker() {
   // (registered once, outside the pathname effect) always knows which row
   // to attach a duration to, no matter which route it fires on.
   const activeView = useRef<ActiveView | null>(null);
+  // How far down the window this view has scrolled, 0-100, reset on every
+  // new view. A plain running max, not state -- it only ever needs to be
+  // read once, when the view ends, never re-rendered on.
+  const maxScrollPct = useRef(0);
 
   function flushDuration() {
     const view = activeView.current;
@@ -52,6 +64,7 @@ export function VisitTracker() {
       type: "duration",
       viewId: view.viewId,
       durationMs: Math.round(performance.now() - view.startedAt),
+      maxScrollPct: maxScrollPct.current,
     });
   }
 
@@ -62,6 +75,11 @@ export function VisitTracker() {
 
     const viewId = crypto.randomUUID();
     activeView.current = { viewId, startedAt: performance.now() };
+    maxScrollPct.current = computeScrollPct(
+      window.scrollY,
+      document.documentElement.scrollHeight,
+      window.innerHeight,
+    );
 
     post({
       type: "view",
@@ -71,6 +89,9 @@ export function VisitTracker() {
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
       language: navigator.language,
+      visitorId: getOrCreateVisitorId() ?? undefined,
+      timezone: getTimezone(),
+      ...getUtmParams(),
     });
   }, [pathname]);
 
@@ -83,11 +104,25 @@ export function VisitTracker() {
     const onVisibilityChange = () => {
       if (document.visibilityState === "hidden") flushDuration();
     };
+    // rAF-throttled: scroll fires far faster than this needs to be read, and
+    // a running max only ever needs the occasional sample, not every event.
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const pct = computeScrollPct(window.scrollY, document.documentElement.scrollHeight, window.innerHeight);
+        if (pct > maxScrollPct.current) maxScrollPct.current = pct;
+        ticking = false;
+      });
+    };
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("pagehide", flushDuration);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("pagehide", flushDuration);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 

@@ -223,3 +223,66 @@ create index if not exists download_events_created_at_idx
 
 create index if not exists download_events_project_platform_idx
   on download_events (project, platform);
+
+-- Persistent first-party visitor identifier, written by src/lib/visitor-id.ts
+-- (a UUID generated once and kept in the browser's localStorage, not a
+-- cookie) and sent along with every page_views beacon. ip_hash alone
+-- fragments one real person into several "visitors" the moment their IP
+-- changes (home IP rotation, wifi<->cellular, a VPN toggling) -- this is the
+-- secondary correlation key /admin/stats/visitor/[ipHash] uses to follow the
+-- same browser across that kind of change instead of splitting the history.
+-- Nullable: older rows, and visitors with storage blocked/cleared/private-mode,
+-- simply can't be cross-IP-correlated -- not a broken profile, just no merge.
+alter table page_views add column if not exists visitor_id uuid;
+create index if not exists page_views_visitor_id_idx on page_views (visitor_id);
+
+-- Browser-reported IANA timezone (Intl.DateTimeFormat().resolvedOptions().timeZone),
+-- e.g. "America/Denver". Free cross-check against the IP-derived country/region
+-- from Vercel's edge network: a US IP paired with a non-US timezone is exactly
+-- the shape a VPN/proxy produces. Shown next to the existing ip-api.com VPN/
+-- hosting flags on the visitor profile, not auto-flagged -- too many legitimate
+-- reasons (travel, a misconfigured OS clock, a multi-region timezone) for a
+-- mismatch to be safely automated into a badge.
+alter table page_views add column if not exists timezone text;
+
+-- UTM campaign params read off the landing page's own URL (?utm_source=...),
+-- the standard way to tag a shared link for "which channel sent this visitor"
+-- -- general-purpose, unlike the résumé-only /r/resume redirect below, since
+-- it works for a link to any page, not just the résumé.
+alter table page_views add column if not exists utm_source text;
+alter table page_views add column if not exists utm_medium text;
+alter table page_views add column if not exists utm_campaign text;
+create index if not exists page_views_utm_source_idx on page_views (utm_source);
+
+-- How far down the page (0-100) the visitor actually scrolled before leaving
+-- -- sent alongside duration_ms on the same "duration" beacon, matched by the
+-- same view_id. A much stronger engagement signal than time-on-page alone: a
+-- tab left open for ten minutes without scrolling past the fold isn't
+-- engagement, and a 15-second visit that scrolled to the bottom might be.
+alter table page_views add column if not exists max_scroll_pct integer;
+
+-- Click log for /r/resume (src/app/r/resume/route.ts), the tracked redirect
+-- Oliver shares off-site (email signature, job applications, LinkedIn) so he
+-- can see which channel actually drives résumé opens -- on-site opens (the
+-- modal, the standalone /resume route) are already covered by page_views and
+-- don't go through this. Chosen over a dedicated subdomain: same analytics
+-- value (which outbound link got clicked), no second deployment/DNS/cert to
+-- maintain for one document. `src` is whatever tag the shared link carries
+-- (e.g. "linkedin", "email-signature") and is caller-supplied, not validated
+-- against a fixed list, since Oliver is the only one who ever creates these
+-- links. ip_hash only -- same posture as download_events.
+create table if not exists resume_redirect_clicks (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  src text,
+  ip_hash text not null,
+  user_agent text
+);
+
+alter table resume_redirect_clicks enable row level security;
+
+create index if not exists resume_redirect_clicks_created_at_idx
+  on resume_redirect_clicks (created_at);
+
+create index if not exists resume_redirect_clicks_src_idx
+  on resume_redirect_clicks (src);
